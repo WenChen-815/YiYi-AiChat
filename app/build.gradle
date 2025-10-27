@@ -1,0 +1,115 @@
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
+    // id 'kotlin-kapt' // 添加kapt插件
+    id 'com.google.devtools.ksp' // 使用 KSP 插件替代 kotlin-kapt
+}
+
+// 加载签名文件
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+
+android {
+    namespace 'com.wenchen.yiyi'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId "com.wenchen.yiyi"
+        minSdk 27
+        targetSdk 35
+        versionCode 1
+        versionName "1.0.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    // 自定义打包名称
+    android.applicationVariants.configureEach { variant ->
+        variant.outputs.configureEach {
+            outputFileName = "YiYi-AIChat_${buildType.name}_v${versionName}.apk"
+        }
+    }
+    // 配置签名文件
+    signingConfigs {
+        config {
+            storeFile file(keystoreProperties['KEY_STORE_FILE'])
+            storePassword keystoreProperties['KEY_STORE_PASSWORD']
+            keyAlias keystoreProperties['KEY_ALIAS']
+            keyPassword keystoreProperties['KEY_PASSWORD']
+        }
+    }
+    buildTypes {
+        release {
+            debuggable false
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.config
+        }
+        debug {
+            debuggable true
+            signingConfig signingConfigs.config
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+    buildFeatures {
+        compose true
+    }
+}
+
+dependencies {
+
+    implementation libs.androidx.core.ktx
+    implementation libs.androidx.appcompat
+    implementation libs.material
+    implementation libs.androidx.activity
+    testImplementation libs.junit
+    androidTestImplementation libs.androidx.junit
+    androidTestImplementation libs.androidx.espresso.core
+
+    // 引入Room和Room的Kotlin扩展库
+    implementation(libs.androidx.room.runtime)
+    // kapt(libs.androidx.room.compiler)
+    ksp(libs.androidx.room.compiler)
+    implementation(libs.androidx.room.ktx)
+    //paging分页
+    implementation libs.androidx.paging.runtime.ktx
+    // 添加Room-Paging集成库
+    implementation libs.androidx.room.paging
+
+    implementation libs.androidx.activity.compose
+    implementation platform(libs.androidx.compose.bom)
+    implementation libs.androidx.ui
+    implementation libs.androidx.ui.graphics
+    implementation libs.androidx.ui.tooling.preview
+    debugImplementation libs.androidx.ui.tooling
+    implementation libs.androidx.material
+    implementation libs.androidx.compose.material3
+    implementation libs.ui                       //ui基础库 - 重要
+    implementation libs.ui.tooling               //ui工具基础库 - 重要
+    implementation libs.androidx.foundation       //基础库 - 重要
+    implementation libs.androidx.activity.compose           //配合activity使用的基础库 - 重要
+    implementation libs.ui.tooling.preview       //在Android studio里预览ui的基础库
+    implementation libs.androidx.runtime.livedata
+    implementation libs.androidx.compose.material.iconsExtended
+    // Compose 导航核心库
+    implementation libs.androidx.navigation.compose
+
+    // 用于JSON解析
+    implementation libs.gson
+
+    implementation libs.androidx.runtime.livedata
+    implementation libs.androidx.lifecycle.viewmodel.compose
+    implementation libs.androidx.lifecycle.runtime.compose
+    implementation libs.androidx.constraintlayout.compose
+    implementation(libs.coil.compose)
+    // 引入Haze库 模糊背景
+    implementation(libs.haze)
+}

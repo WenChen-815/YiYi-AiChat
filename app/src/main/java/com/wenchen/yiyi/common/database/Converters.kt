@@ -1,0 +1,59 @@
+package com.wenchen.yiyi.common.database
+
+import androidx.room.TypeConverter
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import com.wenchen.yiyi.aiChat.entity.ConversationType
+import com.wenchen.yiyi.aiChat.entity.MessageContentType
+import com.wenchen.yiyi.aiChat.entity.MessageType
+
+class Converters {
+
+    @TypeConverter
+    fun fromMessageType(type: MessageType): String {
+        return type.name
+    }
+
+    @TypeConverter
+    fun toMessageType(type: String): MessageType {
+        return MessageType.valueOf(type)
+    }
+
+    @TypeConverter
+    fun fromMessageContentType(type: MessageContentType): String {
+        return type.name
+    }
+
+    @TypeConverter
+    fun toMessageContentType(type: String): MessageContentType {
+        return MessageContentType.valueOf(type)
+    }
+
+    @TypeConverter
+    fun fromTimestamp(value: Long?): Long {
+        return value ?: System.currentTimeMillis()
+    }
+
+    @TypeConverter
+    fun fromStringList(value: List<String>?): String? {
+        return value?.let { Gson().toJson(it) }
+    }
+
+    @TypeConverter
+    fun toStringList(value: String?): List<String>? {
+        return value?.let {
+            val listType = object : TypeToken<List<String>>() {}.type
+            Gson().fromJson(it, listType)
+        }
+    }
+
+    @TypeConverter
+    fun fromConversationType(type: ConversationType): String {
+        return type.name
+    }
+
+    @TypeConverter
+    fun toConversationType(type: String): ConversationType {
+        return ConversationType.valueOf(type)
+    }
+}

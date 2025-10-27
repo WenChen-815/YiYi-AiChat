@@ -1,0 +1,17 @@
+# Project exclude paths
+/.gradle/
+/build/
+*.iml
+/local.properties
+/keystore.properties
+/.idea/
+.DS_Store
+/captures
+.externalNativeBuild
+.cxx
+/.kotlin
+/ignore/
+# 忽略Android构建产物
+app/release/
+app/debug/
+app/keystore/
