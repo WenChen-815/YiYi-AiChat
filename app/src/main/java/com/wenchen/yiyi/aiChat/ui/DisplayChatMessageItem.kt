@@ -1,7 +1,5 @@
 package com.wenchen.yiyi.aiChat.ui
 
-import android.R.attr.end
-import android.R.attr.top
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,7 +19,6 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.FocusRequester.Companion.createRefs
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
@@ -34,6 +31,7 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import coil.compose.AsyncImage
 import com.wenchen.yiyi.R
 import com.wenchen.yiyi.aiChat.entity.ChatMessage
+import com.wenchen.yiyi.aiChat.entity.ConversationType
 import com.wenchen.yiyi.aiChat.entity.MessageContentType
 import com.wenchen.yiyi.aiChat.entity.MessageType
 import com.wenchen.yiyi.aiChat.vm.ChatViewModel
@@ -67,15 +65,20 @@ fun DisplayChatMessageItem(
         )
 
         MessageType.ASSISTANT -> {
+            val avatarUrl = if (uiState.conversation.type == ConversationType.SINGLE) {
+                uiState.currentCharacter?.avatarPath
+                    ?: "android.resource://${LocalContext.current.packageName}/${R.mipmap.ai_closed}"
+            } else {
+                uiState.currentCharacters.find { it.aiCharacterId == message.characterId }?.avatarPath
+                    ?: "android.resource://${LocalContext.current.packageName}/${R.mipmap.ai_closed}"
+            }
             if (message.contentType == MessageContentType.TEXT) {
                 // 分割AI消息内容
                 val parts = cleanedContent.split('\\').filter { it.isNotBlank() }.reversed()
                 for (i in parts.indices) {
                     ChatMessageItem(
                         content = parts[i],
-                        avatarUrl = if (uiState.currentCharacter?.avatarPath?.isNotBlank() == true) {
-                            uiState.currentCharacter.avatarPath
-                        } else "android.resource://${LocalContext.current.packageName}/${R.mipmap.ai_closed}",
+                        avatarUrl = avatarUrl,
                         messageType = message.type,
                         contentType = message.contentType
                     )

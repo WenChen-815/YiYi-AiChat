@@ -24,7 +24,7 @@ interface ConversationDao {
     suspend fun getByCharacterId(id: String): List<Conversation>
 
     @Query("DELETE FROM conversations WHERE id = :conversationId")
-    suspend fun deleteById(conversationId: String)
+    suspend fun deleteById(conversationId: String): Int
 
     @Query("DELETE FROM conversations WHERE id = :id")
     suspend fun deleteByCharacterId(id: String)

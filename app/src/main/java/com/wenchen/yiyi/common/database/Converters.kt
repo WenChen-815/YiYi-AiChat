@@ -56,4 +56,17 @@ class Converters {
     fun toConversationType(type: String): ConversationType {
         return ConversationType.valueOf(type)
     }
+
+    @TypeConverter
+    fun fromCharacterIdMap(map: Map<String, Float>?): String? {
+        return map?.let { Gson().toJson(it) }
+    }
+
+    @TypeConverter
+    fun toCharacterIdMap(value: String?): Map<String, Float>? {
+        return value?.let {
+            val mapType = object : TypeToken<Map<String, Float>>() {}.type
+            Gson().fromJson(it, mapType)
+        }
+    }
 }

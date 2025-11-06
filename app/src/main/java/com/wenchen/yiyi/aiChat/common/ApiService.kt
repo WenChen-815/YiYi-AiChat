@@ -49,7 +49,7 @@ class ApiService(
         onSuccess: (String) -> Unit,
         onError: (String) -> Unit
     ) {
-        Log.i(tag, "model: $model")
+//        Log.i(tag, "model: $model")
         // 创建请求体对象
         val chatRequest = ChatRequest(model, messages, temperature)
 

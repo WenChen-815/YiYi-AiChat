@@ -20,7 +20,7 @@ import com.wenchen.yiyi.common.theme.LightGray
 @Composable
 fun SettingTextFieldItem(
     modifier: Modifier = Modifier,
-    label: String,
+    label: String = "",
     labelPadding: PaddingValues = PaddingValues(0.dp),
     value: String,
     onValueChange: (String) -> Unit,
@@ -30,11 +30,13 @@ fun SettingTextFieldItem(
     placeholder: @Composable (() -> Unit)? = null,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(labelPadding)
-        )
+        if (label.isNotEmpty()){
+            Text(
+                text = label,
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(labelPadding)
+            )
+        }
         YiYiOutlinedTextField(
             value = value,
             onValueChange = onValueChange,

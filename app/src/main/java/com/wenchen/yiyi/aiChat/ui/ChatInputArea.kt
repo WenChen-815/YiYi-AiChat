@@ -39,6 +39,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.unit.dp
+import com.wenchen.yiyi.aiChat.entity.ConversationType
 import com.wenchen.yiyi.aiChat.vm.ChatViewModel
 import com.wenchen.yiyi.common.components.YiYiTextField
 import com.wenchen.yiyi.common.theme.*
@@ -120,7 +121,8 @@ fun ChatInputArea(
                 modifier = Modifier.weight(1f),
                 placeholder = {
                     Text(
-                        "向${uiState.currentCharacter?.name ?: "[未选择角色]"}发送消息",
+                        if (uiState.conversation.type == ConversationType.SINGLE) "向${uiState.currentCharacter?.name ?: "[未选择角色]"}发送消息"
+                        else "在群聊发送消息",
                         style = MaterialTheme.typography.bodyLarge.copy(color = WhiteText.copy(0.6f))
                     )
                 },

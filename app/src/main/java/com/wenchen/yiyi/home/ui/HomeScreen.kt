@@ -29,14 +29,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.google.gson.Gson
 import com.wenchen.yiyi.aiChat.ui.activity.ChatActivity
-import com.wenchen.yiyi.common.entity.AICharacter
-import com.wenchen.yiyi.home.vm.CharacterViewModel
 import com.wenchen.yiyi.common.components.NoBorderTextField
+import com.wenchen.yiyi.common.entity.AICharacter
 import com.wenchen.yiyi.common.theme.BlackText
 import com.wenchen.yiyi.common.theme.GrayBg
 import com.wenchen.yiyi.common.theme.GrayText
 import com.wenchen.yiyi.common.theme.WhiteText
 import com.wenchen.yiyi.config.common.ConfigManager
+import com.wenchen.yiyi.home.vm.CharacterViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,12 +55,13 @@ fun HomeScreen(
 
     // 添加生命周期观察者，当界面恢复时刷新数据
     DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                // 每次回到主页时重新加载数据
-                viewModel.refreshCharacters()
+        val observer =
+            LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_RESUME) {
+                    // 每次回到主页时重新加载数据
+                    viewModel.refreshCharacters()
+                }
             }
-        }
 
         lifecycleOwner.lifecycle.addObserver(observer)
 
@@ -70,31 +71,11 @@ fun HomeScreen(
     }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(10.dp)
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(10.dp),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ){
-            Text(
-                text = "AI角色管理",
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    color = MaterialTheme.colorScheme.onBackground
-                ),
-            )
-            TextButton(
-                onClick = {
-                }
-            ) {
-                Text(
-                    "创建群组",
-                    style = MaterialTheme.typography.bodyMedium.copy(color = WhiteText)
-                )
-            }
-        }
-
         // 搜索框
         NoBorderTextField(
             value = searchQuery,
@@ -106,21 +87,22 @@ fun HomeScreen(
             placeholder = {
                 Text(
                     "搜索角色",
-                    style = MaterialTheme.typography.bodyMedium.copy(color = GrayText)
+                    style = MaterialTheme.typography.bodyMedium.copy(color = GrayText),
                 )
             },
             singleLine = true,
-            keyboardOptions = KeyboardOptions(
-                imeAction = ImeAction.Done
-            ),
-            textStyle = MaterialTheme.typography.bodyLarge.copy(color = BlackText)
+            keyboardOptions =
+                KeyboardOptions(
+                    imeAction = ImeAction.Done,
+                ),
+            textStyle = MaterialTheme.typography.bodyLarge.copy(color = BlackText),
         )
 
         // 角色列表
         if (characters.isEmpty()) {
             Box(
                 modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 Text("暂无角色，请添加新角色")
             }
@@ -129,7 +111,7 @@ fun HomeScreen(
                 columns = GridCells.Fixed(2),
                 modifier = Modifier.fillMaxSize(),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+                verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 items(characters.size) { index ->
                     CharacterItem(
@@ -163,7 +145,7 @@ fun HomeScreen(
                         }
                         showDeleteDialog = false
                         characterToDelete = null
-                    }
+                    },
                 ) {
                     Text("确定")
                 }
@@ -173,11 +155,11 @@ fun HomeScreen(
                     onClick = {
                         showDeleteDialog = false
                         characterToDelete = null
-                    }
+                    },
                 ) {
                     Text("取消")
                 }
-            }
+            },
         )
     }
 }
@@ -189,14 +171,16 @@ fun CharacterItem(
 ) {
     Card(
         shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.Transparent // 设置Card本身透明
-        ),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = Color.Transparent, // 设置Card本身透明
+            ),
         // 上面的colors针对Card本身，而modifier.background针对所处控件的内容区域（默认是透明的）,两者的作用不同
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(max = 300.dp),
-//        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .heightIn(max = 300.dp),
+        //        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         onClick = { onItemClick(character) },
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
@@ -204,85 +188,94 @@ fun CharacterItem(
                 model = character.backgroundPath,
                 contentDescription = "角色背景",
                 contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clip(RoundedCornerShape(8.dp, 8.dp, 9.dp, 9.dp))
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(8.dp, 8.dp, 9.dp, 9.dp)),
             )
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
-                                Color.Transparent,
-                                Color.Transparent,
-                                Color.Transparent,
-                                GrayBg.copy(alpha = 0.9f),
-                                GrayBg
-                            ),
-                            startY = 0f,  // 渐变起点Y坐标
-                            endY = Float.POSITIVE_INFINITY  // 渐变终点Y坐标
-                        )
-                    )
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .background(
+                            brush =
+                                Brush.verticalGradient(
+                                    colors =
+                                        listOf(
+                                            Color.Transparent,
+                                            Color.Transparent,
+                                            Color.Transparent,
+                                            GrayBg.copy(alpha = 0.9f),
+                                            GrayBg,
+                                        ),
+                                    startY = 0f, // 渐变起点Y坐标
+                                    endY = Float.POSITIVE_INFINITY, // 渐变终点Y坐标
+                                ),
+                        ),
             )
             Column(
-                modifier = Modifier
-                    .background(Color.Transparent)
-                    .fillMaxWidth()
-                    .align(Alignment.BottomCenter)
+                modifier =
+                    Modifier
+                        .background(Color.Transparent)
+                        .fillMaxWidth()
+                        .align(Alignment.BottomCenter),
             ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     // 角色信息
                     Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(8.dp, 8.dp)
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .padding(8.dp, 8.dp),
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(bottom = 4.dp)
+                            modifier = Modifier.padding(bottom = 4.dp),
                         ) {
                             AsyncImage(
                                 model = character.avatarPath,
                                 contentDescription = "角色头像",
                                 contentScale = ContentScale.Crop,
-                                modifier = Modifier
-                                    .padding(end = 4.dp)
-                                    .size(24.dp)
-                                    .clip(CircleShape)
+                                modifier =
+                                    Modifier
+                                        .padding(end = 4.dp)
+                                        .size(24.dp)
+                                        .clip(CircleShape),
                             )
                             Text(
                                 text = character.name,
                                 style = MaterialTheme.typography.bodyMedium.copy(color = WhiteText),
-                                maxLines = 1
+                                maxLines = 1,
                             )
                         }
-                        val prompt = buildString {
-                            if (character.roleIdentity.isNotBlank()) {
-                                append("# 角色身份\n${character.roleIdentity}\n")
-                            }
-                            if (character.roleAppearance.isNotBlank()) {
-                                append("# 角色外貌\n${character.roleAppearance}\n")
-                            }
-                            if (character.roleDescription.isNotBlank()) {
-                                append("# 角色描述\n${character.roleDescription}\n")
-                            }
-                            if (character.outputExample.isNotBlank()) {
-                                append("# 输出示例\n${character.outputExample}\n")
-                            }
-                            if (character.behaviorRules.isNotBlank()) {
-                                append("# 行为规则\n${character.behaviorRules}\n")
-                            }
-                        }.trim()
+                        val prompt =
+                            buildString {
+                                if (character.roleIdentity.isNotBlank()) {
+                                    append("# 角色身份\n${character.roleIdentity}\n")
+                                }
+                                if (character.roleAppearance.isNotBlank()) {
+                                    append("# 角色外貌\n${character.roleAppearance}\n")
+                                }
+                                if (character.roleDescription.isNotBlank()) {
+                                    append("# 角色描述\n${character.roleDescription}\n")
+                                }
+                                if (character.outputExample.isNotBlank()) {
+                                    append("# 输出示例\n${character.outputExample}\n")
+                                }
+                                if (character.behaviorRules.isNotBlank()) {
+                                    append("# 行为规则\n${character.behaviorRules}\n")
+                                }
+                            }.trim()
                         Text(
                             text = prompt,
                             style = MaterialTheme.typography.bodySmall.copy(color = WhiteText),
                             maxLines = 3,
-                            overflow = TextOverflow.Ellipsis
+                            overflow = TextOverflow.Ellipsis,
                         )
                     }
                 }

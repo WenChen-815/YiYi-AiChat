@@ -12,12 +12,14 @@ import com.wenchen.yiyi.aiChat.entity.TempChatMessage
 import com.wenchen.yiyi.common.App
 import com.wenchen.yiyi.common.entity.AICharacter
 import com.wenchen.yiyi.aiChat.entity.AIChatMemory
+import com.wenchen.yiyi.aiChat.entity.ConversationType
 import com.wenchen.yiyi.common.entity.Message
 import com.wenchen.yiyi.common.utils.ChatUtil
 import com.wenchen.yiyi.config.common.ConfigManager
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -53,6 +55,8 @@ object AIChatManager {
 
     // 并发控制
     private val characterLocks = ConcurrentHashMap<String, Mutex>()
+    private val sendCharacterQueue = ConcurrentHashMap<String, MutableList<AICharacter>>()
+    private val isProcessing = ConcurrentHashMap<String, Boolean>()
     private val listeners = Collections.synchronizedSet(mutableSetOf<AIChatMessageListener>())
 
     // 用户信息
@@ -91,6 +95,82 @@ object AIChatManager {
         listeners.remove(listener)
     }
 
+    suspend fun sendGroupMessage(
+        conversation: Conversation,
+        aiCharacters: List<AICharacter>,
+        newMessageTexts: List<String>,
+        oldMessages: List<TempChatMessage>,
+        showInChat: Boolean = true,
+        isSendSystemMessage: Boolean = false
+    ) {
+        // 参数校验
+        if (conversation.characterIds.isEmpty() || aiCharacters.isEmpty()) {
+            Log.e(TAG, "未选择AI角色")
+            return
+        }
+        val userMessage =
+            handleUserMessage(conversation, newMessageTexts, isSendSystemMessage, showInChat)
+        val count = tempChatMessageDao.getCountByConversationId(conversation.id)
+        Log.d(TAG, "sendGroupMessage: $count")
+        val summaryMessages = getSummaryMessages(conversation)
+        if (count >= summarizeTriggerCount) aiCharacters.forEach { aiCharacter ->
+            summarize(conversation, aiCharacter, summaryMessages)
+        }
+        // 初始化队列和状态
+        val queueKey = conversation.id
+        if (!sendCharacterQueue.containsKey(queueKey)) {
+            sendCharacterQueue[queueKey] = mutableListOf()
+            isProcessing[queueKey] = false
+        }
+
+        conversation.characterIds.forEach { (id, chance) ->
+            val aiCharacter = aiCharacters.find { it.aiCharacterId == id }
+            if (aiCharacter == null) {
+                Log.e(TAG, "未找到AI角色: $id")
+                return
+            }
+            val random = Math.random()
+//            Log.d(TAG, "sendGroupMessage: $id -- $chance -- $random")
+            if (random < chance) { // 生成一个0~1的随机数
+                sendCharacterQueue[queueKey]?.add(aiCharacter)
+//                CoroutineScope(Dispatchers.Main).launch {
+//                    listeners.forEach { it.onShowToast("chance: $random -- ${aiCharacter.name} 正在回复") }
+//                }
+            }
+        }
+
+        // 启动处理流程
+        processMessageQueue(conversation, oldMessages)
+    }
+
+    private suspend fun processMessageQueue(
+        conversation: Conversation,
+        oldMessages: List<TempChatMessage>
+    ) {
+        val queueKey = conversation.id
+        if (isProcessing[queueKey] == true) return
+
+        isProcessing[queueKey] = true
+        sendCharacterQueue[queueKey]?.shuffle() // 对发送队列进行乱序处理
+        while (sendCharacterQueue[queueKey]?.isNotEmpty() == true) {
+            val aiCharacter = sendCharacterQueue[queueKey]?.removeAt(0) ?: break
+            Log.d(TAG, "oldMessages: $oldMessages")
+            var messages = generateBaseMessages(aiCharacter, conversation, oldMessages)
+            send(conversation, aiCharacter, messages)
+
+            // 添加随机时间间隔
+            val randomDelay = (2000 + (Math.random() * 4000)).toLong() // 2-6秒随机延迟
+            delay(randomDelay)
+        }
+        clearMessageQueue(queueKey)
+    }
+
+    fun clearMessageQueue(conversationId: String) {
+        sendCharacterQueue.remove(conversationId)
+        isProcessing.remove(conversationId)
+    }
+
+
     /**
      * 发送消息并与AI进行交互的核心函数。该函数会构建完整的对话上下文（包括系统提示、历史记录和当前用户输入），
      * 并调用模型接口完成响应生成与记忆更新。
@@ -115,11 +195,34 @@ object AIChatManager {
             Log.e(TAG, "未选择AI角色")
             return
         }
-        // 构建消息列表
-        val messages = mutableListOf<Message>()
+        // 处理新消息
+        val userMessages =
+            handleUserMessage(conversation, newMessageTexts, isSendSystemMessage, showInChat)
+        var messages = generateBaseMessages(aiCharacter, conversation, oldMessages)
 
+        // 发送消息和总结
+//        messages.addAll(userMessages)
+        send(conversation, aiCharacter, messages)
+
+        val count = tempChatMessageDao.getCountByConversationId(conversation.id)
+        if (count >= summarizeTriggerCount) {
+            val summaryMessages = getSummaryMessages(conversation)
+            Log.d(TAG, "开始总结 count=$count")
+            summarize(conversation, aiCharacter, summaryMessages)
+        }
+    }
+
+    private suspend fun generateBaseMessages(
+        aiCharacter: AICharacter,
+        conversation: Conversation,
+        oldMessages: List<TempChatMessage>
+    ): MutableList<Message> {
+        val messages = mutableListOf<Message>()
         // 添加系统提示消息
         val prompt = buildString {
+            if (conversation.type == ConversationType.GROUP) {
+                append("**你正处于多人对话中，你的主要服务对象是[${conversation.playerName}]，请使用以下[${aiCharacter.name}]的身份参与对话**\n")
+            }
             if (aiCharacter.roleIdentity.isNotBlank()) {
                 append("# 角色任务&身份\n${aiCharacter.roleIdentity}\n")
             }
@@ -146,7 +249,7 @@ object AIChatManager {
                 append("# [[以下行为准则请严格遵守]]\n${aiCharacter.behaviorRules}\n")
             }
         }.trim()
-        Log.d(TAG, "prompt: $prompt")
+//        Log.d(TAG, "prompt: $prompt")
 
         val history = aiChatMemoryDao.getByCharacterIdAndConversationId(
             aiCharacter.aiCharacterId,
@@ -156,17 +259,41 @@ object AIChatManager {
         if (prompt.isNotEmpty()) {
             messages.add(Message("system", "$prompt\n# 以下为角色记忆:\n$history"))
         }
-
         // 添加历史消息
         for (message in oldMessages) {
-            if (message.type == MessageType.ASSISTANT) {
-                messages.add(Message(message.type.name.lowercase(), ChatUtil.parseMessage(message)))
+            if (message.type == MessageType.ASSISTANT && message.characterId == aiCharacter.aiCharacterId) {
+                messages.add(Message("assistant", ChatUtil.parseMessage(message)))
             } else {
-                messages.add(Message(message.type.name.lowercase(), message.content))
+                messages.add(Message("user", message.content))
             }
         }
+        return messages
+    }
 
-        // 处理新消息
+    private suspend fun savaMessage(message: ChatMessage, saveToTemp: Boolean) {
+        chatMessageDao.insertMessage(message)
+        if (saveToTemp) {
+            tempChatMessageDao.insert(
+                TempChatMessage(
+                    id = message.id,
+                    content = message.content,
+                    type = message.type,
+                    characterId = message.characterId,
+                    chatUserId = message.chatUserId,
+                    isShow = message.isShow,
+                    conversationId = message.conversationId
+                )
+            )
+        }
+    }
+
+    private suspend fun handleUserMessage(
+        conversation: Conversation,
+        newMessageTexts: List<String>,
+        isSendSystemMessage: Boolean,
+        showInChat: Boolean
+    ): MutableList<Message> {
+        var userMessages = mutableListOf<Message>()
         val currentDate =
             SimpleDateFormat("yyyy-MM-dd EEEE HH:mm:ss", Locale.getDefault()).format(Date())
         val currentUserName = "[${conversation.playerName}]"
@@ -177,39 +304,24 @@ object AIChatManager {
                 "${currentDate}|${currentUserName} $newMessageText"
             }
             val userMessage = ChatMessage(
-                id = "${aiCharacter.aiCharacterId}:${System.currentTimeMillis()}",
+                id = UUID.randomUUID().toString(),
                 content = newContent,
                 type = if (isSendSystemMessage) MessageType.SYSTEM else MessageType.USER,
-                characterId = aiCharacter.aiCharacterId,
+                characterId = "user",
                 chatUserId = USER_ID,
                 isShow = showInChat,
                 conversationId = conversation.id
             )
+            // 保存用户消息到数据库
+            savaMessage(userMessage, true)
+            // 添加新消息到待发送列表
+            userMessages.add(Message(if (isSendSystemMessage) "system" else "user", newContent))
             // 通知所有监听器消息已发送
             CoroutineScope(Dispatchers.Main).launch {
                 listeners.forEach { it.onMessageSent(userMessage) }
             }
-            // 添加新消息到待发送列表
-            messages.add(Message(if (isSendSystemMessage) "system" else "user", newContent))
-            // 保存用户消息到数据库
-            chatMessageDao.insertMessage(userMessage)
-            tempChatMessageDao.insert(
-                TempChatMessage(
-                    id = userMessage.id,
-                    content = userMessage.content,
-                    type = userMessage.type,
-                    characterId = userMessage.characterId,
-                    chatUserId = userMessage.chatUserId,
-                    isShow = userMessage.isShow,
-                    conversationId = userMessage.conversationId
-                )
-            )
         }
-
-        // 发送消息和总结
-        Log.i(TAG, "用户 调用总结")
-        send(conversation, aiCharacter, messages)
-        summarize(conversation, aiCharacter)
+        return userMessages
     }
 
     /**
@@ -222,12 +334,13 @@ object AIChatManager {
     private fun send(
         conversation: Conversation,
         aiCharacter: AICharacter?,
-        messages: MutableList<Message>
+        messages: MutableList<Message>,
     ) {
         if (aiCharacter == null) {
             Log.e(TAG, "未选择AI角色")
             return
         }
+        Log.d(TAG, "send to ${aiCharacter.name}: $messages")
         apiService.sendMessage(
             messages = messages,
             model = configManager.getSelectedModel() ?: "",
@@ -238,11 +351,10 @@ object AIChatManager {
                 val currentDate =
                     SimpleDateFormat("yyyy-MM-dd EEEE HH:mm:ss", Locale.getDefault()).format(Date())
                 val currentCharacterName = "[${aiCharacter.name}]"
-                val messageId = "${aiCharacter.aiCharacterId}:$timestamp"
                 val messageContent = "$currentDate|${currentCharacterName} $aiResponse"
 
                 val aiMessage = ChatMessage(
-                    id = messageId,
+                    id = UUID.randomUUID().toString(),
                     content = messageContent,
                     type = MessageType.ASSISTANT,
                     characterId = aiCharacter.aiCharacterId,
@@ -251,19 +363,9 @@ object AIChatManager {
                 )
                 // 保存AI消息到数据库 创建一个新的协程来执行挂起函数
                 CoroutineScope(Dispatchers.IO).launch {
-                    chatMessageDao.insertMessage(aiMessage)
-                    tempChatMessageDao.insert(
-                        TempChatMessage(
-                            id = messageId,
-                            content = messageContent,
-                            type = MessageType.ASSISTANT,
-                            characterId = aiCharacter.aiCharacterId,
-                            chatUserId = USER_ID,
-                            conversationId = conversation.id
-                        )
-                    )
-                    Log.i(TAG, "AI调用总结")
-                    summarize(conversation, aiCharacter)
+                    savaMessage(aiMessage, true)
+//                    val summaryMessages = getSummaryMessages(conversation)
+//                    summarize(conversation, aiCharacter, summaryMessages)
                 }
                 Log.d(TAG, "AI回复:${aiMessage.content}")
                 CoroutineScope(Dispatchers.Main).launch {
@@ -288,6 +390,7 @@ object AIChatManager {
     suspend fun summarize(
         conversation: Conversation,
         aiCharacter: AICharacter?,
+        summaryMessages: List<TempChatMessage>,
         callback: (() -> Unit)? = null
     ) {
         // 添加用户消息到列表
@@ -316,14 +419,13 @@ object AIChatManager {
                     return@withLock
                 }
             }
-            val count = tempChatMessageDao.getCountByCharacterId(aiCharacter.aiCharacterId)
-            if (count < summarizeTriggerCount) {
-                Log.d(TAG, "无需总结 count=$count")
-                return@withLock
-            }
-            Log.d(TAG, "开始总结 count=$count")
-            val allHistory = tempChatMessageDao.getByCharacterId(aiCharacter.aiCharacterId)
-            val summaryMessages = allHistory.subList(0, allHistory.size - maxContextMessageSize)
+//            val count = tempChatMessageDao.getCountByConversationId(conversation.id)
+//            if (count < summarizeTriggerCount) {
+////                Log.d(TAG, "无需总结 count=$count")
+//                return@withLock
+//            }
+//            Log.d(TAG, "开始总结 count=$count")
+
             // 构建消息列表
             val messages = mutableListOf<Message>()
             // 添加系统提示消息
@@ -343,13 +445,13 @@ object AIChatManager {
                 # [当前时间] [$currentDate]
                 # [角色设定]
                 $prompt
-                
-                现在请你代入${aiCharacter.name}的角色并以“我”自称，用中文总结与${conversation.playerName}的对话，结合代入角色的性格特点，将以下对话片段提取重要信息总结为一段话作为记忆片段(不要有总结内容以外的说明，直接回复一段话):
+                # [对话片段]
             """.trimIndent()
             // 添加历史消息
             for (message in summaryMessages) {
                 summaryRequest += "\n${message.content}"
             }
+            summaryRequest += "\n现在请你代入${aiCharacter.name}的角色并以“我”自称，代入角色的性格特点，用[回忆的口吻]总结以上对话片段为一段话(直接回复一段话)"
             messages.add(Message("system", summaryRequest))
             // 使用CompletableDeferred来等待API调用完成
             val apiCompleted = CompletableDeferred<Boolean>()
@@ -370,7 +472,7 @@ object AIChatManager {
                         tempChatMessageDao.deleteAll(summaryMessages)
                         Log.d(
                             TAG,
-                            "characterId:$characterId conversationId:${conversation.id} aiMemory :$aiMemory"
+                            "aiMemory :$aiMemory"
                         )
                         if (aiMemory == null) {
                             aiMemory = AIChatMemory(
@@ -378,6 +480,7 @@ object AIChatManager {
                                 characterId = aiCharacter.aiCharacterId,
                                 conversationId = conversation.id,
                                 content = newMemoryContent,
+                                count = 1,
                                 createdAt = System.currentTimeMillis()
                             )
                             val result = aiChatMemoryDao.insert(aiMemory)
@@ -385,6 +488,7 @@ object AIChatManager {
                         } else {
                             aiMemory.content =
                                 if (aiMemory.content.isNotEmpty() == true) "${aiMemory.content}\n\n$newMemoryContent" else newMemoryContent
+                            aiMemory.count += 1
                             val result = aiChatMemoryDao.update(aiMemory)
                             Log.d(TAG, "总结成功 update :$result")
                         }
@@ -401,6 +505,11 @@ object AIChatManager {
             // 等待API调用完成后再释放锁
             apiCompleted.await()
         }
+    }
+
+    suspend fun getSummaryMessages(conversation: Conversation): List<TempChatMessage> {
+        val allHistory = tempChatMessageDao.getByConversationId(conversation.id)
+        return allHistory.subList(0, (allHistory.size - maxContextMessageSize).coerceAtLeast(0))
     }
 
     /**

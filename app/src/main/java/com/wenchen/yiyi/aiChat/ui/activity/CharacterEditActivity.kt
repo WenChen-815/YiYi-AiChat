@@ -78,7 +78,12 @@ class CharacterEditActivity : ComponentActivity(), CoroutineScope by MainScope()
             val imageUri = result.data?.data
             try {
                 val bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    ImageDecoder.decodeBitmap(ImageDecoder.createSource(contentResolver, imageUri!!))
+                    ImageDecoder.decodeBitmap(
+                        ImageDecoder.createSource(
+                            contentResolver,
+                            imageUri!!
+                        )
+                    )
                 } else {
                     @Suppress("DEPRECATION")
                     MediaStore.Images.Media.getBitmap(contentResolver, imageUri)
@@ -101,7 +106,12 @@ class CharacterEditActivity : ComponentActivity(), CoroutineScope by MainScope()
             val imageUri = result.data?.data
             try {
                 val bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    ImageDecoder.decodeBitmap(ImageDecoder.createSource(contentResolver, imageUri!!))
+                    ImageDecoder.decodeBitmap(
+                        ImageDecoder.createSource(
+                            contentResolver,
+                            imageUri!!
+                        )
+                    )
                 } else {
                     @Suppress("DEPRECATION")
                     MediaStore.Images.Media.getBitmap(contentResolver, imageUri)
@@ -253,7 +263,7 @@ class CharacterEditActivity : ComponentActivity(), CoroutineScope by MainScope()
                         id = conversationId.toString(),
                         name = character.name,
                         type = ConversationType.SINGLE,
-                        characterIds = listOf(characterId!!),
+                        characterIds = mapOf(character.aiCharacterId to 1.0f),
                         playerName = ConfigManager().getUserName().toString(),
                         playGender = "",
                         playerDescription = "",
@@ -566,10 +576,12 @@ fun CharacterEditScreen(
                 Text(
                     text = "重置次数",
                     style = MaterialTheme.typography.bodyMedium.copy(Gold),
-                    modifier = Modifier.padding(5.dp).clickable {
-                        memoryCount = 0
-                        onResetCountClick()
-                    }
+                    modifier = Modifier
+                        .padding(5.dp)
+                        .clickable {
+                            memoryCount = 0
+                            onResetCountClick()
+                        }
                 )
             }
 

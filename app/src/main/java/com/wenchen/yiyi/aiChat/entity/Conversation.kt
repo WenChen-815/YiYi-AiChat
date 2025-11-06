@@ -12,7 +12,7 @@ data class Conversation(
     @PrimaryKey val id: String,
     var name: String,
     val type: ConversationType,
-    val characterIds: List<String>,
+    val characterIds: Map<String, Float>,
 
     var playerName: String,
     var playGender: String,

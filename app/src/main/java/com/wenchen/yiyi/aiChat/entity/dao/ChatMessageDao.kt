@@ -19,6 +19,10 @@ interface ChatMessageDao {
     @Query("SELECT * FROM chat_messages WHERE conversationId = :conversationId ORDER BY timestamp DESC LIMIT :pageSize OFFSET :offset")
     suspend fun getMessagesByPage(conversationId: String, pageSize: Int, offset: Int): List<ChatMessage>
 
+    // 获取最近一条消息
+    @Query("SELECT * FROM chat_messages WHERE conversationId = :conversationId ORDER BY timestamp DESC LIMIT 1")
+    suspend fun getLastMessageByConversationId(conversationId: String): ChatMessage
+
     // 获取消息总数，用于判断是否还有更多数据
     @Query("SELECT COUNT(*) FROM chat_messages")
     suspend fun getTotalMessageCount(): Int

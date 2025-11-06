@@ -72,7 +72,7 @@ class ChatViewModel : ViewModel() {
                             id = conversationId,
                             name = currentAICharacter?.name ?: "未获取到对话信息",
                             type = ConversationType.SINGLE,
-                            characterIds = listOf(currentAICharacter?.aiCharacterId ?: ""),
+                            characterIds = mapOf((currentAICharacter?.aiCharacterId ?: "") to 1.0f),
                             playerName = "",
                             playGender = "",
                             playerDescription = "",
@@ -108,7 +108,9 @@ class ChatViewModel : ViewModel() {
                                     id = conversationId,
                                     name = currentAICharacter?.name ?: "未获取到对话信息",
                                     type = ConversationType.SINGLE,
-                                    characterIds = listOf(currentAICharacter?.aiCharacterId ?: ""),
+                                    characterIds = mapOf(
+                                        (currentAICharacter?.aiCharacterId ?: "") to 1.0f
+                                    ),
                                     playerName = "",
                                     playGender = "",
                                     playerDescription = "",
@@ -129,6 +131,27 @@ class ChatViewModel : ViewModel() {
             }
         } catch (e: Exception) {
             Log.e("ChatViewModel", "解析角色JSON失败", e)
+        }
+    }
+
+    fun initGroupChat(conversation: Conversation) {
+        // 更新最大上下文消息数
+        chatContext.setLimit(configManager.getMaxContextMessageSize())
+        try {
+            viewModelScope.launch(Dispatchers.IO) {
+                val currentCharacters = conversation.characterIds.mapNotNull { (characterId, _) ->
+                    aiCharacterDao.getCharacterById(characterId)
+                }
+                withContext(Dispatchers.Main) {
+                    _uiState.value = _uiState.value.copy(
+                        conversation = conversation,
+                        currentCharacters = currentCharacters
+                    )
+                    loadInitialData()
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("ChatViewModel", "初始化群聊失败", e)
         }
     }
 
@@ -199,34 +222,31 @@ class ChatViewModel : ViewModel() {
         isInitialLoading = true
 
         Log.d("ChatViewModel", "loadInitialData: ${_uiState.value.conversation.id}")
-        currentAICharacter?.let { character ->
-            viewModelScope.launch {
-                _uiState.value = _uiState.value.copy(isLoading = true)
-                val initialMessages = chatMessageDao.getMessagesByPage(
-                    _uiState.value.conversation.id,
-                    PAGE_SIZE,
-                    0
-                )
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+            val initialMessages = chatMessageDao.getMessagesByPage(
+                _uiState.value.conversation.id,
+                PAGE_SIZE,
+                0
+            )
 
-                val reversedMessages = initialMessages.reversed()
-                _uiState.value = _uiState.value.copy(
-                    messages = initialMessages,
-                    isLoading = false
-                )
+            _uiState.value = _uiState.value.copy(
+                messages = initialMessages,
+                isLoading = false
+            )
 
-                currentPage = 1
-                val totalCount = chatMessageDao.getTotalMessageCount()
-                _uiState.value = _uiState.value.copy(hasMoreData = totalCount > PAGE_SIZE)
+            currentPage = 1
+            val totalCount = chatMessageDao.getTotalMessageCount()
+            _uiState.value = _uiState.value.copy(hasMoreData = totalCount > PAGE_SIZE)
 
-                isInitialLoading = false
+            isInitialLoading = false
 
-                tempChatMessageDao.getByCharacterId(character.aiCharacterId)
-                    .takeLast(configManager.getMaxContextMessageSize())
-                    .let {
-                        chatContext.clear()
-                        chatContext.addAll(it)
-                    }
-            }
+            tempChatMessageDao.getByConversationId(_uiState.value.conversation.id)
+                .takeLast(configManager.getMaxContextMessageSize())
+                .let {
+                    chatContext.clear()
+                    chatContext.addAll(it)
+                }
         }
     }
 
@@ -235,35 +255,32 @@ class ChatViewModel : ViewModel() {
         if (_uiState.value.isLoading || !_uiState.value.hasMoreData || isInitialLoading) return
         Log.d("ChatViewModel", "loadMoreMessages: $currentPage")
 
-        currentAICharacter?.let { character ->
-            viewModelScope.launch(Dispatchers.IO) {
-                _uiState.value = _uiState.value.copy(isLoading = true)
-                val offset = currentPage * PAGE_SIZE
-                val moreMessages = chatMessageDao.getMessagesByPage(
-                    _uiState.value.conversation.id,
-                    PAGE_SIZE,
-                    offset
-                )
+        viewModelScope.launch(Dispatchers.IO) {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+            val offset = currentPage * PAGE_SIZE
+            val moreMessages = chatMessageDao.getMessagesByPage(
+                _uiState.value.conversation.id,
+                PAGE_SIZE,
+                offset
+            )
 
-                withContext(Dispatchers.Main) {
-                    if (moreMessages.isNotEmpty()) {
-                        val currentMessages = _uiState.value.messages.toMutableList()
-                        // 将新消息添加到列表开头（因为是历史消息）
-//                        currentMessages.addAll(0, moreMessages.reversed())
-                        currentMessages.addAll(moreMessages)
-                        _uiState.value = _uiState.value.copy(
-                            messages = currentMessages
-                        )
-                        currentPage++
+            withContext(Dispatchers.Main) {
+                if (moreMessages.isNotEmpty()) {
+                    val currentMessages = _uiState.value.messages.toMutableList()
+                    currentMessages.addAll(moreMessages)
+                    _uiState.value = _uiState.value.copy(
+                        messages = currentMessages
+                    )
+                    currentPage++
 
-                        // 检查是否还有更多数据
-                        val totalCount = chatMessageDao.getTotalMessageCount()
-                        _uiState.value = _uiState.value.copy(hasMoreData = (currentPage * PAGE_SIZE) < totalCount)
-                    } else {
-                        _uiState.value = _uiState.value.copy(hasMoreData = false)
-                    }
-                    _uiState.value = _uiState.value.copy(isLoading = false)
+                    // 检查是否还有更多数据
+                    val totalCount = chatMessageDao.getTotalMessageCount()
+                    _uiState.value =
+                        _uiState.value.copy(hasMoreData = (currentPage * PAGE_SIZE) < totalCount)
+                } else {
+                    _uiState.value = _uiState.value.copy(hasMoreData = false)
                 }
+                _uiState.value = _uiState.value.copy(isLoading = false)
             }
         }
     }
@@ -274,27 +291,57 @@ class ChatViewModel : ViewModel() {
     // 添加获取加载状态的方法
     fun isLoading(): Boolean = _uiState.value.isLoading
 
-    fun sendMessage(messageText: String, isSendSystemMessage: Boolean) {
+    fun sendMessage(
+        messageText: String,
+        isSendSystemMessage: Boolean,
+        character: AICharacter? = currentAICharacter
+    ) {
         if (messageText.isEmpty()) return
         _uiState.value = _uiState.value.copy(isAiReplying = true) // 显示进度条
 
-        currentAICharacter?.let { character ->
-            val tempChatContext = chatContext
+        character?.let { character ->
             viewModelScope.launch {
                 AIChatManager.sendMessage(
                     conversation = _uiState.value.conversation,
                     aiCharacter = character,
                     newMessageTexts = listOf(messageText),
-                    oldMessages = tempChatContext,
+                    oldMessages = chatContext,
                     isSendSystemMessage = isSendSystemMessage,
                 )
             }
         }
     }
 
-    fun sendImage(bitmap: Bitmap, savedUri: Uri) {
+    fun sendGroupMessage(messageText: String, isSendSystemMessage: Boolean) {
+        if (messageText.isEmpty() || _uiState.value.conversation.characterIds.isEmpty()) return
+        Log.d("ChatViewModel", "sendGroupMessage: $messageText")
+        viewModelScope.launch {
+            AIChatManager.sendGroupMessage(
+                conversation = _uiState.value.conversation,
+                aiCharacters = _uiState.value.currentCharacters,
+                newMessageTexts = listOf(messageText),
+                /**
+                 * 引用传递机制
+                 * 在 ChatViewModel 中，chatContext 是一个 LimitMutableList<TempChatMessage> 对象
+                 * 当调用 sendGroupMessage 时，传递的是 chatContext 的引用，而非副本
+                 * 因此 AIChatManager.sendGroupMessage 接收到的 oldMessages 参数实际指向同一个对象
+                 * 数据同步更新
+                 * 在 ChatViewModel.addMessage 方法中，当收到新消息时会调用 chatContext.add(tempMessage)
+                 * 这会直接修改 chatContext 对象的内容
+                 * 由于 oldMessages 指向同一个对象，所以内容也会同步变化
+                 * 并发访问问题
+                 * 如果在 AIChatManager.processMessageQueue 等方法处理过程中，chatContext 被更新
+                 * oldMessages 也会同步更新, 确保在处理过程中使用的是最新上下文，因此不需要单独add userMessage
+                 */
+                oldMessages = chatContext,
+                isSendSystemMessage = isSendSystemMessage,
+            )
+        }
+    }
+
+    fun sendImage(bitmap: Bitmap, savedUri: Uri, character: AICharacter? = currentAICharacter) {
         _uiState.value = _uiState.value.copy(isAiReplying = true) // 显示进度条
-        currentAICharacter?.let { character ->
+        character?.let { character ->
             val tempChatContext = chatContext
             viewModelScope.launch {
                 AIChatManager.sendImage(
@@ -309,8 +356,9 @@ class ChatViewModel : ViewModel() {
     }
 
     fun addMessage(message: ChatMessage) {
+        if (message.conversationId != _uiState.value.conversation.id) return
         val currentMessages = _uiState.value.messages.toMutableList()
-        currentMessages.add(0,message)
+        currentMessages.add(0, message)
         _uiState.value = _uiState.value.copy(
             messages = currentMessages
         )
@@ -333,17 +381,15 @@ class ChatViewModel : ViewModel() {
     }
 
     fun clearChatHistory() {
-        currentAICharacter?.let { character ->
-            viewModelScope.launch(Dispatchers.IO) {
-                chatMessageDao.deleteMessagesByConversationId(_uiState.value.conversation.id)
-                tempChatMessageDao.deleteByConversationId(_uiState.value.conversation.id)
+        viewModelScope.launch(Dispatchers.IO) {
+            chatMessageDao.deleteMessagesByConversationId(_uiState.value.conversation.id)
+            tempChatMessageDao.deleteByConversationId(_uiState.value.conversation.id)
 
-                withContext(Dispatchers.Main) {
-                    _uiState.value = _uiState.value.copy(
-                        messages = emptyList()
-                    )
-                    chatContext.clear()
-                }
+            withContext(Dispatchers.Main) {
+                _uiState.value = _uiState.value.copy(
+                    messages = emptyList()
+                )
+                chatContext.clear()
             }
         }
     }
@@ -375,26 +421,48 @@ class ChatViewModel : ViewModel() {
 
                 // 删除角色所有相关图片
                 val tag1 = imageManager.deleteAllCharacterImages(character)
-                val conversationId =
-                    "${configManager.getUserId().toString()}_${character.aiCharacterId}"
+                val conversationId = _uiState.value.conversation.id
                 val tag2 = imageManager.deleteAllChatImages(conversationId)
                 val tag3 = aiChatMemoryDao.deleteByCharacterIdAndConversationId(
                     character.aiCharacterId,
                     _uiState.value.conversation.id
                 ) > 0
+                val tag4 = conversationDao.deleteById(conversationId) > 0
                 // 最后删除角色
-                val tag4 = aiCharacterDao.deleteAICharacter(character) > 0
+                val tag5 = aiCharacterDao.deleteAICharacter(character) > 0
 
                 // 更新UI状态也在IO线程中执行，避免切换到主线程
                 _uiState.value = _uiState.value.copy(
                     currentCharacter = null
                 )
 
-                Log.e("ChatViewModel", "删除角色: $tag1 $tag2 $tag3")
-                tag1 && tag2 && tag3 && tag4
+                Log.e("ChatViewModel", "删除角色: $tag1 $tag2 $tag3 $tag4 $tag5")
+                tag1 && tag2 && tag3 && tag4 && tag5
             }
         } catch (e: Exception) {
             Log.e("ChatViewModel", "删除角色失败: ${e.message}")
+            false
+        }
+    }
+
+    suspend fun deleteConversation(conversation: Conversation): Boolean {
+        return try {
+            withContext(Dispatchers.IO) {
+                // 先删除对话的所有消息
+                chatMessageDao.deleteMessagesByConversationId(conversation.id)
+                tempChatMessageDao.deleteByConversationId(conversation.id)
+
+                // 删除对话所有相关图片
+                val tag1 = imageManager.deleteAllChatImages(conversation.id)
+                val tag2 = aiChatMemoryDao.deleteByConversationId(conversation.id) >= 0
+                // 最后删除对话
+                val tag3 = conversationDao.deleteById(conversation.id) > 0
+
+                Log.e("ChatViewModel", "删除对话: $tag1 $tag2 $tag3")
+                tag1 && tag2 && tag3
+            }
+        } catch (e: Exception) {
+            Log.e("ChatViewModel", "删除对话失败: ${e.message}")
             false
         }
     }
@@ -409,7 +477,7 @@ data class ChatUiState(
         id = "",
         name = "",
         type = ConversationType.SINGLE,
-        characterIds = emptyList(),
+        characterIds = emptyMap(),
         playerName = "",
         playGender = "",
         playerDescription = "",
@@ -420,6 +488,7 @@ data class ChatUiState(
     ),
     val messages: List<ChatMessage> = emptyList(),
     val currentCharacter: AICharacter? = null,
+    val currentCharacters: List<AICharacter> = emptyList(),
     val currentModelName: String = "",
     val isLoading: Boolean = false,
     val isAiReplying: Boolean = false,

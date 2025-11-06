@@ -24,6 +24,8 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import com.wenchen.yiyi.aiChat.entity.Conversation
+import com.wenchen.yiyi.aiChat.entity.ConversationType
 import com.wenchen.yiyi.aiChat.vm.ChatViewModel
 import com.wenchen.yiyi.common.entity.AICharacter
 import com.wenchen.yiyi.common.theme.*
@@ -38,9 +40,10 @@ fun NavigationDrawerContent(
     onNavSwitchModelClick: () -> Unit,
     onNavClearChatClick: () -> Unit,
     onNavAboutClick: () -> Unit,
-    onEditClick: (AICharacter) -> Unit,
+    onEditClick: (AICharacter) -> Unit = {},
     onGotoConversationEdit: () -> Unit,
-    onDeleteClick: (AICharacter) -> Unit,
+    onDeleteClick: (AICharacter) -> Unit = {},
+    onDeleteGroupClick: (Conversation) -> Unit = {},
     themeBgColor: Color = HalfTransparentBlack,
     hazeState: HazeState,
 ) {
@@ -149,17 +152,25 @@ fun NavigationDrawerContent(
                     .background(WhiteBg.copy(0.1f)),
                 verticalArrangement = Arrangement.Bottom
             ) {
-                YiYiChatDrawerItem(
-                    label = "编辑角色",
-                    onClick = { onEditClick(uiState.currentCharacter!!) },
-                )
+                if (uiState.conversation.type == ConversationType.SINGLE) {
+                    YiYiChatDrawerItem(
+                        label = "编辑角色",
+                        onClick = { onEditClick(uiState.currentCharacter!!) },
+                    )
+                    YiYiChatDrawerItem(
+                        label = "删除角色",
+                        onClick = { onDeleteClick(uiState.currentCharacter!!) },
+                    )
+                }
+                if (uiState.conversation.type == ConversationType.GROUP) {
+                    YiYiChatDrawerItem(
+                        label = "删除会话",
+                        onClick = { onDeleteGroupClick(uiState.conversation) },
+                    )
+                }
                 YiYiChatDrawerItem(
                     label = "清空聊天记录",
                     onClick = onNavClearChatClick,
-                )
-                YiYiChatDrawerItem(
-                    label = "删除角色",
-                    onClick = { onDeleteClick(uiState.currentCharacter!!) },
                 )
             }
 
