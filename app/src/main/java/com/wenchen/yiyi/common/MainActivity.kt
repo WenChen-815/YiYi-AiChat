@@ -1,10 +1,9 @@
 package com.wenchen.yiyi.common
 
-import android.Manifest
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -27,7 +26,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import com.wenchen.yiyi.aiChat.common.AIChatManager
 import com.wenchen.yiyi.aiChat.ui.ChatDisplayScreen
 import com.wenchen.yiyi.aiChat.ui.activity.CharacterEditActivity
@@ -37,11 +35,11 @@ import com.wenchen.yiyi.common.theme.Gold
 import com.wenchen.yiyi.common.theme.GrayText
 import com.wenchen.yiyi.common.theme.Pink
 import com.wenchen.yiyi.common.theme.WhiteText
+import com.wenchen.yiyi.common.utils.PermissionUtils
 import com.wenchen.yiyi.common.utils.StatusBarUtil
 import com.wenchen.yiyi.config.common.ConfigManager
 import com.wenchen.yiyi.config.ui.activity.ConfigActivity
 import com.wenchen.yiyi.home.ui.HomeScreen
-import com.wenchen.yiyi.profile.ui.ProfileScreen
 import kotlin.jvm.java
 
 class MainActivity : ComponentActivity() {
@@ -57,8 +55,10 @@ class MainActivity : ComponentActivity() {
         // 初始化AI聊天管理器
         AIChatManager.init()
 
-        // 请求图片权限
-        requestImagePermissionOnStartup()
+        // 请求权限
+        PermissionUtils.checkAndRequestStoragePermission(this, requestPermissionLauncher)
+        // 请求悬浮窗权限
+        PermissionUtils.checkAndRequestOverlayPermission(this, overlayPermissionLauncher)
 
         setContent {
             AIChatTheme {
@@ -82,6 +82,7 @@ class MainActivity : ComponentActivity() {
         } else {
             StatusBarUtil.setStatusBarTextColor(this, true)
         }
+        val hasOverlayPermission = remember { mutableStateOf(PermissionUtils.hasOverlayPermission(this)) }
         Scaffold(
             topBar = {
                 when (currentPosition) {
@@ -221,6 +222,23 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             },
+            floatingActionButton = {
+                FloatingActionButton(
+                    onClick = {
+
+                    },
+                    containerColor = Pink,
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Text(
+                        text = "小说模式",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = Color.White,
+                    )
+                }
+            }
         ) { padding ->
             Box(
                 modifier =
@@ -236,42 +254,24 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // 在进入界面时请求权限的方法
-    private fun requestImagePermissionOnStartup() {
-        // 检查Android版本，适配不同的权限模型
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            // Android 14及以上版本 - 使用新的精选照片API，无需提前请求权限
-            Log.d("ImgTestActivity", "Android 14+，使用精选照片API无需提前请求权限")
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            // Android 13 (API 33) - 使用READ_MEDIA_IMAGES权限
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.READ_MEDIA_IMAGES,
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                requestPermissionLauncher.launch(Manifest.permission.READ_MEDIA_IMAGES)
-            }
-        } else {
-            // Android 12及以下版本 - 使用READ_EXTERNAL_STORAGE权限
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.READ_EXTERNAL_STORAGE,
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                requestPermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
-            }
-        }
-    }
-
     private val requestPermissionLauncher =
         registerForActivityResult(
             ActivityResultContracts.RequestPermission(),
         ) { isGranted ->
             if (isGranted) {
-                Log.d("ImgTestActivity", "图片访问权限已授予")
+                Log.d("MainActivity", "权限已授予")
             } else {
                 // 权限被拒绝，显示提示信息
-                Toast.makeText(this, "需要存储权限才能选择图片", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "需要权限才能正常使用", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+    private val overlayPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && Settings.canDrawOverlays(this)) {
+                Log.d("MainActivity", "悬浮窗权限已授予")
+            } else {
+                Toast.makeText(this, "悬浮窗权限未授予，部分功能可能受限", Toast.LENGTH_SHORT).show()
             }
         }
 }

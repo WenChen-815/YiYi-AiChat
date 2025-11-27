@@ -33,8 +33,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import com.wenchen.yiyi.aiChat.vm.CharacterEditViewModel
 import com.wenchen.yiyi.common.App
 import com.wenchen.yiyi.common.entity.AICharacter
@@ -49,6 +47,9 @@ import kotlinx.coroutines.withContext
 import java.util.UUID
 import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import com.wenchen.yiyi.aiChat.common.ImageManager
 import com.wenchen.yiyi.aiChat.entity.Conversation
 import com.wenchen.yiyi.aiChat.entity.ConversationType

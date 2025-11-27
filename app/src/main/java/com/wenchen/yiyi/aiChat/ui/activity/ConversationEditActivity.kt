@@ -44,8 +44,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import com.wenchen.yiyi.aiChat.common.ImageManager
 import com.wenchen.yiyi.aiChat.entity.AIChatMemory
 import com.wenchen.yiyi.aiChat.entity.Conversation

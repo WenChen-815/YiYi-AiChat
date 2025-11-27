@@ -45,7 +45,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewModelScope
-import coil.compose.AsyncImage
+import coil3.compose.AsyncImage
 import com.wenchen.yiyi.aiChat.common.AIChatManager
 import com.wenchen.yiyi.aiChat.common.ImageManager
 import com.wenchen.yiyi.aiChat.entity.ChatMessage

@@ -1,4 +1,4 @@
-package com.wenchen.yiyi.aiChat.common
+package com.wenchen.yiyi.common
 
 import android.util.Log
 import com.google.gson.Gson
@@ -72,7 +72,7 @@ class ApiService(
             }
 
             override fun onResponse(call: Call, response: Response) {
-                val responseBody = response.body?.string() ?: ""
+                val responseBody = response.body.string()
                 if (response.isSuccessful) {
                     try {
                         val chatResponse = gson.fromJson(responseBody, ChatResponse::class.java)
@@ -118,7 +118,7 @@ class ApiService(
             }
 
             override fun onResponse(call: Call, response: Response) {
-                val responseBody = response.body?.string() ?: ""
+                val responseBody = response.body.string()
                 Log.e(tag, responseBody)
                 if (response.isSuccessful) {
                     try {
@@ -200,7 +200,7 @@ class ApiService(
 
             override fun onResponse(call: Call, response: Response) {
                 try {
-                    val responseBody = response.body?.string() ?: ""
+                    val responseBody = response.body.string()
                     if (response.isSuccessful) {
                         try {
                             val chatResponse = gson.fromJson(responseBody, ChatResponse::class.java)

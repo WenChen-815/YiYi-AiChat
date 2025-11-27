@@ -40,11 +40,12 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import com.wenchen.yiyi.aiChat.common.AIChatManager
 import com.wenchen.yiyi.config.common.ConfigManager
-import com.wenchen.yiyi.aiChat.common.ApiService
+import com.wenchen.yiyi.common.ApiService
 import com.wenchen.yiyi.aiChat.common.ImageManager
 import com.wenchen.yiyi.common.entity.Model
 import com.wenchen.yiyi.common.theme.AIChatTheme

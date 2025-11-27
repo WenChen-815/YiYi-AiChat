@@ -18,7 +18,7 @@ android {
     defaultConfig {
         applicationId "com.wenchen.yiyi"
         minSdk 27
-        targetSdk 35
+        targetSdk 36
         versionCode 2
         versionName "1.1.0"
 
@@ -110,6 +110,9 @@ dependencies {
     implementation libs.androidx.lifecycle.runtime.compose
     implementation libs.androidx.constraintlayout.compose
     implementation(libs.coil.compose)
+    implementation(libs.coil.gif)
     // 引入Haze库 模糊背景
     implementation(libs.haze)
+
+    implementation libs.okhttp
 }

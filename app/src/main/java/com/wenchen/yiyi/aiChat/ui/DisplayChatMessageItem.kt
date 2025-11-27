@@ -28,7 +28,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
-import coil.compose.AsyncImage
+import coil3.compose.AsyncImage
 import com.wenchen.yiyi.R
 import com.wenchen.yiyi.aiChat.entity.ChatMessage
 import com.wenchen.yiyi.aiChat.entity.ConversationType

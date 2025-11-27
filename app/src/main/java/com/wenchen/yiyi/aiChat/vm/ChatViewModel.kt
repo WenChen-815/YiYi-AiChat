@@ -12,7 +12,7 @@ import com.wenchen.yiyi.common.App
 import com.wenchen.yiyi.common.entity.AICharacter
 import com.wenchen.yiyi.aiChat.common.AIChatManager
 import com.wenchen.yiyi.config.common.ConfigManager
-import com.wenchen.yiyi.aiChat.common.ApiService
+import com.wenchen.yiyi.common.ApiService
 import com.wenchen.yiyi.aiChat.common.ImageManager
 import com.wenchen.yiyi.aiChat.entity.Conversation
 import com.wenchen.yiyi.aiChat.entity.ConversationType
@@ -297,8 +297,6 @@ class ChatViewModel : ViewModel() {
         character: AICharacter? = currentAICharacter
     ) {
         if (messageText.isEmpty()) return
-        _uiState.value = _uiState.value.copy(isAiReplying = true) // 显示进度条
-
         character?.let { character ->
             viewModelScope.launch {
                 AIChatManager.sendMessage(
@@ -331,7 +329,7 @@ class ChatViewModel : ViewModel() {
                  * 由于 oldMessages 指向同一个对象，所以内容也会同步变化
                  * 并发访问问题
                  * 如果在 AIChatManager.processMessageQueue 等方法处理过程中，chatContext 被更新
-                 * oldMessages 也会同步更新, 确保在处理过程中使用的是最新上下文，因此不需要单独add userMessage
+                 * oldMessages 也会同步更新, 确保在处理过程中使用的是最新上下文，因此在AIChatManager.sendGroupMessage中<不需要>单独add userMessage在给下一位AI发送消息
                  */
                 oldMessages = chatContext,
                 isSendSystemMessage = isSendSystemMessage,
@@ -340,7 +338,7 @@ class ChatViewModel : ViewModel() {
     }
 
     fun sendImage(bitmap: Bitmap, savedUri: Uri, character: AICharacter? = currentAICharacter) {
-        _uiState.value = _uiState.value.copy(isAiReplying = true) // 显示进度条
+        _uiState.value = _uiState.value.copy(isAiReplying = true)
         character?.let { character ->
             val tempChatContext = chatContext
             viewModelScope.launch {

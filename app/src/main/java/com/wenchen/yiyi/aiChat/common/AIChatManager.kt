@@ -13,6 +13,7 @@ import com.wenchen.yiyi.common.App
 import com.wenchen.yiyi.common.entity.AICharacter
 import com.wenchen.yiyi.aiChat.entity.AIChatMemory
 import com.wenchen.yiyi.aiChat.entity.ConversationType
+import com.wenchen.yiyi.common.ApiService
 import com.wenchen.yiyi.common.entity.Message
 import com.wenchen.yiyi.common.utils.ChatUtil
 import com.wenchen.yiyi.config.common.ConfigManager
@@ -49,9 +50,9 @@ object AIChatManager {
     private var summarizeTriggerCount: Int = 20
 
     // 数据访问对象
-    private val chatMessageDao = App.Companion.appDatabase.chatMessageDao()
-    private val tempChatMessageDao = App.Companion.appDatabase.tempChatMessageDao()
-    private val aiChatMemoryDao = App.Companion.appDatabase.aiChatMemoryDao()
+    private val chatMessageDao = App.appDatabase.chatMessageDao()
+    private val tempChatMessageDao = App.appDatabase.tempChatMessageDao()
+    private val aiChatMemoryDao = App.appDatabase.aiChatMemoryDao()
 
     // 并发控制
     private val characterLocks = ConcurrentHashMap<String, Mutex>()
@@ -108,6 +109,11 @@ object AIChatManager {
             Log.e(TAG, "未选择AI角色")
             return
         }
+        /*
+         * 此处冗余，但予以保留
+         * 这里不需要用到userMessage的原因是在handleUserMessage方法中将处理后的消息插入了数据库并通知给了ChatActivity，
+         * 而ChatActivity的viewmodel会更新上下文，并且传递的参数本来是就是上下文的引用，所以上下文是最新的，不需要重复添加
+        */
         val userMessage =
             handleUserMessage(conversation, newMessageTexts, isSendSystemMessage, showInChat)
         val count = tempChatMessageDao.getCountByConversationId(conversation.id)
@@ -133,9 +139,6 @@ object AIChatManager {
 //            Log.d(TAG, "sendGroupMessage: $id -- $chance -- $random")
             if (random < chance) { // 生成一个0~1的随机数
                 sendCharacterQueue[queueKey]?.add(aiCharacter)
-//                CoroutineScope(Dispatchers.Main).launch {
-//                    listeners.forEach { it.onShowToast("chance: $random -- ${aiCharacter.name} 正在回复") }
-//                }
             }
         }
 
@@ -155,7 +158,7 @@ object AIChatManager {
         while (sendCharacterQueue[queueKey]?.isNotEmpty() == true) {
             val aiCharacter = sendCharacterQueue[queueKey]?.removeAt(0) ?: break
             Log.d(TAG, "oldMessages: $oldMessages")
-            var messages = generateBaseMessages(aiCharacter, conversation, oldMessages)
+            val messages = generateBaseMessages(aiCharacter, conversation, oldMessages)
             send(conversation, aiCharacter, messages)
 
             // 添加随机时间间隔
@@ -198,7 +201,7 @@ object AIChatManager {
         // 处理新消息
         val userMessages =
             handleUserMessage(conversation, newMessageTexts, isSendSystemMessage, showInChat)
-        var messages = generateBaseMessages(aiCharacter, conversation, oldMessages)
+        val messages = generateBaseMessages(aiCharacter, conversation, oldMessages)
 
         // 发送消息和总结
 //        messages.addAll(userMessages)
@@ -293,12 +296,12 @@ object AIChatManager {
         isSendSystemMessage: Boolean,
         showInChat: Boolean
     ): MutableList<Message> {
-        var userMessages = mutableListOf<Message>()
+        val userMessages = mutableListOf<Message>()
         val currentDate =
             SimpleDateFormat("yyyy-MM-dd EEEE HH:mm:ss", Locale.getDefault()).format(Date())
         val currentUserName = "[${conversation.playerName}]"
         for (newMessageText in newMessageTexts) {
-            var newContent = if (isSendSystemMessage) {
+            val newContent = if (isSendSystemMessage) {
                 "${currentDate}|[系统旁白] $newMessageText"
             } else {
                 "${currentDate}|${currentUserName} $newMessageText"
@@ -461,7 +464,7 @@ object AIChatManager {
                 temperature = 0.3f,
                 onSuccess = { aiResponse ->
                     // 收到回复
-                    var newMemoryContent =
+                    val newMemoryContent =
                         """
                         ## 记忆片段 [${currentDate}]
                         **摘要**:$aiResponse
@@ -586,7 +589,6 @@ object AIChatManager {
                 }
             }
         )
-
     }
 
     // 将Bitmap转换为Base64字符串

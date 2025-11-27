@@ -26,7 +26,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.compose.AsyncImage
+import coil3.compose.AsyncImage
 import com.google.gson.Gson
 import com.wenchen.yiyi.aiChat.ui.activity.ChatActivity
 import com.wenchen.yiyi.common.components.NoBorderTextField

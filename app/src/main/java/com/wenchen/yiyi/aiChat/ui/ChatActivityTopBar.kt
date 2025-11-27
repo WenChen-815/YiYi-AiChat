@@ -34,7 +34,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
+import coil3.compose.AsyncImage
 import com.wenchen.yiyi.aiChat.entity.ConversationType
 import com.wenchen.yiyi.aiChat.vm.ChatUiState
 import com.wenchen.yiyi.common.theme.HalfTransparentBlack
