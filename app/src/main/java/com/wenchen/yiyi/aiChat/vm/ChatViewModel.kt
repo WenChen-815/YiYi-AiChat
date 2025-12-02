@@ -297,6 +297,7 @@ class ChatViewModel : ViewModel() {
         character: AICharacter? = currentAICharacter
     ) {
         if (messageText.isEmpty()) return
+        _uiState.value = _uiState.value.copy(isAiReplying = true)
         character?.let { character ->
             viewModelScope.launch {
                 AIChatManager.sendMessage(

@@ -13,6 +13,6 @@ class App : Application() {
         super.onCreate()
         instance = this
         //构建数据库
-        appDatabase = AppDatabase.Companion.getDatabase(instance.applicationContext)
+        appDatabase = AppDatabase.getDatabase(instance.applicationContext)
     }
 }

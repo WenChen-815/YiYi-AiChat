@@ -78,9 +78,12 @@ class ApiService(
                         val chatResponse = gson.fromJson(responseBody, ChatResponse::class.java)
                         val aiMessage = chatResponse.choices?.firstOrNull()?.message?.content
                         if (aiMessage.isNullOrEmpty()) {
-                            onError("未获取到AI回复")
+                                Log.d(tag, "未获取到AI回复 responseBody：$responseBody")
+                                onError("未获取到AI回复")
                         } else {
-                            onSuccess(aiMessage)
+                            // 去除回复内容中的换行符
+                            val cleanedMessage = aiMessage.replace("\n", "")
+                            onSuccess(cleanedMessage)
                         }
                     } catch (e: Exception) {
                         onError("解析响应失败：${e.message}")
@@ -186,8 +189,8 @@ class ApiService(
 
         // 构建请求
         val request = Request.Builder()
-            .url("$baseUrl/v1/chat/completions")
-            .addHeader("Authorization", "Bearer $apiKey")
+            .url("$imgBaseUrl/v1/chat/completions")
+            .addHeader("Authorization", "Bearer $imgApiKey")
             .addHeader("Content-Type", "application/json")
             .post(requestBody)
             .build()
@@ -206,6 +209,7 @@ class ApiService(
                             val chatResponse = gson.fromJson(responseBody, ChatResponse::class.java)
                             val aiMessage = chatResponse.choices?.firstOrNull()?.message?.content
                             if (aiMessage.isNullOrEmpty()) {
+                                Log.d(tag, "未获取到AI回复 responseBody：$responseBody")
                                 onError("未获取到AI回复")
                             } else {
                                 onSuccess(aiMessage)

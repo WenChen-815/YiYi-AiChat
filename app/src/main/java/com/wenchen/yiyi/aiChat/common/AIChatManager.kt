@@ -15,6 +15,7 @@ import com.wenchen.yiyi.aiChat.entity.AIChatMemory
 import com.wenchen.yiyi.aiChat.entity.ConversationType
 import com.wenchen.yiyi.common.ApiService
 import com.wenchen.yiyi.common.entity.Message
+import com.wenchen.yiyi.common.utils.BitMapUtil
 import com.wenchen.yiyi.common.utils.ChatUtil
 import com.wenchen.yiyi.config.common.ConfigManager
 import kotlinx.coroutines.CompletableDeferred
@@ -550,7 +551,7 @@ object AIChatManager {
         }
 
         val imgMessage = ChatMessage(
-            id = "${character.aiCharacterId}:${System.currentTimeMillis()}",
+            id = "${conversation.id}:${System.currentTimeMillis()}",
             content = "发送了图片:[$imgUri]",
             type = MessageType.USER,
             characterId = character.aiCharacterId,
@@ -565,8 +566,10 @@ object AIChatManager {
             listeners.forEach { it.onMessageSent(imgMessage) }
         }
         chatMessageDao.insertMessage(imgMessage)
-        // 将Bitmap转换为Base64字符串
-        val imageBase64 = bitmapToBase64(bitmap)
+        // 验证图片的大小是否超过8MB，若超过则循环压缩图片至8MB以下
+        val compressedBitmap = BitMapUtil.compressBitmapToLimit(bitmap, 8 * 1024 * 1024)
+        // 将压缩后的Bitmap转换为Base64字符串
+        val imageBase64 = BitMapUtil.bitmapToBase64(compressedBitmap)
         // 准备提示文本
         val prompt =
             "请用中文描述这张图片的主要内容或主题。不要使用'这是'、'这张'等开头，直接描述。如果有文字，请包含在描述中。"
@@ -589,14 +592,6 @@ object AIChatManager {
                 }
             }
         )
-    }
-
-    // 将Bitmap转换为Base64字符串
-    private fun bitmapToBase64(bitmap: Bitmap): String {
-        val baos = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos) // 压缩图片质量为100%
-        val bytes = baos.toByteArray()
-        return Base64.encodeToString(bytes, Base64.DEFAULT)
     }
 
     interface AIChatMessageListener {
