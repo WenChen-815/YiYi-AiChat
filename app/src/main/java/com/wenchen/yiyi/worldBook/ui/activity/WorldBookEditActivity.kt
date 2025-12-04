@@ -297,7 +297,8 @@ fun WorldItem(
 ) {
     var lastName by remember { mutableStateOf(name) }
     var lastDesc by remember { mutableStateOf(desc) }
-    Row(modifier = modifier) {
+    Row(modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically) {
         SettingTextFieldItem(
             value = lastName,
             onValueChange = {
@@ -326,6 +327,7 @@ fun WorldItem(
                 } else {
                     deleteItem(name)
                 }
-            })
+            },
+            color = MaterialTheme.colorScheme.primary)
     }
 }

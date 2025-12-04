@@ -13,6 +13,7 @@ appcompat = "1.7.1"
 lifecycleViewmodelCompose = "2.10.0"
 material = "1.13.0"
 materialVersion = "1.9.5"
+moshi = "1.15.2"
 navigationCompose = "2.9.6"
 okhttp = "5.3.2"
 pagingRuntimeKtx = "3.3.6"
@@ -63,6 +64,9 @@ androidx-compose-material-iconsExtended = { group = "androidx.compose.material",
 
 # 用于JSON解析
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
+moshi = { module = "com.squareup.moshi:moshi", version.ref = "moshi" }
+moshi-kotlin = { module = "com.squareup.moshi:moshi-kotlin", version.ref = "moshi" }
+moshi-kotlin-codegen = { module = "com.squareup.moshi:moshi-kotlin-codegen", version.ref = "moshi" }
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 ui = { module = "androidx.compose.ui:ui", version.ref = "ui" }
 ui-tooling = { module = "androidx.compose.ui:ui-tooling", version.ref = "uiTooling" }
