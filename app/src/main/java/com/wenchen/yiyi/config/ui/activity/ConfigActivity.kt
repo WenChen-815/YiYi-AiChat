@@ -471,7 +471,7 @@ fun ConfigScreen(configManager: ConfigManager, activity: ComponentActivity) {
                         }
                         .padding(16.dp)) {
                     Text(
-                        text = if (selectedModel.isNotEmpty()) selectedModel else "请选择模型",
+                        text = selectedModel.ifEmpty { "请选择模型" },
                         modifier = Modifier.fillMaxWidth(),
                         color = WhiteText
                     )
@@ -733,7 +733,7 @@ private fun loadModels(
                     setModels(modelList)
 
                     // 设置默认选中项
-                    var selectedId = ""
+                    var selectedId: String
                     if (type == 0) {
                         val savedModel = configManager.getSelectedModel()
                         if (savedModel != null) {

@@ -17,7 +17,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.rounded.Book
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.*
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,20 +29,25 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Popup
 import com.wenchen.yiyi.aiChat.common.AIChatManager
 import com.wenchen.yiyi.aiChat.ui.ChatDisplayScreen
 import com.wenchen.yiyi.aiChat.ui.activity.CharacterEditActivity
 import com.wenchen.yiyi.aiChat.ui.activity.ConversationEditActivity
+import com.wenchen.yiyi.common.components.IconWithText
 import com.wenchen.yiyi.common.theme.AIChatTheme
 import com.wenchen.yiyi.common.theme.Gold
 import com.wenchen.yiyi.common.theme.GrayText
 import com.wenchen.yiyi.common.theme.Pink
+import com.wenchen.yiyi.common.theme.WhiteBg
 import com.wenchen.yiyi.common.theme.WhiteText
 import com.wenchen.yiyi.common.utils.PermissionUtils
 import com.wenchen.yiyi.common.utils.StatusBarUtil
 import com.wenchen.yiyi.config.common.ConfigManager
 import com.wenchen.yiyi.config.ui.activity.ConfigActivity
 import com.wenchen.yiyi.home.ui.HomeScreen
+import com.wenchen.yiyi.worldBook.ui.activity.WorldBookEditActivity
+import com.wenchen.yiyi.worldBook.ui.activity.WorldBookListActivity
 import kotlin.jvm.java
 
 class MainActivity : ComponentActivity() {
@@ -82,6 +90,7 @@ class MainActivity : ComponentActivity() {
         } else {
             StatusBarUtil.setStatusBarTextColor(this, true)
         }
+        var showAddPopup by remember { mutableStateOf(false) }
         val hasOverlayPermission = remember { mutableStateOf(PermissionUtils.hasOverlayPermission(this)) }
         Scaffold(
             topBar = {
@@ -97,15 +106,43 @@ class MainActivity : ComponentActivity() {
                                 )
                             },
                             actions = {
-                                TextButton(onClick = {
-                                    val intent = Intent(
-                                        this@MainActivity,
-                                        ConfigActivity::class.java
-                                    )
-                                    startActivity(intent)
-                                }) {
-                                    Text("设置")
-                                }
+//                                TextButton(onClick = {
+//                                    val intent = Intent(
+//                                        this@MainActivity,
+//                                        ConfigActivity::class.java
+//                                    )
+//                                    startActivity(intent)
+//                                }) {
+//                                    Text("设置")
+//                                }
+                                IconWithText(
+                                    icon = Icons.Rounded.Book,
+                                    iconTint = MaterialTheme.colorScheme.primary,
+                                    text = "世界",
+                                    modifier = Modifier.clickable{
+                                        startActivity(Intent(
+                                            this@MainActivity,
+                                            WorldBookListActivity::class.java
+                                        ))}
+                                        .padding(horizontal = 8.dp),
+                                    iconModifier = Modifier.size(24.dp),
+                                    textModifier = Modifier.padding(top = 4.dp),
+                                    textStyle = MaterialTheme.typography.labelSmall.copy(MaterialTheme.colorScheme.primary,)
+                                )
+                                IconWithText(
+                                    icon = Icons.Rounded.Settings,
+                                    iconTint = MaterialTheme.colorScheme.primary,
+                                    text = "设置",
+                                    modifier = Modifier.clickable{
+                                        startActivity(Intent(
+                                            this@MainActivity,
+                                            ConfigActivity::class.java
+                                        ))}
+                                        .padding(horizontal = 8.dp),
+                                    iconModifier = Modifier.size(24.dp),
+                                    textModifier = Modifier.padding(top = 4.dp),
+                                    textStyle = MaterialTheme.typography.labelSmall.copy(MaterialTheme.colorScheme.primary,)
+                                )
                             },
                             colors =
                                 TopAppBarDefaults.topAppBarColors(
@@ -176,10 +213,10 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-                        // 中间发布按钮
+                        // 中间新增按钮
                         Icon(
                             imageVector = Icons.Default.Add,
-                            contentDescription = "新增角色",
+                            contentDescription = "新增",
                             tint = WhiteText,
                             modifier =
                                 Modifier
@@ -191,16 +228,69 @@ class MainActivity : ComponentActivity() {
                                                 colors = listOf(Pink, Gold),
                                             ),
                                     )
-                                    .clickable {
-                                        startActivity(
-                                            Intent(
-                                                this@MainActivity,
-                                                CharacterEditActivity::class.java,
-                                            ),
-                                        )
-                                    },
+                                    .clickable { showAddPopup = true },
                         )
+                        // 弹出菜单
+                        if (showAddPopup) {
+                            Popup(
+                                alignment = Alignment.TopCenter,
+                                onDismissRequest = { showAddPopup = false }
+                            ) {
+                                Card(
+                                    modifier = Modifier
+                                        .padding(bottom = 48.dp)
+                                        .width(150.dp),
+                                    shape = RoundedCornerShape(8.dp),
+                                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                                    colors = CardDefaults.cardColors().copy(
+                                        containerColor = WhiteBg
+                                    )
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(8.dp)
+                                    ) {
+                                        // 新增角色选项
+                                        Text(
+                                            text = "新增角色",
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable {
+                                                    showAddPopup = false
+                                                    startActivity(
+                                                        Intent(
+                                                            this@MainActivity,
+                                                            CharacterEditActivity::class.java,
+                                                        ),
+                                                    )
+                                                }
+                                                .padding(12.dp),
+                                            style = MaterialTheme.typography.bodyLarge.copy(MaterialTheme.colorScheme.primary)
+                                        )
 
+                                        HorizontalDivider()
+
+                                        // 新增世界选项
+                                        Text(
+                                            text = "新增世界",
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable {
+                                                    showAddPopup = false
+                                                    startActivity(
+//                                                        Intent(
+//                                                            this@MainActivity,
+//                                                            WorldBookListActivity::class.java
+//                                                        )
+                                                        Intent(this@MainActivity, WorldBookEditActivity::class.java)
+                                                    )
+                                                }
+                                                .padding(12.dp),
+                                            style = MaterialTheme.typography.bodyLarge.copy(MaterialTheme.colorScheme.primary)
+                                        )
+                                    }
+                                }
+                            }
+                        }
                         Box(
                             modifier = Modifier.fillMaxHeight().weight(1f).clickable(
                                 indication = null,
@@ -222,23 +312,23 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             },
-            floatingActionButton = {
-                FloatingActionButton(
-                    onClick = {
-
-                    },
-                    containerColor = Pink,
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Text(
-                        text = "小说模式",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold
-                        ),
-                        color = Color.White,
-                    )
-                }
-            }
+//            floatingActionButton = {
+//                FloatingActionButton(
+//                    onClick = {
+//                        startActivity(Intent(this@MainActivity, WorldBookListActivity::class.java))
+//                    },
+//                    containerColor = Pink,
+//                    modifier = Modifier.padding(16.dp)
+//                ) {
+//                    Text(
+//                        text = "小说模式",
+//                        style = MaterialTheme.typography.titleMedium.copy(
+//                            fontWeight = FontWeight.Bold
+//                        ),
+//                        color = Color.White,
+//                    )
+//                }
+//            }
         ) { padding ->
             Box(
                 modifier =

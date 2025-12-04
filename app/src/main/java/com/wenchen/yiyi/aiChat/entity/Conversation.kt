@@ -20,6 +20,7 @@ data class Conversation(
 
     var chatWorldId: String,
     var chatSceneDescription: String,
+    var additionalSummaryRequirement: String? = null,
 
     val avatarPath: String?,
     val backgroundPath: String?,
