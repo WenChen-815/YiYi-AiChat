@@ -322,8 +322,13 @@ object AIChatManager {
             if (aiCharacter.outputExample.isNotBlank()) {
                 append("\n# [EXAMPLE]角色输出示例\n${aiCharacter.outputExample}")
             }
+            append("""# [RULES — STRICT]严格遵守以下行为准则
+                    [PRIORITY 1]收到系统旁白消息时，必须根据其中提示内容进行扩写
+                    [PRIORITY 2]在“。 ？ ！ …”等表示句子结束处，或根于语境需要分隔处使用反斜线 (\) 分隔,以确保良好的可读性，但严格要求[]中的内容不允许使用(\)来分隔
+                    其他规则:
+                    """)
             if (aiCharacter.behaviorRules.isNotBlank()) {
-                append("\n# [RULES — STRICT]严格遵守行为准则\n${aiCharacter.behaviorRules}")
+                append(aiCharacter.behaviorRules)
             }
         }.trim()
 //        Log.d(TAG, "prompt:\n $prompt")
@@ -403,8 +408,7 @@ object AIChatManager {
             Log.e(TAG, "未选择AI角色")
             return
         }
-    Log.d(TAG, "send to ${aiCharacter.name}:\n" +
-        messages.joinToString("\n") { "  $it" })
+        Log.d(TAG, "send to ${aiCharacter.name}: $messages")
         apiService.sendMessage(
             messages = messages,
             model = configManager.getSelectedModel() ?: "",
@@ -534,7 +538,10 @@ object AIChatManager {
                         Log.d(TAG, "总结成功 delete :${summaryMessages.map { it.content }}")
                         // 删除已总结的临时消息
                         tempChatMessageDao.deleteAll(summaryMessages)
-//                        Log.d(TAG, "aiMemory :$aiMemory")
+                        Log.d(
+                            TAG,
+                            "aiMemory :$aiMemory"
+                        )
                         if (aiMemory == null) {
                             aiMemory = AIChatMemory(
                                 id = UUID.randomUUID().toString(),
@@ -548,7 +555,7 @@ object AIChatManager {
                             Log.d(TAG, "总结成功 insert :$result")
                         } else {
                             aiMemory.content =
-                                if (aiMemory.content.isNotEmpty()) "${aiMemory.content}\n$newMemoryContent" else newMemoryContent
+                                if (aiMemory.content.isNotEmpty() == true) "${aiMemory.content}\n\n$newMemoryContent" else newMemoryContent
                             aiMemory.count += 1
                             val result = aiChatMemoryDao.update(aiMemory)
                             Log.d(TAG, "总结成功 update :$result")
