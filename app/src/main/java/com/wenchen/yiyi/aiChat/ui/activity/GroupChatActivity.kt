@@ -123,21 +123,27 @@ class GroupChatActivity : ComponentActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        // 刷新对话信息
+        viewModel.refreshConversationInfo()
+    }
+
     private fun setupChatListener() {
         val listener =
             object : AIChatManager.AIChatMessageListener {
-                override fun onMessageSent(userMessage: ChatMessage) {
-                    viewModel.addMessage(userMessage)
+                override fun onMessageSent(message: ChatMessage) {
+                    viewModel.addMessage(message)
                 }
 
-                override fun onMessageReceived(aiMessage: ChatMessage) {
-                    viewModel.addMessage(aiMessage)
+                override fun onMessageReceived(message: ChatMessage) {
+                    viewModel.addMessage(message)
                 }
 
-                override fun onError(errorMessage: String) {
+                override fun onError(error: String) {
                     runOnUiThread {
-                        Log.e("ChatActivity", errorMessage)
-                        Toast.makeText(this@GroupChatActivity, errorMessage, Toast.LENGTH_LONG)
+                        Log.e("ChatActivity", error)
+                        Toast.makeText(this@GroupChatActivity, error, Toast.LENGTH_LONG)
                             .show()
                     }
                 }

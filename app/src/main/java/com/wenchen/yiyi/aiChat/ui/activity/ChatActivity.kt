@@ -397,20 +397,20 @@ class ChatActivity : ComponentActivity() {
     private fun setupChatListener() {
         val listener =
             object : AIChatManager.AIChatMessageListener {
-                override fun onMessageSent(userMessage: ChatMessage) {
-                    viewModel.addMessage(userMessage)
+                override fun onMessageSent(message: ChatMessage) {
+                    viewModel.addMessage(message)
                 }
 
-                override fun onMessageReceived(aiMessage: ChatMessage) {
-                    viewModel.addMessage(aiMessage)
+                override fun onMessageReceived(message: ChatMessage) {
+                    viewModel.addMessage(message)
                     // 隐藏进度条
                     viewModel.hideProgress()
                 }
 
-                override fun onError(errorMessage: String) {
+                override fun onError(error: String) {
                     runOnUiThread {
-                        Log.e("ChatActivity", errorMessage)
-                        Toast.makeText(this@ChatActivity, errorMessage, Toast.LENGTH_LONG).show()
+                        Log.e("ChatActivity", error)
+                        Toast.makeText(this@ChatActivity, error, Toast.LENGTH_LONG).show()
                     }
                 }
 
