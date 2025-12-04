@@ -4,6 +4,8 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.util.Base64
 import android.util.Log
+import com.squareup.moshi.JsonAdapter
+import com.squareup.moshi.Moshi
 import com.wenchen.yiyi.aiChat.entity.ChatMessage
 import com.wenchen.yiyi.aiChat.entity.Conversation
 import com.wenchen.yiyi.aiChat.entity.MessageContentType
@@ -17,7 +19,9 @@ import com.wenchen.yiyi.common.ApiService
 import com.wenchen.yiyi.common.entity.Message
 import com.wenchen.yiyi.common.utils.BitMapUtil
 import com.wenchen.yiyi.common.utils.ChatUtil
+import com.wenchen.yiyi.common.utils.FilesUtil
 import com.wenchen.yiyi.config.common.ConfigManager
+import com.wenchen.yiyi.worldBook.entity.WorldBook
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -222,51 +226,35 @@ object AIChatManager {
         oldMessages: List<TempChatMessage>
     ): MutableList<Message> {
         val messages = mutableListOf<Message>()
-        // 添加系统提示消息
-        val prompt = buildString {
-            if (conversation.type == ConversationType.GROUP) {
-                append("**你正处于多人对话中，你的主要服务对象是[${conversation.playerName}]，请使用以下[${aiCharacter.name}]的身份参与对话**\n")
-            }
-            if (aiCharacter.roleIdentity.isNotBlank()) {
-                append("# 角色任务&身份\n${aiCharacter.roleIdentity}\n")
-            }
-            if (aiCharacter.roleAppearance.isNotBlank()) {
-                append("# 角色外貌\n${aiCharacter.roleAppearance}\n")
-            }
-            if (aiCharacter.roleDescription.isNotBlank()) {
-                append("# 角色描述\n${aiCharacter.roleDescription}\n")
-            }
-            append("# 用户简介:${conversation.playerName} ")
-            if (conversation.playGender.isNotBlank()) {
-                append("性别:${conversation.playGender} ")
-            }
-            if (conversation.playerDescription.isNotBlank()) {
-                append("描述:${conversation.playerDescription}")
-            }
-            if (conversation.chatSceneDescription.isNotBlank()) {
-                append("\n# [[当前场景]]: ${conversation.chatSceneDescription}\n")
-            }
-            if (aiCharacter.outputExample.isNotBlank()) {
-                append("# 角色输出示例\n${aiCharacter.outputExample}\n")
-            }
-            append("""# [[以下行为准则请严格遵守]]
-                    [PRIORITY 1]收到系统旁白消息时，必须根据其中提示内容进行扩写
-                    [PRIORITY 2]在“。 ？ ！ …”等表示句子结束处，或根于语境需要分隔处使用反斜线 (\) 分隔,以确保良好的可读性，但严格要求[]中的内容不允许使用(\)来分隔
-                    ## 其他规则""")
-            if (aiCharacter.behaviorRules.isNotBlank()) {
-                append(aiCharacter.behaviorRules)
-            }
-        }.trim()
-//        Log.d(TAG, "prompt: $prompt")
-
         val history = aiChatMemoryDao.getByCharacterIdAndConversationId(
             aiCharacter.aiCharacterId,
             conversation.id
         )?.content
-
-        if (prompt.isNotEmpty()) {
-            messages.add(Message("system", "$prompt\n# 以下为角色记忆:\n$history"))
+        var worldBook: WorldBook? = null
+        if (conversation.chatWorldId.isNotEmpty()) {
+            // 获取世界ID并通过moshi解析
+            val worldBookJson = FilesUtil.readFile("world_book/${conversation.chatWorldId}.json")
+            val worldBookAdapter: JsonAdapter<WorldBook> = Moshi.Builder().build().adapter(WorldBook::class.java)
+            worldBook = worldBookJson.let { worldBookAdapter.fromJson(it) }
         }
+        val worldItemBuilder = StringBuilder()
+        // 处理世界物品，构建名称到描述的映射和正则模式
+        val worldItems = worldBook?.worldItems ?: emptyList()
+        val itemNameToDesc = worldItems.associate { it.name to it.desc } // 名称→描述映射
+        /*
+        知识点
+        associate 和 groupBy 都是 Kotlin 集合操作函数，但它们有不同的用途：
+            associate 函数
+                作用: 将集合转换为 Map，每个元素映射到一个键值对，遇到重复值则保留最后一个
+                特点:每个输入元素产生一个键值对,输出 Map 的大小等于输入集合的大小（除非有重复键）,常见变体包括 associateBy、associateWith 等
+            groupBy 函数
+                作用: 将集合按照某个键进行分组
+                特点:相同键的元素会被归为一组,输出 Map 的值是元素列表,可能产生比原集合更少的键
+         */
+        // 构建正则模式（转义特殊字符，避免正则语法错误）
+        val itemNames = worldItems.map { Regex.escape(it.name) } // 转义特殊字符
+        val pattern = if (itemNames.isNotEmpty()) itemNames.joinToString("|").toRegex() else null // 合并为"item1|item2"模式
+        val matchedItems = mutableSetOf<String>() // 记录已匹配物品，避免重复添加
         // 添加历史消息
         for (message in oldMessages) {
             if (message.type == MessageType.ASSISTANT && message.characterId == aiCharacter.aiCharacterId) {
@@ -274,6 +262,78 @@ object AIChatManager {
             } else {
                 messages.add(Message("user", message.content))
             }
+
+            // 使用正则匹配替换嵌套循环
+//            if (pattern != null) {
+            pattern?.findAll(message.content)?.forEach { matchResult -> // 一次匹配所有物品
+                val matchedName = matchResult.value
+                if (matchedName !in matchedItems) { // 去重处理
+                    itemNameToDesc[matchedName]?.let { desc ->
+                        worldItemBuilder.append("[${matchedName}]: $desc\n")
+                        matchedItems.add(matchedName)
+                    }
+                }
+            }
+        }
+        // 添加系统提示消息
+        val prompt = buildString {
+            if (worldBook != null){
+                append("# [WORLD]\n## 世界介绍\n${worldBook.worldDesc ?: ""}")
+            }
+            if (worldItemBuilder.isNotEmpty()) {
+                append("\n## 物品释义\n${worldItemBuilder}")
+            }
+            append("\n# [PLAYER]")
+            append("\n## 用户角色信息\n-名称：${conversation.playerName} ")
+            if (conversation.playGender.isNotBlank()) {
+                append("\n-性别:${conversation.playGender} ")
+            }
+            if (conversation.playerDescription.isNotBlank()) {
+                append("\n-描述:${conversation.playerDescription}")
+            }
+            if (conversation.chatSceneDescription.isNotBlank()) {
+                append("\n# [SCENE]当前场景\n${conversation.chatSceneDescription}")
+            }
+            if (conversation.type == ConversationType.SINGLE) {
+                append("""
+                    # [IMPORTANT]
+                    **你应以[${conversation.playerName}]为主要交互对象**
+                    **你需要深度理解世界设定、用户角色信息、当前场景以及后续你需要扮演的角色信息**
+                    **现在请使用以下[${aiCharacter.name}]的身份参与对话**""".trimIndent())
+            }
+            if (conversation.type == ConversationType.GROUP) {
+                append("""
+                    # [IMPORTANT]
+                    **你正处于多人对话与行动的环境当中**
+                    **你允许与多位角色交互，但仍应以[${conversation.playerName}]为主要交互对象**
+                    **你需要深度理解世界设定、用户角色信息、当前场景以及后续你需要扮演的角色信息**
+                    **现在请使用以下[${aiCharacter.name}]的身份参与对话**""".trimIndent())
+            }
+            if (aiCharacter.roleIdentity.isNotBlank()) {
+                append("# [YOUR ROLE]${aiCharacter.name}\n## 角色任务&身份\n${aiCharacter.roleIdentity}")
+            }
+            if (aiCharacter.roleAppearance.isNotBlank()) {
+                append("\n## 角色外貌\n${aiCharacter.roleAppearance}")
+            }
+            if (aiCharacter.roleDescription.isNotBlank()) {
+                append("\n## 角色描述\n${aiCharacter.roleDescription}")
+            }
+            append("\n# [MEMORY]以下为角色[${aiCharacter.name}]的记忆:\n$history")
+            if (aiCharacter.outputExample.isNotBlank()) {
+                append("\n# [EXAMPLE]角色输出示例\n${aiCharacter.outputExample}")
+            }
+            append("""# [RULES — STRICT]严格遵守以下行为准则
+                    [PRIORITY 1]收到系统旁白消息时，必须根据其中提示内容进行扩写
+                    [PRIORITY 2]在“。 ？ ！ …”等表示句子结束处，或根于语境需要分隔处使用反斜线 (\) 分隔,以确保良好的可读性，但严格要求[]中的内容不允许使用(\)来分隔
+                    其他规则:
+                    """)
+            if (aiCharacter.behaviorRules.isNotBlank()) {
+                append(aiCharacter.behaviorRules)
+            }
+        }.trim()
+//        Log.d(TAG, "prompt:\n $prompt")
+        if (prompt.isNotEmpty()) {
+            messages.add(0,Message("system", "$prompt\n"))
         }
         return messages
     }

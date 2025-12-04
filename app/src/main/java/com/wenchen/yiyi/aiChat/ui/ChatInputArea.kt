@@ -1,5 +1,6 @@
 package com.wenchen.yiyi.aiChat.ui
 
+import android.R
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -79,12 +80,13 @@ fun ChatInputArea(
                 modifier = Modifier
                     .padding(end = 8.dp, bottom = 8.dp)
                     .border(
-                        width = 1.dp,
+                        width = 12.dp,
                         brush = if (isSendSystemMessage) {
                             Brush.linearGradient(
                                 colors = listOf(
                                     Color.Transparent,
-                                    Color.White,
+                                    Color.Transparent,
+                                    Color.White.copy(0.8f),
                                     Color.Transparent,
                                 ),
                                 start = Offset(offset, offset),
@@ -93,7 +95,7 @@ fun ChatInputArea(
                         } else {
                             SolidColor(Color.Transparent)
                         },
-                        shape = RoundedCornerShape(6.dp)
+                        shape = RoundedCornerShape(7.dp)
                     )
                     .height(24.dp),
                 shape = RoundedCornerShape(6.dp),
@@ -101,8 +103,8 @@ fun ChatInputArea(
                 contentPadding = PaddingValues(vertical = 2.dp, horizontal = 3.dp)
             ) {
                 Text(
-                    text = "系统消息",
-                    color = Color.White
+                    text = "发送旁白",
+                    style = MaterialTheme.typography.labelLarge.copy(color = WhiteText)
                 )
             }
         }

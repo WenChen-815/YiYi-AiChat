@@ -11,12 +11,9 @@
         android:maxSdkVersion="34" /> <!-- 图片选择权限 - Android 12及以下版本 -->
     <uses-permission
         android:name="android.permission.READ_EXTERNAL_STORAGE"
-        android:maxSdkVersion="32" />
-    <!-- 悬浮窗权限 -->
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
-    <!-- 后台启动权限 -->
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <!-- 后台保活，添加前台服务权限 -->
+        android:maxSdkVersion="32" /> <!-- 悬浮窗权限 -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" /> <!-- 后台启动权限 -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" /> <!-- 后台保活，添加前台服务权限 -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
 
@@ -33,9 +30,15 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <activity
+            android:name=".worldBook.ui.activity.WorldBookListActivity"
+            android:exported="false" />
+        <activity
+            android:name=".worldBook.ui.activity.WorldBookEditActivity"
+            android:exported="false" />
+        <activity
             android:name=".aiChat.ui.activity.GroupChatActivity"
             android:exported="false"
-            android:windowSoftInputMode="adjustResize"/>
+            android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".common.MainActivity"
             android:exported="true">

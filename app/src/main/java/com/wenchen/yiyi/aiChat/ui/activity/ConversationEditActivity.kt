@@ -6,6 +6,7 @@ import android.graphics.ImageDecoder
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -43,10 +44,16 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.core.net.toUri
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import com.squareup.moshi.JsonAdapter
+import com.squareup.moshi.Moshi
 import com.wenchen.yiyi.aiChat.common.ImageManager
 import com.wenchen.yiyi.aiChat.entity.AIChatMemory
 import com.wenchen.yiyi.aiChat.entity.Conversation
@@ -62,7 +69,9 @@ import com.wenchen.yiyi.common.theme.GrayText
 import com.wenchen.yiyi.common.theme.LightGold
 import com.wenchen.yiyi.common.theme.LightGray
 import com.wenchen.yiyi.common.theme.WhiteText
+import com.wenchen.yiyi.common.utils.FilesUtil
 import com.wenchen.yiyi.common.utils.StatusBarUtil
+import com.wenchen.yiyi.worldBook.entity.WorldBook
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -160,6 +169,7 @@ class ConversationEditActivity : ComponentActivity() {
                             playerDescription,
                             chatWorldId,
                             chatSceneDescription,
+                            additionalSummaryRequirement,
                             chooseCharacterMap,
                         ->
                         lifecycleScope.launch {
@@ -170,6 +180,7 @@ class ConversationEditActivity : ComponentActivity() {
                                 playerDescription,
                                 chatWorldId,
                                 chatSceneDescription,
+                                additionalSummaryRequirement,
                                 chooseCharacterMap,
                             )
                         }
@@ -220,6 +231,7 @@ class ConversationEditActivity : ComponentActivity() {
         playerDescription: String,
         chatWorldId: String,
         chatSceneDescription: String,
+        additionalSummaryRequirement: String,
         chooseCharacterMap: Map<String, Float>,
     ) {
         if (name.isEmpty()) {
@@ -251,6 +263,7 @@ class ConversationEditActivity : ComponentActivity() {
                             playerDescription = playerDescription,
                             chatWorldId = chatWorldId,
                             chatSceneDescription = chatSceneDescription,
+                            additionalSummaryRequirement = additionalSummaryRequirement,
                             characterIds = chooseCharacterMap,
                             avatarPath =
                                 if (hasNewAvatar.value) {
@@ -303,6 +316,7 @@ class ConversationEditActivity : ComponentActivity() {
                             playerDescription = playerDescription,
                             chatWorldId = chatWorldId,
                             chatSceneDescription = chatSceneDescription,
+                            additionalSummaryRequirement = additionalSummaryRequirement,
                             avatarPath =
                                 if (hasNewAvatar.value) {
                                     imageManager.getAvatarImagePath(
@@ -357,13 +371,37 @@ class ConversationEditActivity : ComponentActivity() {
     }
 }
 
+// 从文件加载世界书列表
+private suspend fun loadWorldBooks(
+    adapter: JsonAdapter<WorldBook>,
+    onLoaded: (List<WorldBook>) -> Unit
+) = withContext(Dispatchers.IO) {
+    val worldBookFiles = FilesUtil.listFileNames("world_book")
+    Log.d("WorldBookListActivity", "loadWorldBooks: $worldBookFiles")
+    val worldBooks = mutableListOf<WorldBook>()
+
+    worldBookFiles.forEach { fileName ->
+        try {
+            val json = FilesUtil.readFile("world_book/$fileName")
+            val worldBook = adapter.fromJson(json)
+            worldBook?.let { worldBooks.add(it) }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    withContext(Dispatchers.Main) {
+        onLoaded(worldBooks)
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ConversationEditScreen(
     activity: ComponentActivity,
     isCreateNew: Boolean,
     conversationId: String,
-    onSaveClick: (String, String, String, String, String, String, Map<String, Float>) -> Unit,
+    onSaveClick: (String, String, String, String, String, String, String, Map<String, Float>) -> Unit,
     onCancelClick: () -> Unit,
     onAvatarClick: () -> Unit,
     onBackgroundClick: () -> Unit,
@@ -371,21 +409,26 @@ fun ConversationEditScreen(
     backgroundBitmap: Bitmap?,
     onAvatarDeleteClick: () -> Unit,
     onBackgroundDeleteClick: () -> Unit,
+    lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
 ) {
     if (isSystemInDarkTheme()) {
         StatusBarUtil.setStatusBarTextColor(activity, false)
     } else {
         StatusBarUtil.setStatusBarTextColor(activity, true)
     }
-
+    val coroutineScope = rememberCoroutineScope()
     var name by remember { mutableStateOf("") }
     var playerName by remember { mutableStateOf("") }
     var playGender by remember { mutableStateOf("") }
     var playerDescription by remember { mutableStateOf("") }
     var chatWorldId by remember { mutableStateOf("") }
     var chatSceneDescription by remember { mutableStateOf("") }
+    var additionalSummaryRequirement by remember { mutableStateOf("") }
     var chooseCharacterMap by remember { mutableStateOf<Map<String, Float>>(emptyMap()) }
     var allCharacter by remember { mutableStateOf<List<AICharacter>>(emptyList()) }
+    var allWorldBook by remember { mutableStateOf<List<WorldBook>>(emptyList()) }
+    val moshi: Moshi = Moshi.Builder().build()
+    val worldBookAdapter: JsonAdapter<WorldBook> = moshi.adapter(WorldBook::class.java)
 
     val scrollState = rememberScrollState()
     val context = LocalContext.current
@@ -396,6 +439,7 @@ fun ConversationEditScreen(
     var conversation by remember { mutableStateOf<Conversation?>(null) }
 
     val (isCharacterSheetVisible, setCharacterSheetVisible) = remember { mutableStateOf(false) }
+    val (isWorldSheetVisible, setWorldSheetVisible) = remember { mutableStateOf(false) }
     val onCharacterSelectedCallback = remember { mutableStateOf<((String) -> Unit)?>(null) }
 
     BackHandler(enabled = isCharacterSheetVisible) {
@@ -413,6 +457,7 @@ fun ConversationEditScreen(
                     playerDescription = conversation!!.playerDescription
                     chatWorldId = conversation!!.chatWorldId
                     chatSceneDescription = conversation!!.chatSceneDescription
+                    additionalSummaryRequirement = conversation!!.additionalSummaryRequirement ?: ""
                     avatarPath = conversation!!.avatarPath.toString()
                     backgroundPath = conversation!!.backgroundPath.toString()
                     chooseCharacterMap = conversation!!.characterIds
@@ -424,6 +469,21 @@ fun ConversationEditScreen(
                         .show()
                 }
             }
+        }
+    }
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                coroutineScope.launch {
+                    loadWorldBooks(worldBookAdapter) { loadedBooks ->
+                        allWorldBook = loadedBooks
+                    }
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
 
@@ -481,6 +541,7 @@ fun ConversationEditScreen(
                             playerDescription,
                             chatWorldId,
                             chatSceneDescription,
+                            additionalSummaryRequirement,
                             chooseCharacterMap,
                         )
                     },
@@ -930,18 +991,42 @@ fun ConversationEditScreen(
                 maxLines = 10,
             )
 
-            SettingTextFieldItem(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp),
-                singleLine = true,
-                label = "世界ID",
-                labelPadding = PaddingValues(bottom = 6.dp),
-                value = chatWorldId,
-                onValueChange = { chatWorldId = it },
-                placeholder = { Text("未实现，敬请期待") },
+//            SettingTextFieldItem(
+//                modifier =
+//                    Modifier
+//                        .fillMaxWidth()
+//                        .padding(top = 8.dp),
+//                singleLine = true,
+//                label = "世界ID",
+//                labelPadding = PaddingValues(bottom = 6.dp),
+//                value = chatWorldId,
+//                onValueChange = { chatWorldId = it },
+//                placeholder = { Text("未实现，敬请期待") },
+//            )
+            Text(
+                text = "世界选择",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(top = 8.dp)
             )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.primary),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable { setWorldSheetVisible(true) }
+                        .padding(16.dp)) {
+                    Text(
+                        text = allWorldBook.find { it.id == chatWorldId }?.worldName ?: "请选择世界",
+                        modifier = Modifier.fillMaxWidth(),
+                        color = WhiteText
+                    )
+                }
+            }
 
             SettingTextFieldItem(
                 modifier =
@@ -956,6 +1041,20 @@ fun ConversationEditScreen(
                 placeholder = { Text("请输入场景描述") },
                 minLines = 5,
                 maxLines = 15,
+            )
+            SettingTextFieldItem(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp)
+                        .heightIn(max = 250.dp),
+                label = "额外总结需求",
+                labelPadding = PaddingValues(bottom = 6.dp),
+                value = additionalSummaryRequirement,
+                onValueChange = { additionalSummaryRequirement = it },
+                placeholder = { Text("非必填：AI总结时会关注这里的额外要求，尽可能保留你希望的内容") },
+                minLines = 3,
+                maxLines = 10,
             )
             if (isCharacterSheetVisible) {
                 ModalBottomSheet(
@@ -991,6 +1090,36 @@ fun ConversationEditScreen(
                                             onCharacterSelectedCallback.value?.invoke(id)
                                         }
                                     },
+                            )
+                        }
+                    }
+                }
+            }
+            if (isWorldSheetVisible) {
+                ModalBottomSheet(
+                    onDismissRequest = {
+                        setWorldSheetVisible(false)
+                    },
+                    sheetState = rememberModalBottomSheetState(
+                        skipPartiallyExpanded = true // 禁用部分展开
+                    ),
+                ) {
+                    // 获取屏幕高度
+                    val screenHeight =
+                        with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() }
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = screenHeight * 0.6f)
+                    ) {
+                        items(allWorldBook.size) { index ->
+                            val worldBook = allWorldBook[index]
+                            ListItem(
+                                headlineContent = { Text(worldBook.worldName) },
+                                modifier = Modifier.clickable {
+                                    chatWorldId = worldBook.id
+                                    setWorldSheetVisible(false)
+                                }
                             )
                         }
                     }
