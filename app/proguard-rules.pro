@@ -21,9 +21,11 @@
 #-renamesourcefileattribute SourceFile
 # OkHttp
 -dontwarn okhttp3.**
--keep class okhttp3.** { *; }
+-keep class okhttp3.OkHttpClient { *; }
+-keep class okhttp3.Request { *; }
+-keep class okhttp3.Response { *; }
 # Gson
--keep class com.google.gson.** { *; }
-
 -keep class com.wenchen.yiyi.common.entity.** { *; }
--keep class com.wenchen.yiyi.aiChat.common.ApiService$* { *; }
+-keep class com.wenchen.yiyi.aiChat.entity.** { *; }
+-keep class com.wenchen.yiyi.worldBook.entity.** { *; }
+-keep class com.wenchen.yiyi.common.ApiService$* { *; }
