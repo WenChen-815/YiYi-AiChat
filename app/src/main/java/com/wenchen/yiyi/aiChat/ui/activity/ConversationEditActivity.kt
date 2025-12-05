@@ -378,7 +378,7 @@ private suspend fun loadWorldBooks(
 ) = withContext(Dispatchers.IO) {
     val worldBookFiles = FilesUtil.listFileNames("world_book")
     Log.d("WorldBookListActivity", "loadWorldBooks: $worldBookFiles")
-    val worldBooks = mutableListOf<WorldBook>()
+    val worldBooks = mutableListOf(WorldBook("","未选择世界"))
 
     worldBookFiles.forEach { fileName ->
         try {
@@ -1021,7 +1021,7 @@ fun ConversationEditScreen(
                         .clickable { setWorldSheetVisible(true) }
                         .padding(16.dp)) {
                     Text(
-                        text = allWorldBook.find { it.id == chatWorldId }?.worldName ?: "请选择世界",
+                        text = allWorldBook.find { it.id == chatWorldId }?.worldName ?: "未选择世界",
                         modifier = Modifier.fillMaxWidth(),
                         color = WhiteText
                     )

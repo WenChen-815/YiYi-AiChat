@@ -292,14 +292,15 @@ object AIChatManager {
                 append("\n-描述:${conversation.playerDescription}")
             }
             if (conversation.chatSceneDescription.isNotBlank()) {
-                append("\n# [SCENE]当前场景\n${conversation.chatSceneDescription}")
+                append("\n# [SCENE]当前场景\n${conversation.chatSceneDescription}\n")
             }
             if (conversation.type == ConversationType.SINGLE) {
                 append("""
                     # [IMPORTANT]
                     **你应以[${conversation.playerName}]为主要交互对象**
                     **你需要深度理解世界设定、用户角色信息、当前场景以及后续你需要扮演的角色信息**
-                    **现在请使用以下[${aiCharacter.name}]的身份参与对话**""".trimIndent())
+                    **现在请使用以下[${aiCharacter.name}]的身份参与对话**
+                    """.trimIndent())
             }
             if (conversation.type == ConversationType.GROUP) {
                 append("""
@@ -307,10 +308,11 @@ object AIChatManager {
                     **你正处于多人对话与行动的环境当中**
                     **你允许与多位角色交互，但仍应以[${conversation.playerName}]为主要交互对象**
                     **你需要深度理解世界设定、用户角色信息、当前场景以及后续你需要扮演的角色信息**
-                    **现在请使用以下[${aiCharacter.name}]的身份参与对话**""".trimIndent())
+                    **现在请使用以下[${aiCharacter.name}]的身份参与对话**
+                    """.trimIndent())
             }
             if (aiCharacter.roleIdentity.isNotBlank()) {
-                append("# [YOUR ROLE]${aiCharacter.name}\n## 角色任务&身份\n${aiCharacter.roleIdentity}")
+                append("\n# [YOUR ROLE]${aiCharacter.name}\n## 角色任务&身份\n${aiCharacter.roleIdentity}")
             }
             if (aiCharacter.roleAppearance.isNotBlank()) {
                 append("\n## 角色外貌\n${aiCharacter.roleAppearance}")
@@ -320,13 +322,14 @@ object AIChatManager {
             }
             append("\n# [MEMORY]以下为角色[${aiCharacter.name}]的记忆:\n$history")
             if (aiCharacter.outputExample.isNotBlank()) {
-                append("\n# [EXAMPLE]角色输出示例\n${aiCharacter.outputExample}")
+                append("\n# [EXAMPLE]角色输出示例\n${aiCharacter.outputExample}\n")
             }
-            append("""# [RULES — STRICT]严格遵守以下行为准则
-                    [PRIORITY 1]收到系统旁白消息时，必须根据其中提示内容进行扩写
-                    [PRIORITY 2]在“。 ？ ！ …”等表示句子结束处，或根于语境需要分隔处使用反斜线 (\) 分隔,以确保良好的可读性，但严格要求[]中的内容不允许使用(\)来分隔
-                    其他规则:
-                    """)
+            append("""
+                # [RULES — STRICT]严格遵守以下行为准则
+                [PRIORITY 1]收到系统旁白消息时，必须根据其中提示内容进行扩写
+                [PRIORITY 2]在“。 ？ ！ …”等表示句子结束处，或根于语境需要分隔处使用反斜线 (\) 分隔,以确保良好的可读性，但严格要求[]中的内容不允许使用(\)来分隔
+                其他规则:
+                """.trimIndent())
             if (aiCharacter.behaviorRules.isNotBlank()) {
                 append(aiCharacter.behaviorRules)
             }
@@ -408,7 +411,7 @@ object AIChatManager {
             Log.e(TAG, "未选择AI角色")
             return
         }
-        Log.d(TAG, "send to ${aiCharacter.name}: $messages")
+        Log.d(TAG, "send to ${aiCharacter.name}\n" + messages.joinToString("\n"))
         apiService.sendMessage(
             messages = messages,
             model = configManager.getSelectedModel() ?: "",
