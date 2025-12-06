@@ -171,6 +171,7 @@ class ConversationEditActivity : ComponentActivity() {
                             chatSceneDescription,
                             additionalSummaryRequirement,
                             chooseCharacterMap,
+                            characterKeywordsMap,
                         ->
                         lifecycleScope.launch {
                             saveConversation(
@@ -182,6 +183,7 @@ class ConversationEditActivity : ComponentActivity() {
                                 chatSceneDescription,
                                 additionalSummaryRequirement,
                                 chooseCharacterMap,
+                                characterKeywordsMap,
                             )
                         }
                     },
@@ -233,6 +235,7 @@ class ConversationEditActivity : ComponentActivity() {
         chatSceneDescription: String,
         additionalSummaryRequirement: String,
         chooseCharacterMap: Map<String, Float>,
+        characterKeywordsMap: Map<String, List<String>>,
     ) {
         if (name.isEmpty()) {
             withContext(Dispatchers.Main) {
@@ -265,6 +268,7 @@ class ConversationEditActivity : ComponentActivity() {
                             chatSceneDescription = chatSceneDescription,
                             additionalSummaryRequirement = additionalSummaryRequirement,
                             characterIds = chooseCharacterMap,
+                            characterKeywords = characterKeywordsMap,
                             avatarPath =
                                 if (hasNewAvatar.value) {
                                     imageManager.getAvatarImagePath(
@@ -311,6 +315,7 @@ class ConversationEditActivity : ComponentActivity() {
                             name = name,
                             type = ConversationType.GROUP,
                             characterIds = chooseCharacterMap,
+                            characterKeywords = characterKeywordsMap,
                             playerName = playerName,
                             playGender = playGender,
                             playerDescription = playerDescription,
@@ -401,7 +406,7 @@ fun ConversationEditScreen(
     activity: ComponentActivity,
     isCreateNew: Boolean,
     conversationId: String,
-    onSaveClick: (String, String, String, String, String, String, String, Map<String, Float>) -> Unit,
+    onSaveClick: (String, String, String, String, String, String, String, Map<String, Float>, Map<String, List<String>>) -> Unit,
     onCancelClick: () -> Unit,
     onAvatarClick: () -> Unit,
     onBackgroundClick: () -> Unit,
@@ -425,6 +430,7 @@ fun ConversationEditScreen(
     var chatSceneDescription by remember { mutableStateOf("") }
     var additionalSummaryRequirement by remember { mutableStateOf("") }
     var chooseCharacterMap by remember { mutableStateOf<Map<String, Float>>(emptyMap()) }
+    var characterKeywordsMap by remember { mutableStateOf<Map<String, List<String>>>(emptyMap()) }
     var allCharacter by remember { mutableStateOf<List<AICharacter>>(emptyList()) }
     var allWorldBook by remember { mutableStateOf<List<WorldBook>>(emptyList()) }
     val moshi: Moshi = Moshi.Builder().build()
@@ -461,6 +467,7 @@ fun ConversationEditScreen(
                     avatarPath = conversation!!.avatarPath.toString()
                     backgroundPath = conversation!!.backgroundPath.toString()
                     chooseCharacterMap = conversation!!.characterIds
+                    characterKeywordsMap = conversation?.characterKeywords ?: emptyMap()
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
@@ -543,6 +550,7 @@ fun ConversationEditScreen(
                             chatSceneDescription,
                             additionalSummaryRequirement,
                             chooseCharacterMap,
+                            characterKeywordsMap,
                         )
                     },
                     modifier = Modifier.weight(1f),
@@ -604,6 +612,7 @@ fun ConversationEditScreen(
                         onClick = {
                             onCharacterSelectedCallback.value = { characterId ->
                                 chooseCharacterMap = chooseCharacterMap + (characterId to 0.8f)
+                                characterKeywordsMap = characterKeywordsMap + (characterId to emptyList())
                             }
                             setCharacterSheetVisible(true)
                         },
@@ -614,7 +623,6 @@ fun ConversationEditScreen(
 
                 var isMemoryDialogVisible by remember { mutableStateOf(false) }
                 var selectCharacterId by remember { mutableStateOf("") }
-                var memoryContent by remember { mutableStateOf("") }
                 chooseCharacterMap.forEach { (characterId, chance) ->
                     var offsetX by remember { mutableFloatStateOf(0f) }
                     val maxOffset = with(LocalDensity.current) { (56.dp * 2).toPx() } // 最大偏移量
@@ -656,6 +664,8 @@ fun ConversationEditScreen(
                                     .padding(horizontal = 6.dp)
                                     .clickable {
                                         chooseCharacterMap = chooseCharacterMap - characterId
+                                        // 同步移除关键词表中的对应角色关键词
+                                        characterKeywordsMap = characterKeywordsMap - characterId
                                     },
                                 contentAlignment = Alignment.Center
                             ) {
@@ -666,116 +676,144 @@ fun ConversationEditScreen(
                                 )
                             }
                         }
-
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(72.dp)
-                                .padding(vertical = 4.dp)
-                                .pointerInput(Unit) {
-                                    detectHorizontalDragGestures(
-                                        onDragEnd = {
-                                            // 拖拽结束后，根据偏移量决定最终位置
-                                            offsetX = when {
-                                                offsetX > maxOffset / 2 -> maxOffset // 右滑超过一半，完全展开
-                                                offsetX < -maxOffset / 2 -> 0f       // 左滑超过一半，回到原位
-                                                else -> if (offsetX > 0) 0f else offsetX // 其他情况回到原位
+                        Column {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(72.dp)
+                                    .padding(vertical = 4.dp)
+                                    .pointerInput(Unit) {
+                                        detectHorizontalDragGestures(
+                                            onDragEnd = {
+                                                // 拖拽结束后，根据偏移量决定最终位置
+                                                offsetX = when {
+                                                    offsetX > maxOffset / 2 -> maxOffset // 右滑超过一半，完全展开
+                                                    offsetX < -maxOffset / 2 -> 0f       // 左滑超过一半，回到原位
+                                                    else -> if (offsetX > 0) 0f else offsetX // 其他情况回到原位
+                                                }
                                             }
-                                        }
-                                    ) { change, dragAmount ->
-                                        // 允许左右拖拽，但限制最大偏移量
-                                        val newValue = offsetX + dragAmount
-                                        if (newValue >= 0 && newValue <= maxOffset) {
-                                            offsetX = newValue
-                                            change.consume()
+                                        ) { change, dragAmount ->
+                                            // 允许左右拖拽，但限制最大偏移量
+                                            val newValue = offsetX + dragAmount
+                                            if (newValue >= 0 && newValue <= maxOffset) {
+                                                offsetX = newValue
+                                                change.consume()
+                                            }
                                         }
                                     }
-                                }
-                                .offset { IntOffset(offsetX.toInt(), 0) },
-                            colors =
-                                CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.primary,
-                                ),
-                        ) {
-                            Row(
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically,
+                                    .offset { IntOffset(offsetX.toInt(), 0) },
+                                colors =
+                                    CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.primary,
+                                    ),
                             ) {
-                                Text(
-                                    text = allCharacter.find { it.aiCharacterId == characterId }?.name
-                                        ?: characterId,
-                                    style = MaterialTheme.typography.bodyMedium.copy(WhiteText),
-                                    modifier = Modifier.weight(1f),
-                                )
-
-                                // 概率调整滑块
                                 Row(
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    val colors =
-                                        SliderDefaults.colors(
-                                            activeTrackColor = WhiteText,
-                                            inactiveTrackColor = LightGold,
-                                            thumbColor = WhiteText,
-                                            activeTickColor = Color.Transparent,
-                                            inactiveTickColor = Color.White,
-                                        )
-                                    Slider(
-                                        value = chance,
-                                        onValueChange = { newChance ->
-                                            chooseCharacterMap =
-                                                chooseCharacterMap + (characterId to newChance)
-                                        },
-                                        modifier = Modifier.width(120.dp),
-                                        colors = colors,
-                                        steps = 19,
-                                        thumb = {
-                                            Canvas(modifier = Modifier.size(24.dp)) {
-                                                drawCircle(
-                                                    color = WhiteText,
-                                                    radius = 7.dp.toPx(),
-                                                )
-                                            }
-                                        },
-                                        track = { sliderState ->
-                                            SliderDefaults.Track(
-                                                modifier = Modifier.height(9.dp),
-                                                colors = colors,
-                                                enabled = true,
-                                                sliderState = sliderState,
-                                                thumbTrackGapSize = 0.dp,
-                                                drawStopIndicator = {
-//                                                drawCircle(color = colors.inactiveTickColor, center = it, radius = TrackStopIndicatorSize.toPx() / 2f)
-                                                },
-                                                // 求求了，别画那些小圆点，真不好看
-                                                drawTick = { offset, color -> {} },
-                                            )
-                                        },
-                                        valueRange = 0.0f..1.0f,
+                                    Text(
+                                        text = allCharacter.find { it.aiCharacterId == characterId }?.name
+                                            ?: characterId,
+                                        style = MaterialTheme.typography.bodyMedium.copy(WhiteText),
+                                        modifier = Modifier.weight(1f),
                                     )
-                                    Box(
-                                        modifier = Modifier
-                                            .width(40.dp)
-                                            .clip(RoundedCornerShape(10.dp))
-                                            .background(LightGold.copy(alpha = 0.5f)),
-                                        contentAlignment = Alignment.Center
+
+                                    // 概率调整滑块
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
                                     ) {
-                                        Text(
-                                            text = "${(chance * 100).toInt()}%",
-                                            style = MaterialTheme.typography.bodySmall.copy(WhiteText),
+                                        val colors =
+                                            SliderDefaults.colors(
+                                                activeTrackColor = WhiteText,
+                                                inactiveTrackColor = LightGold,
+                                                thumbColor = WhiteText,
+                                                activeTickColor = Color.Transparent,
+                                                inactiveTickColor = Color.White,
+                                            )
+                                        Slider(
+                                            value = chance,
+                                            onValueChange = { newChance ->
+                                                chooseCharacterMap =
+                                                    chooseCharacterMap + (characterId to newChance)
+                                            },
+                                            modifier = Modifier.width(120.dp),
+                                            colors = colors,
+                                            steps = 19,
+                                            thumb = {
+                                                Canvas(modifier = Modifier.size(24.dp)) {
+                                                    drawCircle(
+                                                        color = WhiteText,
+                                                        radius = 7.dp.toPx(),
+                                                    )
+                                                }
+                                            },
+                                            track = { sliderState ->
+                                                SliderDefaults.Track(
+                                                    modifier = Modifier.height(9.dp),
+                                                    colors = colors,
+                                                    enabled = true,
+                                                    sliderState = sliderState,
+                                                    thumbTrackGapSize = 0.dp,
+                                                    drawStopIndicator = {
+//                                                drawCircle(color = colors.inactiveTickColor, center = it, radius = TrackStopIndicatorSize.toPx() / 2f)
+                                                    },
+                                                    // 求求了，别画那些小圆点，真不好看
+                                                    drawTick = { offset, color -> {} },
+                                                )
+                                            },
+                                            valueRange = 0.0f..1.0f,
                                         )
+                                        Box(
+                                            modifier = Modifier
+                                                .width(40.dp)
+                                                .clip(RoundedCornerShape(10.dp))
+                                                .background(LightGold.copy(alpha = 0.5f)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = "${(chance * 100).toInt()}%",
+                                                style = MaterialTheme.typography.bodySmall.copy(
+                                                    WhiteText
+                                                ),
+                                            )
+                                        }
                                     }
                                 }
                             }
+                            val (keywordsText, setKeywordsText) = remember(characterId) {
+                                mutableStateOf(characterKeywordsMap[characterId]?.joinToString("/") ?: "")
+                            }
+                            // 关键词输入框
+                            SettingTextFieldItem(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
+                                singleLine = true,
+                                label = "",
+                                value = keywordsText,
+                                onValueChange = { newText ->
+                                    setKeywordsText(newText)
+                                    // 更新关键词映射
+                                    val keywordsList = if (newText.isBlank()) {
+                                        emptyList()
+                                    } else {
+                                        newText.split("/").map { it.trim() }
+                                            .filter { it.isNotEmpty() }
+                                    }
+                                    characterKeywordsMap =
+                                        characterKeywordsMap + (characterId to keywordsList)
+                                },
+                                placeholder = { Text("输入关键词，用/分隔", color = GrayText) },
+                            )
                         }
                         if (isMemoryDialogVisible) {
                             val coroutineScope = rememberCoroutineScope()
                             ShowMemoryDialog(
-                                onConfirm = { newMemoryContent ->
+                                onConfirm = { newMemoryContent, memoryCount ->
                                     // 启动新线程保存角色记忆
                                     coroutineScope.launch(Dispatchers.IO) {
                                         try {
@@ -785,23 +823,23 @@ fun ConversationEditScreen(
 
                                             if (existingMemory != null) {
                                                 // 更新现有记忆
-                                                val updatedMemory = existingMemory.copy(content = newMemoryContent)
+                                                val updatedMemory = existingMemory.copy(content = newMemoryContent,count = memoryCount)
                                                 memoryDao.update(updatedMemory)
                                             } else {
                                                 // 创建新的记忆记录
                                                 val newMemory = AIChatMemory(
                                                     id = UUID.randomUUID().toString(),
-                                                    characterId = characterId,
+                                                    characterId = selectCharacterId,
                                                     conversationId = conversationId,
                                                     content = newMemoryContent,
                                                     createdAt = System.currentTimeMillis(),
+                                                    count = memoryCount
                                                 )
                                                 memoryDao.insert(newMemory)
                                             }
 
                                             // 更新本地状态
                                             withContext(Dispatchers.Main) {
-                                                memoryContent = newMemoryContent
                                                 isMemoryDialogVisible = false
                                                 Toast.makeText(context, "角色记忆保存成功", Toast.LENGTH_SHORT).show()
                                             }

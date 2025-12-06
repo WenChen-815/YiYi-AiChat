@@ -131,7 +131,10 @@ fun WorldBookEditScreen(
                     description = worldBook?.worldDesc ?: ""
 
                     //worldItems = worldBook?.worldItems?.toMutableStateList() ?: mutableStateListOf()
-                    // 知识点：使用这种方法会替换worldItems的引用，导致remember的worldItems失效，当数据更新时无法触发Compose的重新渲染
+                    /*
+                     知识点：对象引用
+                     使用这种方法会替换worldItems的引用，导致remember的worldItems失效，当数据更新时无法触发Compose的重新渲染
+                     */
 
                     worldItems.clear() // 清空原有元素
                     worldBook?.worldItems?.let { worldItems.addAll(it) } // 添加新元素

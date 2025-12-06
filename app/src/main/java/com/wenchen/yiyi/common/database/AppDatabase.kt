@@ -27,7 +27,7 @@ import com.wenchen.yiyi.aiChat.entity.AIChatMemory
         AIChatMemory::class,
         Conversation::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -50,14 +50,21 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "ai_chat_database"
                 )
-                    .addMigrations(MIGRATION_1_2)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                     .build()
                 INSTANCE = instance
                 instance
             }
         }
 
-        // 添加从版本1到版本2的迁移脚本
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // 为 conversations 表添加 characterKeywords 列
+                db.execSQL(
+                    "ALTER TABLE conversations ADD COLUMN characterKeywords TEXT"
+                )
+            }
+        }
         val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 // 为 conversations 表添加 additionalSummaryRequirement 列

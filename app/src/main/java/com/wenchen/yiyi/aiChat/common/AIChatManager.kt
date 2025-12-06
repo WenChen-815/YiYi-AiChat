@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.util.Base64
 import android.util.Log
+import androidx.compose.runtime.key
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import com.wenchen.yiyi.aiChat.entity.ChatMessage
@@ -140,12 +141,33 @@ object AIChatManager {
                 Log.e(TAG, "未找到AI角色: $id")
                 return
             }
-            val random = Math.random()
-//            Log.d(TAG, "sendGroupMessage: $id -- $chance -- $random")
-            if (random < chance) { // 生成一个0~1的随机数
-                sendCharacterQueue[queueKey]?.add(aiCharacter)
+
+            // 检查是否有关键词配置
+            val keywordsList = conversation.characterKeywords?.get(id) ?: emptyList()
+            Log.d(TAG, "keywordsList: $keywordsList")
+            // 如果没有关键词配置或关键词列表为空，则使用概率判断
+            if (conversation.characterKeywords == null || keywordsList.isEmpty()) {
+                val random = Math.random()
+                if (random < chance) {
+                    sendCharacterQueue[queueKey]?.add(aiCharacter)
+                }
+            } else {
+                // 有关键词配置，检查是否匹配
+                val keywords = keywordsList.joinToString("|").toRegex()
+                Log.d(TAG, "keywords: $keywords")
+                if (keywords.containsMatchIn(newMessageTexts[0])) {
+                    // 匹配到关键词，直接加入队列
+                    sendCharacterQueue[queueKey]?.add(aiCharacter)
+                } else {
+                    // 未匹配到关键词，使用概率判断
+                    val random = Math.random()
+                    if (random < chance) {
+                        sendCharacterQueue[queueKey]?.add(aiCharacter)
+                    }
+                }
             }
         }
+
 
         // 启动处理流程
         processMessageQueue(conversation, oldMessages)
@@ -167,7 +189,7 @@ object AIChatManager {
             send(conversation, aiCharacter, messages)
 
             // 添加随机时间间隔
-            val randomDelay = (2000 + (Math.random() * 4000)).toLong() // 2-6秒随机延迟
+            val randomDelay = (2000 + (Math.random() * 2000)).toLong() // 2-4秒随机延迟
             delay(randomDelay)
         }
         clearMessageQueue(queueKey)
@@ -234,7 +256,8 @@ object AIChatManager {
         if (conversation.chatWorldId.isNotEmpty()) {
             // 获取世界ID并通过moshi解析
             val worldBookJson = FilesUtil.readFile("world_book/${conversation.chatWorldId}.json")
-            val worldBookAdapter: JsonAdapter<WorldBook> = Moshi.Builder().build().adapter(WorldBook::class.java)
+            val worldBookAdapter: JsonAdapter<WorldBook> =
+                Moshi.Builder().build().adapter(WorldBook::class.java)
             worldBook = worldBookJson.let { worldBookAdapter.fromJson(it) }
         }
         val worldItemBuilder = StringBuilder()
@@ -242,7 +265,7 @@ object AIChatManager {
         val worldItems = worldBook?.worldItems ?: emptyList()
         val itemNameToDesc = worldItems.associate { it.name to it.desc } // 名称→描述映射
         /*
-        知识点
+        知识点：集合操作函数
         associate 和 groupBy 都是 Kotlin 集合操作函数，但它们有不同的用途：
             associate 函数
                 作用: 将集合转换为 Map，每个元素映射到一个键值对，遇到重复值则保留最后一个
@@ -253,7 +276,8 @@ object AIChatManager {
          */
         // 构建正则模式（转义特殊字符，避免正则语法错误）
         val itemNames = worldItems.map { Regex.escape(it.name) } // 转义特殊字符
-        val pattern = if (itemNames.isNotEmpty()) itemNames.joinToString("|").toRegex() else null // 合并为"item1|item2"模式
+        val pattern = if (itemNames.isNotEmpty()) itemNames.joinToString("|")
+            .toRegex() else null // 合并为"item1|item2"模式
         val matchedItems = mutableSetOf<String>() // 记录已匹配物品，避免重复添加
         // 添加历史消息
         for (message in oldMessages) {
@@ -277,7 +301,7 @@ object AIChatManager {
         }
         // 添加系统提示消息
         val prompt = buildString {
-            if (worldBook != null){
+            if (worldBook != null) {
                 append("# [WORLD]\n## 世界介绍\n${worldBook.worldDesc ?: ""}")
             }
             if (worldItemBuilder.isNotEmpty()) {
@@ -295,21 +319,25 @@ object AIChatManager {
                 append("\n# [SCENE]当前场景\n${conversation.chatSceneDescription}\n")
             }
             if (conversation.type == ConversationType.SINGLE) {
-                append("""
+                append(
+                    """
                     # [IMPORTANT]
                     **你应以[${conversation.playerName}]为主要交互对象**
                     **你需要深度理解世界设定、用户角色信息、当前场景以及后续你需要扮演的角色信息**
                     **现在请使用以下[${aiCharacter.name}]的身份参与对话**
-                    """.trimIndent())
+                    """.trimIndent()
+                )
             }
             if (conversation.type == ConversationType.GROUP) {
-                append("""
+                append(
+                    """
                     # [IMPORTANT]
                     **你正处于多人对话与行动的环境当中**
                     **你允许与多位角色交互，但仍应以[${conversation.playerName}]为主要交互对象**
                     **你需要深度理解世界设定、用户角色信息、当前场景以及后续你需要扮演的角色信息**
                     **现在请使用以下[${aiCharacter.name}]的身份参与对话**
-                    """.trimIndent())
+                    """.trimIndent()
+                )
             }
             if (aiCharacter.roleIdentity.isNotBlank()) {
                 append("\n# [YOUR ROLE]${aiCharacter.name}\n## 角色任务&身份\n${aiCharacter.roleIdentity}")
@@ -324,19 +352,21 @@ object AIChatManager {
             if (aiCharacter.outputExample.isNotBlank()) {
                 append("\n# [EXAMPLE]角色输出示例\n${aiCharacter.outputExample}\n")
             }
-            append("""
+            append(
+                """
                 # [RULES — STRICT]严格遵守以下行为准则
                 [PRIORITY 1]收到系统旁白消息时，必须根据其中提示内容进行扩写
                 [PRIORITY 2]在“。 ？ ！ …”等表示句子结束处，或根于语境需要分隔处使用反斜线 (\) 分隔,以确保良好的可读性，但严格要求[]中的内容不允许使用(\)来分隔
                 其他规则:
-                """.trimIndent())
+                """.trimIndent()
+            )
             if (aiCharacter.behaviorRules.isNotBlank()) {
                 append(aiCharacter.behaviorRules)
             }
         }.trim()
 //        Log.d(TAG, "prompt:\n $prompt")
         if (prompt.isNotEmpty()) {
-            messages.add(0,Message("system", "$prompt\n"))
+            messages.add(0, Message("system", "$prompt\n"))
         }
         return messages
     }

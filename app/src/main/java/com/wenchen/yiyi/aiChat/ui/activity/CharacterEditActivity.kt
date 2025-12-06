@@ -243,12 +243,12 @@ class CharacterEditActivity : ComponentActivity(), CoroutineScope by MainScope()
                 id = UUID.randomUUID().toString(),
                 conversationId = conversationId.toString(),
                 characterId = character.aiCharacterId,
-                content = if (memory.isEmpty()) "" else memory,
+                content = memory.ifEmpty { "" },
                 createdAt = System.currentTimeMillis(),
                 count = memoryCount
             )
         } else {
-            memoryEntity.content = if (memory.isEmpty()) "" else memory
+            memoryEntity.content = memory.ifEmpty { "" }
             memoryEntity.count = memoryCount
         }
 
@@ -265,11 +265,13 @@ class CharacterEditActivity : ComponentActivity(), CoroutineScope by MainScope()
                         name = character.name,
                         type = ConversationType.SINGLE,
                         characterIds = mapOf(character.aiCharacterId to 1.0f),
+                        characterKeywords = mapOf(character.aiCharacterId to emptyList()),
                         playerName = ConfigManager().getUserName().toString(),
                         playGender = "",
                         playerDescription = "",
                         chatWorldId = "",
                         chatSceneDescription = "",
+                        additionalSummaryRequirement = "",
                         avatarPath = character.avatarPath,
                         backgroundPath = character.backgroundPath,
                     )

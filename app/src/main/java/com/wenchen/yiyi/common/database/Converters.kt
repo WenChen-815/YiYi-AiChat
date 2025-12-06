@@ -69,4 +69,17 @@ class Converters {
             Gson().fromJson(it, mapType)
         }
     }
+
+    @TypeConverter
+    fun fromCharacterKeywordsMap(map: Map<String, List<String>>?): String? {
+        return map?.let { Gson().toJson(it) }
+    }
+
+    @TypeConverter
+    fun toCharacterKeywordsMap(value: String?): Map<String, List<String>>? {
+        return value?.let {
+            val mapType = object : TypeToken<Map<String, List<String>>>() {}.type
+            Gson().fromJson(it, mapType)
+        }
+    }
 }

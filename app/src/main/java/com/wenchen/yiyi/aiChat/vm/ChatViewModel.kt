@@ -73,11 +73,13 @@ class ChatViewModel : ViewModel() {
                             name = currentAICharacter?.name ?: "未获取到对话信息",
                             type = ConversationType.SINGLE,
                             characterIds = mapOf((currentAICharacter?.aiCharacterId ?: "") to 1.0f),
+                            characterKeywords = mapOf((currentAICharacter?.aiCharacterId ?: "") to emptyList()),
                             playerName = "",
                             playGender = "",
                             playerDescription = "",
                             chatWorldId = "",
                             chatSceneDescription = "",
+                            additionalSummaryRequirement = "",
                             avatarPath = currentAICharacter?.avatarPath,
                             backgroundPath = currentAICharacter?.backgroundPath,
                         )
@@ -111,11 +113,13 @@ class ChatViewModel : ViewModel() {
                                     characterIds = mapOf(
                                         (currentAICharacter?.aiCharacterId ?: "") to 1.0f
                                     ),
+                                    characterKeywords = mapOf((currentAICharacter?.aiCharacterId ?: "") to emptyList()),
                                     playerName = "",
                                     playGender = "",
                                     playerDescription = "",
                                     chatWorldId = "",
                                     chatSceneDescription = "",
+                                    additionalSummaryRequirement = "",
                                     avatarPath = currentAICharacter?.avatarPath,
                                     backgroundPath = currentAICharacter?.backgroundPath,
                                 )
@@ -477,11 +481,13 @@ data class ChatUiState(
         name = "",
         type = ConversationType.SINGLE,
         characterIds = emptyMap(),
+        characterKeywords = emptyMap(),
         playerName = "",
         playGender = "",
         playerDescription = "",
         chatWorldId = "",
         chatSceneDescription = "",
+        additionalSummaryRequirement = "",
         avatarPath = "",
         backgroundPath = ""
     ),
