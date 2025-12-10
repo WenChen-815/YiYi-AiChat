@@ -361,11 +361,11 @@ object AIChatManager {
             if (aiCharacter.outputExample.isNotBlank()) {
                 append("\n# [EXAMPLE]角色输出示例\n${aiCharacter.outputExample}\n")
             }
+            // [PRIORITY 2]在“。 ？ ！ …”等表示句子结束处，或根于语境需要分隔处使用反斜线 (\) 分隔,以确保良好的可读性，但严格要求[]中的内容不允许使用(\)来分隔
             append(
                 """
                 # [RULES — STRICT]严格遵守以下行为准则
                 [PRIORITY 1]收到系统旁白消息时，必须根据其中提示内容进行扩写
-                [PRIORITY 2]在“。 ？ ！ …”等表示句子结束处，或根于语境需要分隔处使用反斜线 (\) 分隔,以确保良好的可读性，但严格要求[]中的内容不允许使用(\)来分隔
                 其他规则:
                 """.trimIndent()
             )

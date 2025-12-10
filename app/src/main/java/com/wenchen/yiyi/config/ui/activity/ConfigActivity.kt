@@ -58,6 +58,7 @@ import com.wenchen.yiyi.common.utils.StatusBarUtil
 import com.wenchen.yiyi.common.components.SettingTextFieldItem
 import com.wenchen.yiyi.common.theme.BlackText
 import com.wenchen.yiyi.common.theme.DarkGray
+import com.wenchen.yiyi.common.theme.GrayText
 import com.wenchen.yiyi.common.theme.LightGray
 import com.wenchen.yiyi.config.ui.SwitchWithText
 import kotlinx.coroutines.*
@@ -111,6 +112,7 @@ fun ConfigScreen(configManager: ConfigManager, activity: ComponentActivity) {
     var maxContextCount by remember { mutableStateOf(configManager.getMaxContextMessageSize().toString()) }
     var summarizeCount by remember { mutableStateOf(configManager.getSummarizeTriggerCount().toString()) }
     var maxSummarizeCount by remember { mutableStateOf(configManager.getMaxSummarizeCount().toString()) }
+    var enableSeparator by remember { mutableStateOf(configManager.isSeparatorEnabled()) }
 
     // 用户头像相关
     var userAvatarPath by remember { mutableStateOf(configManager.getUserAvatarPath()) }
@@ -283,10 +285,6 @@ fun ConfigScreen(configManager: ConfigManager, activity: ComponentActivity) {
                                 return@TextButton
                             }
                         }
-
-                        val contextCount = maxContextCount.toIntOrNull() ?: 10
-                        val sumCount = summarizeCount.toIntOrNull() ?: 20
-
                         // 保存配置
                         configManager.saveUserId(userId)
                         configManager.saveUserName(userName)
@@ -301,8 +299,10 @@ fun ConfigScreen(configManager: ConfigManager, activity: ComponentActivity) {
                             configManager.saveSelectedImgModel(selectedImgModel)
                         }
 
-                        configManager.saveMaxContextMessageSize(contextCount)
-                        configManager.saveSummarizeTriggerCount(sumCount)
+                        configManager.saveMaxContextMessageSize(maxContextCount.toIntOrNull() ?:15)
+                        configManager.saveSummarizeTriggerCount(summarizeCount.toIntOrNull() ?: 20)
+                        configManager.saveMaxSummarizeCount(maxSummarizeCount.toIntOrNull() ?: 20)
+                        configManager.saveEnableSeparator(enableSeparator)
 
                         // 保存用户头像
                         saveUserAvatar()
@@ -669,7 +669,14 @@ fun ConfigScreen(configManager: ConfigManager, activity: ComponentActivity) {
                 onValueChange = { maxSummarizeCount = it },
                 placeholder = { Text("设定最高总结次数, 避免过高消耗") }
             )
-
+            // 分隔符启用开关
+            SwitchWithText(
+                checked = enableSeparator,
+                onCheckedChange = { enableSeparator = it },
+                text = "启用分隔符\"/\"",
+                modifier = Modifier.padding(top = 16.dp)
+            )
+            Text(text = "此功能不再内置，需要自行在提示词中提示AI使用分隔符", style = MaterialTheme.typography.labelSmall.copy(GrayText))
             Spacer(modifier = Modifier.height(16.dp))
         }
         // 添加模型选择抽屉

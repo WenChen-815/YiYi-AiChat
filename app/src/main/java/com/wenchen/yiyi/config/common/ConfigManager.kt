@@ -21,6 +21,8 @@ class ConfigManager() {
     private val KEY_SUMMARIZE_TRIGGER_COUNT = "summarize_trigger_count"
     private val KEY_MAX_SUMMARIZE_COUNT = "max_summarize_count"
 
+    private val KEY_ENABLE_SEPARATOR = "enable_separator"
+
     private val prefs: SharedPreferences =
         App.Companion.instance.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
 
@@ -189,5 +191,15 @@ class ConfigManager() {
     // 获取最大总结次数
     fun getMaxSummarizeCount(): Int {
         return prefs.getInt(KEY_MAX_SUMMARIZE_COUNT, 20)
+    }
+
+    // 保存分隔符启用状态
+    fun saveEnableSeparator(enabled: Boolean) {
+        prefs.edit { putBoolean(KEY_ENABLE_SEPARATOR, enabled) }
+    }
+
+    // 获取分隔符启用状态
+    fun isSeparatorEnabled(): Boolean {
+        return prefs.getBoolean(KEY_ENABLE_SEPARATOR, false)
     }
 }

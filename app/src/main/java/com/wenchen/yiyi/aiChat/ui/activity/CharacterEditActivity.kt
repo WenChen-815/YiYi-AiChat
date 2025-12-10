@@ -370,7 +370,7 @@ fun CharacterEditScreen(
     var roleAppearance by remember { mutableStateOf("") }
     var roleDescription by remember { mutableStateOf("") }
     var outputExample by remember { mutableStateOf("") }
-    var behaviorRules by remember { mutableStateOf("") }
+    var behaviorRules by remember { mutableStateOf("在 。 ？ ！ … 等表示句子结束处，或根于语境需要使用反斜线 (\\) 分隔,以确保良好的可读性与表达，但严格要求[]中的内容不允许使用分隔符(\\)") }
     var memory by remember { mutableStateOf("") }
     var memoryCount by remember { mutableIntStateOf(0) }
     var avatarPath by remember { mutableStateOf("") }

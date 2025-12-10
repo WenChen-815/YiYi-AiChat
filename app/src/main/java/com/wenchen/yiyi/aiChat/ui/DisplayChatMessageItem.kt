@@ -49,7 +49,7 @@ fun DisplayChatMessageItem(
     viewModel: ChatViewModel,
 ) {
     // 解析AI回复中的日期和角色名称
-    var cleanedContent = ChatUtil.parseMessage(message)
+    val cleanedContent = ChatUtil.parseMessage(message)
     val uiState = viewModel.uiState.collectAsState().value
     when (message.type) {
         MessageType.USER, MessageType.SYSTEM -> ChatMessageItem(
@@ -73,8 +73,11 @@ fun DisplayChatMessageItem(
                     ?: "android.resource://${LocalContext.current.packageName}/${R.mipmap.ai_closed}"
             }
             if (message.contentType == MessageContentType.TEXT) {
-                // 分割AI消息内容
-                val parts = cleanedContent.split('\\').filter { it.isNotBlank() }.reversed()
+                val parts = if (ConfigManager().isSeparatorEnabled()) {
+                    cleanedContent.split('\\').filter { it.isNotBlank() }.reversed()
+                } else {
+                    listOf(cleanedContent)
+                }
                 for (i in parts.indices) {
                     ChatMessageItem(
                         content = parts[i],
@@ -104,7 +107,7 @@ fun ChatMessageItem(
     messageType: MessageType,
     contentType: MessageContentType
 ) {
-    var visibilityAlpha = remember { mutableFloatStateOf(1f) }
+    val visibilityAlpha = remember { mutableFloatStateOf(1f) }
     val threshold = with(LocalDensity.current) { 168.dp.toPx() } // 设定阈值
     val topBarHeight = with(LocalDensity.current) { 96.dp.toPx() } // 设定顶部栏高度
 
@@ -125,7 +128,7 @@ fun ChatMessageItem(
                 alpha = visibilityAlpha.floatValue
             }
     ) {
-        var (avatar, messageCard) = createRefs()
+        val (avatar, messageCard) = createRefs()
         if (messageType != MessageType.SYSTEM) {
             AsyncImage(
                 model = avatarUrl,
