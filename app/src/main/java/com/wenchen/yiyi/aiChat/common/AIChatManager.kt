@@ -173,7 +173,7 @@ object AIChatManager {
         processMessageQueue(conversation, oldMessages)
     }
 
-    private suspend fun processMessageQueue(
+    private fun processMessageQueue(
         conversation: Conversation,
         oldMessages: List<TempChatMessage>
     ) {
@@ -182,17 +182,26 @@ object AIChatManager {
 
         isProcessing[queueKey] = true
         sendCharacterQueue[queueKey]?.shuffle() // 对发送队列进行乱序处理
-        while (sendCharacterQueue[queueKey]?.isNotEmpty() == true) {
-            val aiCharacter = sendCharacterQueue[queueKey]?.removeAt(0) ?: break
-            Log.d(TAG, "oldMessages: $oldMessages")
-            val messages = generateBaseMessages(aiCharacter, conversation, oldMessages)
-            send(conversation, aiCharacter, messages)
+        // 使用单个协程处理整个队列
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                while (sendCharacterQueue[queueKey]?.isNotEmpty() == true) {
+                    val aiCharacter = sendCharacterQueue[queueKey]?.removeAt(0) ?: break
+                    val messages = generateBaseMessages(aiCharacter, conversation, oldMessages)
 
-            // 添加随机时间间隔
-            val randomDelay = (2000 + (Math.random() * 2000)).toLong() // 2-4秒随机延迟
-            delay(randomDelay)
+                    val completion = CompletableDeferred<Unit>()
+                    send(conversation, aiCharacter, messages) {
+                        completion.complete(Unit)
+                    }
+                    completion.await() // 等待当前消息发送完成
+                    delay((1000).toLong()) // 1s延迟
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "处理消息队列时出错", e)
+            } finally {
+                clearMessageQueue(queueKey)
+            }
         }
-        clearMessageQueue(queueKey)
     }
 
     fun clearMessageQueue(conversationId: String) {
@@ -436,6 +445,7 @@ object AIChatManager {
         conversation: Conversation,
         aiCharacter: AICharacter?,
         messages: MutableList<Message>,
+        afterSend:() -> Unit = {}
     ) {
         if (aiCharacter == null) {
             Log.e(TAG, "未选择AI角色")
@@ -467,6 +477,7 @@ object AIChatManager {
                     savaMessage(aiMessage, true)
 //                    val summaryMessages = getSummaryMessages(conversation)
 //                    summarize(conversation, aiCharacter, summaryMessages)
+                    afterSend.invoke()
                 }
                 Log.d(TAG, "AI回复:${aiMessage.content}")
                 CoroutineScope(Dispatchers.Main).launch {
@@ -477,6 +488,7 @@ object AIChatManager {
                 CoroutineScope(Dispatchers.Main).launch {
                     listeners.forEach { it.onError(errorMessage) }
                 }
+                afterSend.invoke()
             }
         )
     }
