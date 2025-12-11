@@ -26,6 +26,7 @@ import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import coil3.compose.AsyncImage
@@ -35,6 +36,7 @@ import com.wenchen.yiyi.aiChat.entity.ConversationType
 import com.wenchen.yiyi.aiChat.entity.MessageContentType
 import com.wenchen.yiyi.aiChat.entity.MessageType
 import com.wenchen.yiyi.aiChat.vm.ChatViewModel
+import com.wenchen.yiyi.common.components.StyledBracketText
 import com.wenchen.yiyi.common.theme.BlackBg
 import com.wenchen.yiyi.common.theme.BlackText
 import com.wenchen.yiyi.common.theme.Gold
@@ -193,13 +195,19 @@ fun ChatMessageItem(
             ) {
                 when (contentType) {
                     MessageContentType.TEXT -> {
-                        Text(
+                        val color = when (messageType) {
+                            MessageType.USER -> BlackText
+                            MessageType.ASSISTANT, MessageType.SYSTEM -> WhiteText
+                        }
+                        val specialTextColor = when (messageType) {
+                            MessageType.USER -> Color.DarkGray
+                            MessageType.ASSISTANT -> Color.LightGray
+                            MessageType.SYSTEM -> WhiteText
+                        }
+                        StyledBracketText(
                             text = content,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = when (messageType) {
-                                MessageType.USER -> BlackText
-                                MessageType.ASSISTANT, MessageType.SYSTEM -> WhiteText
-                            },
+                            normalTextStyle = MaterialTheme.typography.bodyLarge.copy(color = color),
+                            specialTextStyle = MaterialTheme.typography.bodyLarge.copy(color = specialTextColor, fontStyle = FontStyle.Italic)
                         )
                     }
 

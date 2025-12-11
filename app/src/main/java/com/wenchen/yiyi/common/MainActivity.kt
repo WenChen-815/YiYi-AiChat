@@ -315,13 +315,13 @@ class MainActivity : ComponentActivity() {
 //            floatingActionButton = {
 //                FloatingActionButton(
 //                    onClick = {
-//                        startActivity(Intent(this@MainActivity, WorldBookListActivity::class.java))
+//                        startActivity(Intent(this@MainActivity, TestActivity::class.java))
 //                    },
 //                    containerColor = Pink,
 //                    modifier = Modifier.padding(16.dp)
 //                ) {
 //                    Text(
-//                        text = "小说模式",
+//                        text = "测试区域",
 //                        style = MaterialTheme.typography.titleMedium.copy(
 //                            fontWeight = FontWeight.Bold
 //                        ),
