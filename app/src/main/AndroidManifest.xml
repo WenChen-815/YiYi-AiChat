@@ -30,6 +30,9 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <activity
+            android:name=".common.TestActivity"
+            android:exported="false" />
+        <activity
             android:name=".worldBook.ui.activity.WorldBookListActivity"
             android:exported="false" />
         <activity
