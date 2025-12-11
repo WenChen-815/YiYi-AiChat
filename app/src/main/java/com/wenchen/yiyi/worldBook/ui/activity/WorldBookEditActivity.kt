@@ -304,6 +304,7 @@ fun WorldItem(
         verticalAlignment = Alignment.CenterVertically) {
         SettingTextFieldItem(
             value = lastName,
+            label = "",
             onValueChange = {
                 if (!isAddOne) update(it, desc)
                 lastName = it
@@ -313,6 +314,7 @@ fun WorldItem(
         )
         SettingTextFieldItem(
             value = lastDesc,
+            label = "",
             onValueChange = {
                 if (!isAddOne) update(name, it)
                 lastDesc = it

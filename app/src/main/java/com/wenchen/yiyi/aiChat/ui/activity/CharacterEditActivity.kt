@@ -28,6 +28,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -153,6 +154,7 @@ class CharacterEditActivity : ComponentActivity(), CoroutineScope by MainScope()
                     activity = this,
                     conversationId = conversationId.toString(),
                     characterId = characterId,
+                    isNewCharacter = isNewCharacter.value,
                     onSaveClick = { name, roleIdentity, roleAppearance, roleDescription, outputExample, behaviorRules, memory, memoryCount ->
                         lifecycleScope.launch {
                             saveCharacter(
@@ -349,6 +351,7 @@ fun CharacterEditScreen(
     activity: ComponentActivity,
     conversationId: String,
     characterId: String? = null,
+    isNewCharacter: Boolean,
     onSaveClick: (String, String, String, String, String, String, String, Int) -> Unit,
     onCancelClick: () -> Unit,
     onAvatarClick: () -> Unit,
@@ -370,7 +373,7 @@ fun CharacterEditScreen(
     var roleAppearance by remember { mutableStateOf("") }
     var roleDescription by remember { mutableStateOf("") }
     var outputExample by remember { mutableStateOf("") }
-    var behaviorRules by remember { mutableStateOf("在 。 ？ ！ … 等表示句子结束处，或根于语境需要使用反斜线 (\\) 分隔,以确保良好的可读性与表达，但严格要求[]中的内容不允许使用分隔符(\\)") }
+    var behaviorRules by remember { mutableStateOf("") }
     var memory by remember { mutableStateOf("") }
     var memoryCount by remember { mutableIntStateOf(0) }
     var avatarPath by remember { mutableStateOf("") }
@@ -387,7 +390,8 @@ fun CharacterEditScreen(
                 roleAppearance = character?.roleAppearance ?: ""
                 roleDescription = character?.roleDescription ?: ""
                 outputExample = character?.outputExample ?: ""
-                behaviorRules = character?.behaviorRules ?: ""
+                behaviorRules = character?.behaviorRules
+                    ?: "- 在 。 ？ ！ … 等表示句子结束处，或根于语境需要使用反斜线 (\\) 分隔,以确保良好的可读性与表达\n- 使用[]描述心理、场景或动作，但严格要求[]中的内容不允许使用分隔符(\\)"
                 memory = memoryEntity?.content ?: ""
                 memoryCount = memoryEntity?.count ?: 0
                 avatarPath = character?.avatarPath ?: ""
@@ -536,7 +540,11 @@ fun CharacterEditScreen(
                 labelPadding = PaddingValues(bottom = 6.dp),
                 value = outputExample,
                 onValueChange = { outputExample = it },
-                placeholder = { Text("请输入角色输出示例,建议分行分点") },
+                placeholder = { Text("""
+                    （带分隔符）
+                    1.[听到你赞我新得的墨兰开得雅致，眼中泛起笑意，指尖轻轻拂过花瓣] \ 这花是晨间才开的 \ 你瞧，这瓣上的露水还未干呢
+                    （不带分隔符）
+                    1.[听到你赞我新得的墨兰开得雅致，眼中泛起笑意，指尖轻轻拂过花瓣] 这花是晨间才开的。你瞧，这瓣上的露水还未干呢""".trimIndent()) },
                 minLines = 3,
                 maxLines = 10,
             )
@@ -546,7 +554,22 @@ fun CharacterEditScreen(
                     .fillMaxWidth()
                     .padding(top = 8.dp)
                     .heightIn(max = 250.dp),
-                label = "行为规则",
+                label = {
+                    Column {
+                        Text(
+                            text = "行为规则",
+                            style = MaterialTheme.typography.titleMedium,
+                        )
+                        if (isNewCharacter){
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "（预设模板，配合全局配置中的分隔符开关使用哦~）",
+                                style = MaterialTheme.typography.titleSmall.copy(Color.LightGray)
+                            )
+                        }
+
+                    }
+                },
                 labelPadding = PaddingValues(bottom = 6.dp),
                 value = behaviorRules,
                 onValueChange = { behaviorRules = it },

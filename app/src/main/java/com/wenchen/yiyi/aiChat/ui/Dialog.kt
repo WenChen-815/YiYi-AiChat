@@ -182,6 +182,7 @@ fun ShowMemoryDialog(
                             .fillMaxWidth()
                             .height(200.dp)
                             .padding(top = 8.dp),
+                    label = "",
                     labelPadding = PaddingValues(bottom = 6.dp),
                     value = memoryContent.value,
                     onValueChange = { memoryContent.value = it },
