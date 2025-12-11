@@ -113,6 +113,7 @@ fun ConfigScreen(configManager: ConfigManager, activity: ComponentActivity) {
     var summarizeCount by remember { mutableStateOf(configManager.getSummarizeTriggerCount().toString()) }
     var maxSummarizeCount by remember { mutableStateOf(configManager.getMaxSummarizeCount().toString()) }
     var enableSeparator by remember { mutableStateOf(configManager.isSeparatorEnabled()) }
+    var enableTimePrefix by remember { mutableStateOf(configManager.isTimePrefixEnabled()) }
 
     // 用户头像相关
     var userAvatarPath by remember { mutableStateOf(configManager.getUserAvatarPath()) }
@@ -303,6 +304,7 @@ fun ConfigScreen(configManager: ConfigManager, activity: ComponentActivity) {
                         configManager.saveSummarizeTriggerCount(summarizeCount.toIntOrNull() ?: 20)
                         configManager.saveMaxSummarizeCount(maxSummarizeCount.toIntOrNull() ?: 20)
                         configManager.saveEnableSeparator(enableSeparator)
+                        configManager.saveEnableTimePrefix(enableTimePrefix)
 
                         // 保存用户头像
                         saveUserAvatar()
@@ -677,6 +679,15 @@ fun ConfigScreen(configManager: ConfigManager, activity: ComponentActivity) {
                 modifier = Modifier.padding(top = 16.dp)
             )
             Text(text = "此功能不再内置，需要自行在提示词中提示AI使用分隔符", style = MaterialTheme.typography.labelSmall.copy(GrayText))
+
+            SwitchWithText(
+                checked = enableTimePrefix,
+                onCheckedChange = { enableTimePrefix = it },
+                text = "消息附带当前时间",
+                modifier = Modifier.padding(top = 16.dp)
+            )
+            Text(text = "此选项不会影响消息内容的显示，但关闭后AI将无法得知当前时间，按需启用", style = MaterialTheme.typography.labelSmall.copy(GrayText))
+
             Spacer(modifier = Modifier.height(16.dp))
         }
         // 添加模型选择抽屉

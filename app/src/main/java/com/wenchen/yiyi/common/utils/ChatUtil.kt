@@ -13,21 +13,15 @@ object ChatUtil {
     }
 
     fun parse(content: String): String {
-        var cleanedContent = content
         // 解析AI回复中的日期和角色名称
-        val dateRegex = Regex("\\d{4}-\\d{2}-\\d{2} \\w+ \\d{2}:\\d{2}:\\d{2}")
-        val roleRegex = Regex("\\[.*?\\]")
+        val dateRegex = Regex("\\d{4}-\\d{2}-\\d{2} \\w+ \\d{2}:\\d{2}:\\d{2}\\|")
+        val roleRegex = Regex("^\\[[^]]*]")
 
-        val dateMatch = dateRegex.find(content)
-        val roleMatch = roleRegex.find(content)
-        if (dateMatch != null && roleMatch != null) {
-            // 提取日期和角色名称
-            val date = dateMatch.value
-            val role = roleMatch.value
+        // 分别处理日期和角色名称的移除
+        var result = content
+        result = dateRegex.replace(result, "")
+        result = roleRegex.replace(result, "")
 
-            // 移除日期和角色名称，只保留实际回复内容
-            cleanedContent = content.replace("${date}|$role", "").trim()
-        }
-        return cleanedContent
+        return result.trim()
     }
 }

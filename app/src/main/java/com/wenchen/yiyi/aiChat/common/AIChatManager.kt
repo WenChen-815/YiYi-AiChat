@@ -2,9 +2,7 @@ package com.wenchen.yiyi.aiChat.common
 
 import android.graphics.Bitmap
 import android.net.Uri
-import android.util.Base64
 import android.util.Log
-import androidx.compose.runtime.key
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import com.wenchen.yiyi.aiChat.entity.ChatMessage
@@ -30,7 +28,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import java.io.ByteArrayOutputStream
 import java.text.SimpleDateFormat
 import java.util.Collections
 import java.util.Date
@@ -406,12 +403,14 @@ object AIChatManager {
         val userMessages = mutableListOf<Message>()
         val currentDate =
             SimpleDateFormat("yyyy-MM-dd EEEE HH:mm:ss", Locale.getDefault()).format(Date())
+        // 根据配置决定是否添加时间戳
+        val prefix = if (configManager.isTimePrefixEnabled()) "$currentDate|" else ""
         val currentUserName = "[${conversation.playerName}]"
         for (newMessageText in newMessageTexts) {
             val newContent = if (isSendSystemMessage) {
-                "${currentDate}|[系统旁白] $newMessageText"
+                "$prefix[系统旁白] $newMessageText"
             } else {
-                "${currentDate}|${currentUserName} $newMessageText"
+                "$prefix${currentUserName} $newMessageText"
             }
             val userMessage = ChatMessage(
                 id = UUID.randomUUID().toString(),
@@ -458,11 +457,12 @@ object AIChatManager {
             temperature = 1.1f,
             onSuccess = { aiResponse ->
                 // 创建时间戳和格式化日期
-                val timestamp = System.currentTimeMillis()
+                // val timestamp = System.currentTimeMillis()
                 val currentDate =
                     SimpleDateFormat("yyyy-MM-dd EEEE HH:mm:ss", Locale.getDefault()).format(Date())
+                val prefix = if (configManager.isTimePrefixEnabled()) "$currentDate|" else ""
                 val currentCharacterName = "[${aiCharacter.name}]"
-                val messageContent = "$currentDate|${currentCharacterName} $aiResponse"
+                val messageContent = "$prefix${currentCharacterName} $aiResponse"
 
                 val aiMessage = ChatMessage(
                     id = UUID.randomUUID().toString(),
