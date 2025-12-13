@@ -6,6 +6,21 @@ import java.io.FileWriter
 
 object FilesUtil {
     private val app: App = App.instance
+
+    fun deleteFile(fileName: String): Boolean {
+        return try {
+            val file = File(app.applicationContext?.filesDir, fileName)
+            if (file.exists()) {
+                file.delete()
+            } else {
+                false
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
     // 保存到内部存储的files目录
     fun saveToFile(message: String, fileName: String): String {
         try {

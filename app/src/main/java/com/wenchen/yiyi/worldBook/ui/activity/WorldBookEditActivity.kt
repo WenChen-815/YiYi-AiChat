@@ -85,12 +85,12 @@ class WorldBookEditActivity : ComponentActivity() {
                 Log.d("WorldBookEditActivity", "saveWorldBook: $filePath")
             }
             withContext(Dispatchers.Main) {
-                Toast.makeText(this@WorldBookEditActivity, "世界书保存成功", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@WorldBookEditActivity, "世界保存成功", Toast.LENGTH_SHORT).show()
                 this@WorldBookEditActivity.finish()
             }
         } catch (e: Exception) {
             withContext(Dispatchers.Main) {
-                Toast.makeText(this@WorldBookEditActivity, "世界书保存失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@WorldBookEditActivity, "世界保存失败: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -114,9 +114,41 @@ fun WorldBookEditScreen(
     var description by remember { mutableStateOf("") }
     val worldItems = remember { mutableStateListOf<WorldBookItem>() }
 
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
     val scrollState = rememberScrollState()
     val context = LocalContext.current
     var worldBook by remember { mutableStateOf<WorldBook?>(null) }
+    // 删除确认对话框
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("确认删除") },
+            text = { Text("确定要删除这个世界吗？此操作不可撤销。") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        // 执行删除操作
+                        val deleted = FilesUtil.deleteFile("world_book/$worldId.json")
+                        if (deleted) {
+                            Toast.makeText(context, "世界删除成功", Toast.LENGTH_SHORT).show()
+                            activity.finish()
+                        } else {
+                            Toast.makeText(context, "世界删除失败", Toast.LENGTH_SHORT).show()
+                        }
+                        showDeleteDialog = false
+                    }
+                ) {
+                    Text("确认")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("取消")
+                }
+            }
+        )
+    }
     LaunchedEffect(worldId) {
         launch(Dispatchers.IO) {
             try {
@@ -142,7 +174,7 @@ fun WorldBookEditScreen(
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     Toast
-                        .makeText(context, "加载世界书数据失败: ${e.message}", Toast.LENGTH_SHORT)
+                        .makeText(context, "加载世界数据失败: ${e.message}", Toast.LENGTH_SHORT)
                         .show()
                 }
             }
@@ -167,10 +199,22 @@ fun WorldBookEditScreen(
                             .align(Alignment.CenterStart),
                 )
                 Text(
-                    text = "世界书配置",
+                    text = "世界配置",
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.align(Alignment.Center),
                 )
+                // 删除按钮 仅在编辑现有世界时显示
+                if (!isCreateNew) {
+                    Text(
+                        text = "删除世界",
+                        modifier = Modifier
+                            .clickable { showDeleteDialog = true }
+                            .align(Alignment.CenterEnd)
+                            .padding(8.dp),
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                }
             }
         },
         bottomBar = {
@@ -191,7 +235,7 @@ fun WorldBookEditScreen(
                             containerColor = MaterialTheme.colorScheme.primary,
                         ),
                 ) {
-                    Text("保存世界书", color = WhiteText)
+                    Text("保存世界", color = WhiteText)
                 }
             }
         },
