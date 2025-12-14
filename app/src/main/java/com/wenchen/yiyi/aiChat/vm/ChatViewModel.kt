@@ -51,7 +51,7 @@ class ChatViewModel : ViewModel() {
 
     private var currentAICharacter: AICharacter? = null
     private var chatContext: LimitMutableList<TempChatMessage> =
-        limitMutableListOf<TempChatMessage>(10)
+        limitMutableListOf(15)
 
     init {
         initApiService()
@@ -472,6 +472,34 @@ class ChatViewModel : ViewModel() {
 
     fun setReceiveNewMessage(receiveNewMessage: Boolean) {
         _uiState.value = _uiState.value.copy(receiveNewMessage = receiveNewMessage)
+    }
+
+    fun updateMessageContent(messageId: String, content: String, onComplete: ((Boolean) -> Unit)? = null) {
+        viewModelScope.launch {
+            try {
+                // 更新数据库
+                chatMessageDao.updateMessageContent(messageId, content)
+                tempChatMessageDao.updateMessageContent(messageId, content)
+
+                // 更新UI状态中的消息列表
+                _uiState.update { currentState ->
+                    val updatedMessages = currentState.messages.map { message ->
+                        if (message.id == messageId) message.copy(content = content) else message
+                    }
+                    currentState.copy(messages = updatedMessages)
+                }
+                chatContext.forEach { message ->
+                    if (message.id == messageId) {
+                        message.content = content
+                    }
+                }
+
+                onComplete?.invoke(true)
+            } catch (e: Exception) {
+                Log.e("ChatViewModel", "修改消息内容失败: ${e.message}", e)
+                onComplete?.invoke(false)
+            }
+        }
     }
 }
 

@@ -288,7 +288,7 @@ object AIChatManager {
         // 添加历史消息
         for (message in oldMessages) {
             if (message.type == MessageType.ASSISTANT && message.characterId == aiCharacter.aiCharacterId) {
-                messages.add(Message("assistant", ChatUtil.parseMessage(message)))
+                messages.add(Message("assistant", ChatUtil.parseMessage(message).cleanedContent))
             } else {
                 messages.add(Message("user", message.content))
             }

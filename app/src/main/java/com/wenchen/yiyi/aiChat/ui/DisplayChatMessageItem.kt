@@ -1,7 +1,9 @@
 package com.wenchen.yiyi.aiChat.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -9,13 +11,17 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,6 +35,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.lifecycle.viewModelScope
 import coil3.compose.AsyncImage
 import com.wenchen.yiyi.R
 import com.wenchen.yiyi.aiChat.entity.ChatMessage
@@ -36,6 +43,7 @@ import com.wenchen.yiyi.aiChat.entity.ConversationType
 import com.wenchen.yiyi.aiChat.entity.MessageContentType
 import com.wenchen.yiyi.aiChat.entity.MessageType
 import com.wenchen.yiyi.aiChat.vm.ChatViewModel
+import com.wenchen.yiyi.common.components.SettingTextFieldItem
 import com.wenchen.yiyi.common.components.StyledBracketText
 import com.wenchen.yiyi.common.theme.BlackBg
 import com.wenchen.yiyi.common.theme.BlackText
@@ -44,6 +52,7 @@ import com.wenchen.yiyi.common.theme.HalfTransparentBlack
 import com.wenchen.yiyi.common.theme.WhiteText
 import com.wenchen.yiyi.common.utils.ChatUtil
 import com.wenchen.yiyi.config.common.ConfigManager
+import kotlinx.coroutines.launch
 
 @Composable
 fun DisplayChatMessageItem(
@@ -51,15 +60,18 @@ fun DisplayChatMessageItem(
     viewModel: ChatViewModel,
 ) {
     // 解析AI回复中的日期和角色名称
-    val cleanedContent = ChatUtil.parseMessage(message)
+    val parseMessage = ChatUtil.parseMessage(message)
     val uiState = viewModel.uiState.collectAsState().value
     when (message.type) {
         MessageType.USER, MessageType.SYSTEM -> ChatMessageItem(
+            viewModel = viewModel,
+            messageId = message.id,
             content = when (message.contentType) {
-                MessageContentType.TEXT -> cleanedContent
+                MessageContentType.TEXT -> parseMessage.cleanedContent
                 MessageContentType.IMAGE -> message.imgUrl.toString()
                 MessageContentType.VOICE -> ""
             },
+            parsedMessage = parseMessage,
             avatarUrl = ConfigManager().getUserAvatarPath()
                 ?: "android.resource://${LocalContext.current.packageName}/${R.mipmap.ai_closed}",
             messageType = message.type,
@@ -76,21 +88,26 @@ fun DisplayChatMessageItem(
             }
             if (message.contentType == MessageContentType.TEXT) {
                 val parts = if (ConfigManager().isSeparatorEnabled()) {
-                    cleanedContent.split('\\').filter { it.isNotBlank() }.reversed()
+                    parseMessage.cleanedContent.split('\\').filter { it.isNotBlank() }.reversed()
                 } else {
-                    listOf(cleanedContent)
+                    listOf(parseMessage.cleanedContent)
                 }
                 for (i in parts.indices) {
                     ChatMessageItem(
+                        viewModel = viewModel,
+                        messageId = message.id,
                         content = parts[i],
                         avatarUrl = avatarUrl,
                         messageType = message.type,
-                        contentType = message.contentType
+                        contentType = message.contentType,
+                        parsedMessage = parseMessage
                     )
                 }
             } else {
                 ChatMessageItem(
-                    content = cleanedContent,
+                    viewModel = viewModel,
+                    messageId = message.id,
+                    content = parseMessage.cleanedContent,
                     avatarUrl = if (uiState.currentCharacter?.avatarPath?.isNotBlank() == true) {
                         uiState.currentCharacter.avatarPath
                     } else "android.resource://${LocalContext.current.packageName}/${R.mipmap.ai_closed}",
@@ -104,12 +121,16 @@ fun DisplayChatMessageItem(
 
 @Composable
 fun ChatMessageItem(
+    viewModel: ChatViewModel,
+    messageId: String,
     content: String,
     avatarUrl: String?,
     messageType: MessageType,
-    contentType: MessageContentType
+    contentType: MessageContentType,
+    parsedMessage: ChatUtil.ParsedMessage? = null
 ) {
     val visibilityAlpha = remember { mutableFloatStateOf(1f) }
+    val isEditing = remember { mutableStateOf(false) }
     val threshold = with(LocalDensity.current) { 168.dp.toPx() } // 设定阈值
     val topBarHeight = with(LocalDensity.current) { 96.dp.toPx() } // 设定顶部栏高度
 
@@ -206,8 +227,17 @@ fun ChatMessageItem(
                         }
                         StyledBracketText(
                             text = content,
+                            modifier = Modifier.combinedClickable(
+                                onClick = {},
+                                onLongClick = {
+                                    isEditing.value = true
+                                },
+                            ),
                             normalTextStyle = MaterialTheme.typography.bodyLarge.copy(color = color),
-                            specialTextStyle = MaterialTheme.typography.bodyLarge.copy(color = specialTextColor, fontStyle = FontStyle.Italic)
+                            specialTextStyle = MaterialTheme.typography.bodyLarge.copy(
+                                color = specialTextColor,
+                                fontStyle = FontStyle.Italic
+                            )
                         )
                     }
 
@@ -227,5 +257,68 @@ fun ChatMessageItem(
                 }
             }
         }
+        if (isEditing.value) {
+            EditMessageDialog(
+                originalContent = content,
+                onConfirm = { editedContent ->
+                    var finalContent = editedContent
+                    if (parsedMessage != null) {
+                        finalContent = listOfNotNull(
+                            parsedMessage.extractedDate,
+                            parsedMessage.extractedRole
+                        ).joinToString("") + " " + parsedMessage.cleanedContent.replace(content, editedContent)
+                    }
+                    viewModel.updateMessageContent(messageId, finalContent) {
+                        isEditing.value = false
+                    }
+                },
+                onDismiss = {
+                    isEditing.value = false
+                }
+            )
+        }
     }
+}
+
+@Composable
+fun EditMessageDialog(
+    originalContent: String,
+    onConfirm: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val editedText = remember { mutableStateOf(originalContent) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        text = {
+            SettingTextFieldItem(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp)
+                        .heightIn(max = 250.dp),
+                label = "编辑消息",
+                labelPadding = PaddingValues(bottom = 6.dp),
+                value = editedText.value,
+                onValueChange = { editedText.value = it },
+                placeholder = { Text("请输入编辑后的消息") },
+                minLines = 5,
+                maxLines = 15,
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onConfirm(editedText.value)
+                }
+            ) {
+                Text("保存")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("取消")
+            }
+        }
+    )
 }

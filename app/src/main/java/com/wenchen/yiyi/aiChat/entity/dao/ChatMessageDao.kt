@@ -38,4 +38,12 @@ interface ChatMessageDao {
     // 清空所有聊天记录
     @Query("DELETE FROM chat_messages")
     suspend fun deleteAllMessages()
+
+    // 更新消息内容
+    @Query("UPDATE chat_messages SET content = :content WHERE id = :messageId")
+    suspend fun updateMessageContent(messageId: String, content: String): Int
+
+    // 删除指定消息
+    @Query("DELETE FROM chat_messages WHERE id = :messageId")
+    suspend fun deleteMessage(messageId: String): Int
 }

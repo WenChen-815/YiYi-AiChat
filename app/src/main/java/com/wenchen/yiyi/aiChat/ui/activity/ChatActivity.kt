@@ -516,7 +516,7 @@ fun ChatScreen(
         }
     }
 
-    var initFinish = remember { mutableStateOf(false) }
+    val initFinish = remember { mutableStateOf(false) }
     // 滚动到底部（仅在新消息时）
     LaunchedEffect(uiState.messages.size) {
         if (uiState.messages.isNotEmpty() && (uiState.receiveNewMessage || !initFinish.value)) {

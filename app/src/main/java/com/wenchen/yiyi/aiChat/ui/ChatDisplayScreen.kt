@@ -79,7 +79,7 @@ fun ChatDisplayScreen(
                     LaunchedEffect(conversation.id) {
                         try {
                             val message = chatMessageDao.getLastMessageByConversationId(conversation.id)
-                            lastMessage = ChatUtil.parseMessage(message)
+                            lastMessage = ChatUtil.parseMessage(message).cleanedContent
                         } catch (e: Exception) {
                             lastMessage = ""
                         }

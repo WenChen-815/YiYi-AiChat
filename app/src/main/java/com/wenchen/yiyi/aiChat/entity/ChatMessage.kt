@@ -14,7 +14,7 @@ enum class MessageContentType {
 @Entity(tableName = "chat_messages")
 data class ChatMessage(
     @PrimaryKey val id: String,
-    val content: String,
+    var content: String,
     val type: MessageType,
     val timestamp: Long = System.currentTimeMillis(),
     val conversationId: String, // 用于区分不同对话的聊天记录

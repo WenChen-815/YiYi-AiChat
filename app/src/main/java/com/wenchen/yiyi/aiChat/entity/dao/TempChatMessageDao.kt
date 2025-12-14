@@ -64,4 +64,12 @@ interface TempChatMessageDao {
     // 根据对话ID获取临时聊天记录的数量
     @Query("SELECT COUNT(*) FROM temp_chat_messages WHERE conversationId = :conversationId")
     suspend fun getCountByConversationId(conversationId: String): Int
+
+    // 更新消息内容
+    @Query("UPDATE temp_chat_messages SET content = :content WHERE id = :messageId")
+    suspend fun updateMessageContent(messageId: String, content: String): Int
+
+    // 删除指定消息
+    @Query("DELETE FROM temp_chat_messages WHERE id = :messageId")
+    suspend fun deleteMessage(messageId: String): Int
 }
