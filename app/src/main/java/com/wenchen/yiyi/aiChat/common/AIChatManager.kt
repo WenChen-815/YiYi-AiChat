@@ -600,7 +600,7 @@ object AIChatManager {
                             Log.d(TAG, "总结成功 insert :$result")
                         } else {
                             aiMemory.content =
-                                if (aiMemory.content.isNotEmpty() == true) "${aiMemory.content}\n\n$newMemoryContent" else newMemoryContent
+                                if (aiMemory.content.isNotEmpty()) "${aiMemory.content}\n\n$newMemoryContent" else newMemoryContent
                             aiMemory.count += 1
                             val result = aiChatMemoryDao.update(aiMemory)
                             Log.d(TAG, "总结成功 update :$result")

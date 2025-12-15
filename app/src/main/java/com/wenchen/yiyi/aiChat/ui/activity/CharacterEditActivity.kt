@@ -16,6 +16,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -32,6 +33,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.wenchen.yiyi.aiChat.vm.CharacterEditViewModel
@@ -47,10 +50,15 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.UUID
 import androidx.core.net.toUri
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import com.squareup.moshi.JsonAdapter
+import com.squareup.moshi.Moshi
 import com.wenchen.yiyi.aiChat.common.ImageManager
 import com.wenchen.yiyi.aiChat.entity.Conversation
 import com.wenchen.yiyi.aiChat.entity.ConversationType
@@ -60,7 +68,10 @@ import com.wenchen.yiyi.common.theme.DarkGray
 import com.wenchen.yiyi.common.theme.Gold
 import com.wenchen.yiyi.common.theme.LightGray
 import com.wenchen.yiyi.common.theme.WhiteText
+import com.wenchen.yiyi.common.utils.FilesUtil
 import com.wenchen.yiyi.common.utils.StatusBarUtil
+import com.wenchen.yiyi.config.ui.SwitchWithText
+import com.wenchen.yiyi.worldBook.entity.WorldBook
 
 class CharacterEditActivity : ComponentActivity(), CoroutineScope by MainScope() {
     private var characterId: String? = null
@@ -155,7 +166,7 @@ class CharacterEditActivity : ComponentActivity(), CoroutineScope by MainScope()
                     conversationId = conversationId.toString(),
                     characterId = characterId,
                     isNewCharacter = isNewCharacter.value,
-                    onSaveClick = { name, roleIdentity, roleAppearance, roleDescription, outputExample, behaviorRules, memory, memoryCount ->
+                    onSaveClick = { name, roleIdentity, roleAppearance, roleDescription, outputExample, behaviorRules, memory, memoryCount, playerName, playGender, playerDescription, chatWorldId ->
                         lifecycleScope.launch {
                             saveCharacter(
                                 name,
@@ -165,7 +176,11 @@ class CharacterEditActivity : ComponentActivity(), CoroutineScope by MainScope()
                                 outputExample,
                                 behaviorRules,
                                 memory,
-                                memoryCount
+                                memoryCount,
+                                playerName,
+                                playGender,
+                                playerDescription,
+                                chatWorldId
                             )
                         }
                     },
@@ -205,7 +220,11 @@ class CharacterEditActivity : ComponentActivity(), CoroutineScope by MainScope()
         outputExample: String,
         behaviorRules: String,
         memory: String,
-        memoryCount: Int
+        memoryCount: Int,
+        playerName: String,
+        playGender: String,
+        playerDescription: String,
+        chatWorldId: String
     ) {
         if (name.isEmpty()) {
             Toast.makeText(this, "请输入角色名称", Toast.LENGTH_SHORT).show()
@@ -268,10 +287,10 @@ class CharacterEditActivity : ComponentActivity(), CoroutineScope by MainScope()
                         type = ConversationType.SINGLE,
                         characterIds = mapOf(character.aiCharacterId to 1.0f),
                         characterKeywords = mapOf(character.aiCharacterId to emptyList()),
-                        playerName = ConfigManager().getUserName().toString(),
-                        playGender = "",
-                        playerDescription = "",
-                        chatWorldId = "",
+                        playerName = playerName.ifEmpty { ConfigManager().getUserName().toString() },
+                        playGender = playGender,
+                        playerDescription = playerDescription,
+                        chatWorldId = chatWorldId,
                         chatSceneDescription = "",
                         additionalSummaryRequirement = "",
                         avatarPath = character.avatarPath,
@@ -352,7 +371,7 @@ fun CharacterEditScreen(
     conversationId: String,
     characterId: String? = null,
     isNewCharacter: Boolean,
-    onSaveClick: (String, String, String, String, String, String, String, Int) -> Unit,
+    onSaveClick: (String, String, String, String, String, String, String, Int, String, String, String, String) -> Unit,
     onCancelClick: () -> Unit,
     onAvatarClick: () -> Unit,
     onBackgroundClick: () -> Unit,
@@ -379,6 +398,18 @@ fun CharacterEditScreen(
     var avatarPath by remember { mutableStateOf("") }
     var backgroundPath by remember { mutableStateOf("") }
 
+    // 对话设定
+    var playerName by remember { mutableStateOf("") }
+    var playGender by remember { mutableStateOf("") }
+    var playerDescription by remember { mutableStateOf("") }
+    var chatWorldId by remember { mutableStateOf("") }
+    var allWorldBook by remember { mutableStateOf<List<WorldBook>>(emptyList()) }
+    val (isWorldSheetVisible, setWorldSheetVisible) = remember { mutableStateOf(false) }
+    val (isPresetPlayerAndWorld, setPresetPlayerAndWorld) = remember { mutableStateOf(false) }
+    val moshi: Moshi = Moshi.Builder().build()
+    val worldBookAdapter: JsonAdapter<WorldBook> = moshi.adapter(WorldBook::class.java)
+
+
     val scrollState = rememberScrollState()
 
     // 如果是编辑模式，加载角色数据
@@ -400,6 +431,24 @@ fun CharacterEditScreen(
             }
         }
     }
+    val coroutineScope = rememberCoroutineScope()
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                coroutineScope.launch {
+                    loadWorldBooks(worldBookAdapter) { loadedBooks ->
+                        allWorldBook = loadedBooks
+                    }
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
 
     Scaffold(
         topBar = {
@@ -453,7 +502,11 @@ fun CharacterEditScreen(
                             outputExample,
                             behaviorRules,
                             memory,
-                            memoryCount
+                            memoryCount,
+                            playerName,
+                            playGender,
+                            playerDescription,
+                            chatWorldId
                         )
                     },
                     modifier = Modifier.weight(1f),
@@ -540,11 +593,15 @@ fun CharacterEditScreen(
                 labelPadding = PaddingValues(bottom = 6.dp),
                 value = outputExample,
                 onValueChange = { outputExample = it },
-                placeholder = { Text("""
+                placeholder = {
+                    Text(
+                        """
                     （带分隔符）
                     1.[听到你赞我新得的墨兰开得雅致，眼中泛起笑意，指尖轻轻拂过花瓣] \ 这花是晨间才开的 \ 你瞧，这瓣上的露水还未干呢
                     （不带分隔符）
-                    1.[听到你赞我新得的墨兰开得雅致，眼中泛起笑意，指尖轻轻拂过花瓣] 这花是晨间才开的。你瞧，这瓣上的露水还未干呢""".trimIndent()) },
+                    1.[听到你赞我新得的墨兰开得雅致，眼中泛起笑意，指尖轻轻拂过花瓣] 这花是晨间才开的。你瞧，这瓣上的露水还未干呢""".trimIndent()
+                    )
+                },
                 minLines = 3,
                 maxLines = 10,
             )
@@ -560,7 +617,7 @@ fun CharacterEditScreen(
                             text = "行为规则",
                             style = MaterialTheme.typography.titleMedium,
                         )
-                        if (isNewCharacter){
+                        if (isNewCharacter) {
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
                                 text = "（预设模板，配合全局配置中的分隔符开关使用哦~）",
@@ -731,6 +788,135 @@ fun CharacterEditScreen(
                     }
                 }
             }
+
+            if(isNewCharacter){
+                SwitchWithText(
+                    modifier = Modifier.fillMaxWidth(),
+                    text = "预设“我”和世界",
+                    checked = isPresetPlayerAndWorld,
+                    onCheckedChange = { setPresetPlayerAndWorld(it) }
+                )
+            }
+
+            if (isPresetPlayerAndWorld) {
+                SettingTextFieldItem(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    singleLine = true,
+                    label = "我的名称",
+                    labelPadding = PaddingValues(bottom = 6.dp),
+                    value = playerName,
+                    onValueChange = { playerName = it },
+                    placeholder = { Text("请输入名称") },
+                )
+
+                SettingTextFieldItem(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    singleLine = true,
+                    label = "我的性别",
+                    labelPadding = PaddingValues(bottom = 6.dp),
+                    value = playGender,
+                    onValueChange = { playGender = it },
+                    placeholder = { Text("请输入性别") },
+                )
+
+                SettingTextFieldItem(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp)
+                        .heightIn(max = 250.dp),
+                    label = "我的描述",
+                    labelPadding = PaddingValues(bottom = 6.dp),
+                    value = playerDescription,
+                    onValueChange = { playerDescription = it },
+                    placeholder = { Text("请输入对自己的描述") },
+                    minLines = 3,
+                    maxLines = 10,
+                )
+
+                Text(
+                    text = "世界选择",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(MaterialTheme.colorScheme.primary),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { setWorldSheetVisible(true) }
+                            .padding(16.dp)) {
+                        Text(
+                            text = allWorldBook.find { it.id == chatWorldId }?.worldName
+                                ?: "未选择世界",
+                            modifier = Modifier.fillMaxWidth(),
+                            color = WhiteText
+                        )
+                    }
+                }
+            }
+            if (isWorldSheetVisible) {
+                ModalBottomSheet(
+                    onDismissRequest = {
+                        setWorldSheetVisible(false)
+                    },
+                    sheetState = rememberModalBottomSheetState(
+                        skipPartiallyExpanded = true // 禁用部分展开
+                    ),
+                ) {
+                    // 获取屏幕高度
+                    val screenHeight =
+                        with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() }
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = screenHeight * 0.6f)
+                    ) {
+                        items(allWorldBook.size) { index ->
+                            val worldBook = allWorldBook[index]
+                            ListItem(
+                                headlineContent = { Text(worldBook.worldName) },
+                                modifier = Modifier.clickable {
+                                    chatWorldId = worldBook.id
+                                    setWorldSheetVisible(false)
+                                }
+                            )
+                        }
+                    }
+                }
+            }
         }
+    }
+}
+
+// 从文件加载世界书列表
+private suspend fun loadWorldBooks(
+    adapter: JsonAdapter<WorldBook>,
+    onLoaded: (List<WorldBook>) -> Unit
+) = withContext(Dispatchers.IO) {
+    val worldBookFiles = FilesUtil.listFileNames("world_book")
+    Log.d("WorldBookListActivity", "loadWorldBooks: $worldBookFiles")
+    val worldBooks = mutableListOf(WorldBook("","未选择世界"))
+
+    worldBookFiles.forEach { fileName ->
+        try {
+            val json = FilesUtil.readFile("world_book/$fileName")
+            val worldBook = adapter.fromJson(json)
+            worldBook?.let { worldBooks.add(it) }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    withContext(Dispatchers.Main) {
+        onLoaded(worldBooks)
     }
 }
