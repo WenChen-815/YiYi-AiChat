@@ -82,8 +82,9 @@ class ApiService(
                                 onError("未获取到AI回复")
                         } else {
                             // 去除回复内容中的换行符
-                            val cleanedMessage = aiMessage.replace("\n", "")
-                            onSuccess(cleanedMessage)
+                            // val cleanedMessage = aiMessage.replace("\n", "")
+                            // onSuccess(cleanedMessage)
+                            onSuccess(aiMessage)
                         }
                     } catch (e: Exception) {
                         onError("解析响应失败：${e.message}")
