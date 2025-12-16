@@ -65,6 +65,7 @@ import com.wenchen.yiyi.common.utils.StatusBarUtil
 import com.wenchen.yiyi.common.utils.ThemeColorExtractor
 import com.wenchen.yiyi.config.ui.activity.ConfigActivity
 import dev.chrisbanes.haze.HazeProgressive
+import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
@@ -129,6 +130,7 @@ class ChatActivity : ComponentActivity() {
                 val scope = rememberCoroutineScope()
                 val uiState by viewModel.uiState.collectAsState()
                 val bgImgHazeState = rememberHazeState()
+                val chatWindowHazeState = rememberHazeState()
 
                 val bgBitmap: Bitmap? =
                     try {
@@ -240,7 +242,7 @@ class ChatActivity : ComponentActivity() {
                                 hazeState = bgImgHazeState,
                             )
                         },
-                        modifier = Modifier.background(BlackBg),
+                        modifier = Modifier.background(BlackBg).hazeSource(chatWindowHazeState),
                     ) {
                         // 确保聊天界面使用LTR布局方向
                         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
@@ -279,7 +281,7 @@ class ChatActivity : ComponentActivity() {
                                             .align(Alignment.BottomCenter)
                                             .hazeEffect(
                                                 state = bgImgHazeState,
-                                                style = HazeStyle(tint = null, blurRadius = 111.dp),
+                                                style = HazeStyle(tint = null, blurRadius = 32.dp),
                                             ) {
                                                 // 垂直线性渐变：从顶部0%模糊强度到底部100%
                                                 progressive =
@@ -316,6 +318,7 @@ class ChatActivity : ComponentActivity() {
                                     },
                                     modifier = Modifier.fillMaxSize(),
                                     themeBgColor = colors[0],
+                                    chatWindowHazeState = chatWindowHazeState
                                 )
                             }
                         }
@@ -465,6 +468,7 @@ fun ChatScreen(
     onSendMessage: (String, Boolean) -> Unit,
     modifier: Modifier = Modifier,
     themeBgColor: Color = if (isSystemInDarkTheme()) BlackBg else WhiteBg,
+    chatWindowHazeState: HazeState,
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var messageText by remember { mutableStateOf("") }
@@ -581,6 +585,7 @@ fun ChatScreen(
                                 DisplayChatMessageItem(
                                     message = message,
                                     viewModel = viewModel,
+                                    chatWindowHazeState = chatWindowHazeState,
                                 )
                             }
                         }

@@ -167,6 +167,7 @@ class GroupChatActivity : ComponentActivity() {
         val scope = rememberCoroutineScope()
         val uiState by viewModel.uiState.collectAsState()
         val bgImgHazeState = rememberHazeState()
+        val chatWindowHazeState = rememberHazeState()
 
         val bgBitmap: Bitmap? =
             try {
@@ -271,7 +272,7 @@ class GroupChatActivity : ComponentActivity() {
                         hazeState = bgImgHazeState,
                     )
                 },
-                modifier = Modifier.background(BlackBg),
+                modifier = Modifier.background(BlackBg).hazeSource(chatWindowHazeState),
             ) {
                 // 确保聊天界面使用LTR布局方向
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
@@ -310,7 +311,7 @@ class GroupChatActivity : ComponentActivity() {
                                     .align(Alignment.BottomCenter)
                                     .hazeEffect(
                                         state = bgImgHazeState,
-                                        style = HazeStyle(tint = null, blurRadius = 111.dp),
+                                        style = HazeStyle(tint = null, blurRadius = 32.dp),
                                     ) {
                                         // 垂直线性渐变：从顶部0%模糊强度到底部100%
                                         progressive =
@@ -347,6 +348,7 @@ class GroupChatActivity : ComponentActivity() {
                             },
                             modifier = Modifier.fillMaxSize(),
                             themeBgColor = colors[0],
+                            chatWindowHazeState = chatWindowHazeState,
                         )
                     }
                 }
@@ -433,6 +435,7 @@ class GroupChatActivity : ComponentActivity() {
         onSendMessage: (String, Boolean) -> Unit,
         modifier: Modifier = Modifier,
         themeBgColor: Color = if (isSystemInDarkTheme()) BlackBg else WhiteBg,
+        chatWindowHazeState: HazeState
     ) {
         val uiState by viewModel.uiState.collectAsState()
         var messageText by remember { mutableStateOf("") }
@@ -471,7 +474,7 @@ class GroupChatActivity : ComponentActivity() {
             }
         }
 
-        var initFinish = remember { mutableStateOf(false) }
+        val initFinish = remember { mutableStateOf(false) }
         // 滚动到底部（仅在新消息时）
         LaunchedEffect(uiState.messages.size) {
             if (uiState.messages.isNotEmpty() && (uiState.receiveNewMessage || !initFinish.value)) {
@@ -526,6 +529,7 @@ class GroupChatActivity : ComponentActivity() {
                                     DisplayChatMessageItem(
                                         message = message,
                                         viewModel = viewModel,
+                                        chatWindowHazeState = chatWindowHazeState,
                                     )
                                 }
                             }

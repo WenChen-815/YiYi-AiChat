@@ -501,6 +501,27 @@ class ChatViewModel : ViewModel() {
             }
         }
     }
+
+    fun deleteOneMessage(messageId: String) {
+        viewModelScope.launch {
+            try {
+                // 删除数据库中的消息
+                chatMessageDao.deleteMessageById(messageId)
+                tempChatMessageDao.deleteMessageById(messageId)
+
+                // 更新UI状态中的消息列表
+                _uiState.update { currentState ->
+                    val updatedMessages = currentState.messages.filter { it.id != messageId }
+                    currentState.copy(messages = updatedMessages)
+                }
+                chatContext.removeIf { it.id == messageId }
+
+                Log.e("ChatViewModel", "删除消息: $messageId")
+            } catch (e: Exception) {
+                Log.e("ChatViewModel", "删除消息失败: ${e.message}", e)
+            }
+        }
+    }
 }
 
 data class ChatUiState(

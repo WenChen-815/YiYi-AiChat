@@ -2,7 +2,8 @@ package com.wenchen.yiyi.common.theme
 
 import androidx.compose.ui.graphics.Color
 
-val BlackBg = Color(0xFF060606)
+val BlackBg = Color(0xFF111111)
+val IconBg = Color(0xFF222222)
 val GrayBg = Color(0xFF1D1D1F)
 val WhiteBg = Color(0xFFFDFDFD)
 val BlackText = Color(0xFF080808)
