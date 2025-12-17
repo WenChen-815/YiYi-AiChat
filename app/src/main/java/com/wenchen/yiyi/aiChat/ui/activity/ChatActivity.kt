@@ -242,7 +242,9 @@ class ChatActivity : ComponentActivity() {
                                 hazeState = bgImgHazeState,
                             )
                         },
-                        modifier = Modifier.background(BlackBg).hazeSource(chatWindowHazeState),
+                        modifier = Modifier
+                            .background(BlackBg)
+                            .hazeSource(chatWindowHazeState),
                     ) {
                         // 确保聊天界面使用LTR布局方向
                         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
@@ -312,9 +314,6 @@ class ChatActivity : ComponentActivity() {
                                     },
                                     onPickImage = {
                                         pickImageFromGallery()
-                                    },
-                                    onSendMessage = { message, isSendSystemMessage ->
-                                        viewModel.sendMessage(message, isSendSystemMessage)
                                     },
                                     modifier = Modifier.fillMaxSize(),
                                     themeBgColor = colors[0],
@@ -465,16 +464,15 @@ fun ChatScreen(
     viewModel: ChatViewModel,
     onOpenDrawer: () -> Unit,
     onPickImage: () -> Unit,
-    onSendMessage: (String, Boolean) -> Unit,
     modifier: Modifier = Modifier,
     themeBgColor: Color = if (isSystemInDarkTheme()) BlackBg else WhiteBg,
     chatWindowHazeState: HazeState,
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var messageText by remember { mutableStateOf("") }
+    var isSendSystemMessage by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
 
-    var isSendSystemMessage by remember { mutableStateOf(false) }
 
 //    var contentLayoutHeight =
 //        with(LocalDensity.current) { listState.layoutInfo.viewportSize.height.toDp() }
@@ -610,11 +608,13 @@ fun ChatScreen(
                     onMessageTextChange = { messageText = it },
                     onSendMessage = {
                         if (messageText.isNotBlank()) {
-                            onSendMessage(messageText, isSendSystemMessage)
+                            viewModel.sendMessage(messageText, isSendSystemMessage)
                             messageText = ""
                         }
                     },
                     onPickImage = onPickImage,
+                    onReGenerate = { viewModel.reGenerate(false) },
+                    onContinue = { viewModel.continueGenerate(false) },
                     isAiReplying = uiState.isAiReplying,
                     isSendSystemMessage = isSendSystemMessage,
                     onSendSysMsgClick = { isSendSystemMessage = !isSendSystemMessage },

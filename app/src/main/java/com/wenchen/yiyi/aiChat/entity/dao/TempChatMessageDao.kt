@@ -72,4 +72,8 @@ interface TempChatMessageDao {
     // 删除指定消息
     @Query("DELETE FROM temp_chat_messages WHERE id = :messageId")
     suspend fun deleteMessageById(messageId: String): Int
+
+     // 删除指定消息列表
+    @Query("DELETE FROM temp_chat_messages WHERE id IN (:messageIds)")
+    suspend fun deleteMessagesByIds(messageIds: List<String>): Int
 }

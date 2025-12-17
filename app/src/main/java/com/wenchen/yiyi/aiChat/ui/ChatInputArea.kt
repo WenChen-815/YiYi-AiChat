@@ -52,6 +52,8 @@ fun ChatInputArea(
     onMessageTextChange: (String) -> Unit,
     onSendMessage: () -> Unit,
     onPickImage: () -> Unit,
+    onReGenerate: () -> Unit,
+    onContinue: () -> Unit,
     onSendSysMsgClick: () -> Unit,
     isSendSystemMessage: Boolean,
     isAiReplying: Boolean,
@@ -73,6 +75,46 @@ fun ChatInputArea(
             )
         )
         Row(modifier = Modifier.fillMaxWidth()) {
+            // 继续生成
+            Button(
+                onClick = onContinue,
+                modifier = Modifier
+                    .padding(end = 8.dp, bottom = 8.dp)
+                    .border(
+                        width = 12.dp,
+                        brush = SolidColor(Color.Transparent),
+                        shape = RoundedCornerShape(7.dp)
+                    )
+                    .height(24.dp),
+                shape = RoundedCornerShape(6.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                contentPadding = PaddingValues(vertical = 2.dp, horizontal = 3.dp)
+            ) {
+                Text(
+                    text = "→| 继续",
+                    style = MaterialTheme.typography.labelLarge.copy(color = WhiteText)
+                )
+            }
+            // 重新生成
+            Button(
+                onClick = onReGenerate,
+                modifier = Modifier
+                    .padding(end = 8.dp, bottom = 8.dp)
+                    .border(
+                        width = 12.dp,
+                        brush = SolidColor(Color.Transparent),
+                        shape = RoundedCornerShape(7.dp)
+                    )
+                    .height(24.dp),
+                shape = RoundedCornerShape(6.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                contentPadding = PaddingValues(vertical = 2.dp, horizontal = 3.dp)
+            ) {
+                Text(
+                    text = "重新生成",
+                    style = MaterialTheme.typography.labelLarge.copy(color = WhiteText)
+                )
+            }
             // 系统消息切换按钮
             Button(
                 onClick = onSendSysMsgClick,

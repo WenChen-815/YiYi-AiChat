@@ -343,9 +343,6 @@ class GroupChatActivity : ComponentActivity() {
                             onPickImage = {
                                 pickImageFromGallery()
                             },
-                            onSendMessage = { message, isSendSystemMessage ->
-                                viewModel.sendGroupMessage(message, isSendSystemMessage)
-                            },
                             modifier = Modifier.fillMaxSize(),
                             themeBgColor = colors[0],
                             chatWindowHazeState = chatWindowHazeState,
@@ -432,7 +429,6 @@ class GroupChatActivity : ComponentActivity() {
         viewModel: ChatViewModel,
         onOpenDrawer: () -> Unit,
         onPickImage: () -> Unit,
-        onSendMessage: (String, Boolean) -> Unit,
         modifier: Modifier = Modifier,
         themeBgColor: Color = if (isSystemInDarkTheme()) BlackBg else WhiteBg,
         chatWindowHazeState: HazeState
@@ -554,11 +550,13 @@ class GroupChatActivity : ComponentActivity() {
                         onMessageTextChange = { messageText = it },
                         onSendMessage = {
                             if (messageText.isNotBlank()) {
-                                onSendMessage(messageText, isSendSystemMessage)
+                                viewModel.sendGroupMessage(messageText, isSendSystemMessage)
                                 messageText = ""
                             }
                         },
                         onPickImage = onPickImage,
+                        onReGenerate = { viewModel.reGenerate(true) },
+                        onContinue = { viewModel.continueGenerate(true) },
                         isAiReplying = uiState.isAiReplying,
                         isSendSystemMessage = isSendSystemMessage,
                         onSendSysMsgClick = { isSendSystemMessage = !isSendSystemMessage },

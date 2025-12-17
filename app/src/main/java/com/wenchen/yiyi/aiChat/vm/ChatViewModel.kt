@@ -53,6 +53,9 @@ class ChatViewModel : ViewModel() {
     private var chatContext: LimitMutableList<TempChatMessage> =
         limitMutableListOf(15)
 
+    var lastGroupChatReply = 0
+
+
     init {
         initApiService()
     }
@@ -295,12 +298,39 @@ class ChatViewModel : ViewModel() {
     // 添加获取加载状态的方法
     fun isLoading(): Boolean = _uiState.value.isLoading
 
+    fun continueGenerate(isGroupChat: Boolean) = if (isGroupChat) sendGroupMessage() else sendMessage()
+
+    fun reGenerate(isGroupChat: Boolean){
+        val removeMessageIds = mutableListOf<String>()
+        if (isGroupChat){
+            repeat(lastGroupChatReply) {
+                removeMessageIds.add(chatContext.last().id)
+                chatContext.removeAt(chatContext.lastIndex)
+            }
+            sendGroupMessage()
+        } else {
+            removeMessageIds.add(chatContext.last().id)
+            chatContext.removeAt(chatContext.lastIndex)
+            sendMessage()
+        }
+        // 移除ui_state中对应的消息
+        _uiState.value = _uiState.value.copy(
+            messages = _uiState.value.messages.filter { !removeMessageIds.contains(it.id) }
+        )
+        // 移除数据库中的消息
+        if (removeMessageIds.isNotEmpty()) {
+            viewModelScope.launch {
+                chatMessageDao.deleteMessagesByIds(removeMessageIds)
+                tempChatMessageDao.deleteMessagesByIds(removeMessageIds)
+            }
+        }
+    }
     fun sendMessage(
-        messageText: String,
-        isSendSystemMessage: Boolean,
+        messageText: String = "",
+        isSendSystemMessage: Boolean = false,
         character: AICharacter? = currentAICharacter
     ) {
-        if (messageText.isEmpty()) return
+//        if (messageText.isEmpty()) return
         _uiState.value = _uiState.value.copy(isAiReplying = true)
         character?.let { character ->
             viewModelScope.launch {
@@ -308,6 +338,7 @@ class ChatViewModel : ViewModel() {
                     conversation = _uiState.value.conversation,
                     aiCharacter = character,
                     newMessageTexts = listOf(messageText),
+                    isHandleUserMessage = messageText.isNotEmpty(),
                     oldMessages = chatContext,
                     isSendSystemMessage = isSendSystemMessage,
                 )
@@ -315,16 +346,17 @@ class ChatViewModel : ViewModel() {
         }
     }
 
-    fun sendGroupMessage(messageText: String, isSendSystemMessage: Boolean) {
-        if (messageText.isEmpty() || _uiState.value.conversation.characterIds.isEmpty()) return
+    fun sendGroupMessage(messageText: String = "", isSendSystemMessage: Boolean = false) {
+        if (_uiState.value.conversation.characterIds.isEmpty()) return
         Log.d("ChatViewModel", "sendGroupMessage: $messageText")
         viewModelScope.launch {
-            AIChatManager.sendGroupMessage(
+            lastGroupChatReply = AIChatManager.sendGroupMessage(
                 conversation = _uiState.value.conversation,
                 aiCharacters = _uiState.value.currentCharacters,
                 newMessageTexts = listOf(messageText),
+                isHandleUserMessage = messageText.isNotEmpty(),
                 /**
-                 * 引用传递机制
+                 * 知识点：引用传递
                  * 在 ChatViewModel 中，chatContext 是一个 LimitMutableList<TempChatMessage> 对象
                  * 当调用 sendGroupMessage 时，传递的是 chatContext 的引用，而非副本
                  * 因此 AIChatManager.sendGroupMessage 接收到的 oldMessages 参数实际指向同一个对象

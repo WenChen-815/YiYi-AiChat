@@ -24,6 +24,7 @@ import com.wenchen.yiyi.worldBook.entity.WorldBook
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -103,22 +104,25 @@ object AIChatManager {
         conversation: Conversation,
         aiCharacters: List<AICharacter>,
         newMessageTexts: List<String>,
+        isHandleUserMessage: Boolean,
         oldMessages: List<TempChatMessage>,
         showInChat: Boolean = true,
         isSendSystemMessage: Boolean = false
-    ) {
+    ) : Int {
         // 参数校验
         if (conversation.characterIds.isEmpty() || aiCharacters.isEmpty()) {
             Log.e(TAG, "未选择AI角色")
-            return
+            return 0
         }
         /*
          * 此处冗余，但予以保留
          * 这里不需要用到userMessage的原因是在handleUserMessage方法中将处理后的消息插入了数据库并通知给了ChatActivity，
          * 而ChatActivity的viewmodel会更新上下文，并且传递的参数本来是就是上下文的引用，所以上下文是最新的，不需要重复添加
         */
-        val userMessage =
-            handleUserMessage(conversation, newMessageTexts, isSendSystemMessage, showInChat)
+        var userMessages: List<Message> = emptyList()
+        if (isHandleUserMessage){
+            userMessages = handleUserMessage(conversation, newMessageTexts, isSendSystemMessage, showInChat)
+        }
         val count = tempChatMessageDao.getCountByConversationId(conversation.id)
         Log.d(TAG, "sendGroupMessage: $count")
         val summaryMessages = getSummaryMessages(conversation)
@@ -136,7 +140,7 @@ object AIChatManager {
             val aiCharacter = aiCharacters.find { it.aiCharacterId == id }
             if (aiCharacter == null) {
                 Log.e(TAG, "未找到AI角色: $id")
-                return
+                return@forEach
             }
 
             // 检查是否有关键词配置
@@ -167,30 +171,32 @@ object AIChatManager {
 
 
         // 启动处理流程
-        processMessageQueue(conversation, oldMessages)
+        return processMessageQueue(conversation, oldMessages)
     }
 
-    private fun processMessageQueue(
+    private suspend fun processMessageQueue(
         conversation: Conversation,
         oldMessages: List<TempChatMessage>
-    ) {
+    ) : Int {
+        var replyCount = 0
         val queueKey = conversation.id
-        if (isProcessing[queueKey] == true) return
+        if (isProcessing[queueKey] == true) return 0
 
         isProcessing[queueKey] = true
         sendCharacterQueue[queueKey]?.shuffle() // 对发送队列进行乱序处理
-        // 使用单个协程处理整个队列
-        CoroutineScope(Dispatchers.IO).launch {
+        // 使用单个协程处理整个队列，使用 async 来获取返回值
+        val deferred = CoroutineScope(Dispatchers.IO).async {
             try {
                 while (sendCharacterQueue[queueKey]?.isNotEmpty() == true) {
                     val aiCharacter = sendCharacterQueue[queueKey]?.removeAt(0) ?: break
                     val messages = generateBaseMessages(aiCharacter, conversation, oldMessages)
 
-                    val completion = CompletableDeferred<Unit>()
-                    send(conversation, aiCharacter, messages) {
-                        completion.complete(Unit)
+                    val completion = CompletableDeferred<Boolean>()
+                    send(conversation, aiCharacter, messages) { isSuccess ->
+                            completion.complete(isSuccess)
                     }
-                    completion.await() // 等待当前消息发送完成
+                    // 等待当前消息发送完成
+                    if (completion.await()) replyCount++ else break
                     delay((1000).toLong()) // 1s延迟
                 }
             } catch (e: Exception) {
@@ -198,7 +204,9 @@ object AIChatManager {
             } finally {
                 clearMessageQueue(queueKey)
             }
+            replyCount
         }
+        return deferred.await()
     }
 
     fun clearMessageQueue(conversationId: String) {
@@ -222,6 +230,7 @@ object AIChatManager {
         conversation: Conversation,
         aiCharacter: AICharacter?,
         newMessageTexts: List<String>,
+        isHandleUserMessage: Boolean,
         oldMessages: List<TempChatMessage>,
         showInChat: Boolean = true,
         isSendSystemMessage: Boolean = false
@@ -232,8 +241,10 @@ object AIChatManager {
             return
         }
         // 处理新消息
-        val userMessages =
-            handleUserMessage(conversation, newMessageTexts, isSendSystemMessage, showInChat)
+        var userMessages: List<Message> = emptyList()
+        if (isHandleUserMessage){
+            userMessages = handleUserMessage(conversation, newMessageTexts, isSendSystemMessage, showInChat)
+        }
         val messages = generateBaseMessages(aiCharacter, conversation, oldMessages)
 
         // 发送消息和总结
@@ -444,7 +455,7 @@ object AIChatManager {
         conversation: Conversation,
         aiCharacter: AICharacter?,
         messages: MutableList<Message>,
-        afterSend:() -> Unit = {}
+        afterSend:(Boolean) -> Unit = {}
     ) {
         if (aiCharacter == null) {
             Log.e(TAG, "未选择AI角色")
@@ -477,7 +488,7 @@ object AIChatManager {
                     savaMessage(aiMessage, true)
 //                    val summaryMessages = getSummaryMessages(conversation)
 //                    summarize(conversation, aiCharacter, summaryMessages)
-                    afterSend.invoke()
+                    afterSend.invoke(true)
                 }
                 Log.d(TAG, "AI回复:${aiMessage.content}")
                 CoroutineScope(Dispatchers.Main).launch {
@@ -488,7 +499,7 @@ object AIChatManager {
                 CoroutineScope(Dispatchers.Main).launch {
                     listeners.forEach { it.onError(errorMessage) }
                 }
-                afterSend.invoke()
+                afterSend.invoke(false)
             }
         )
     }
@@ -691,7 +702,7 @@ object AIChatManager {
                 Log.d(TAG, "图片识别成功，回复：$imgDescription")
                 CoroutineScope(Dispatchers.IO).launch {
                     val desc = "[${conversation.playerName}]向你发送了图片:[$imgDescription]"
-                    sendMessage(conversation, character, listOf(desc), oldMessages, false)
+                    sendMessage(conversation, character, listOf(desc), true, oldMessages, false)
                 }
             },
             onError = { errorMessage ->
