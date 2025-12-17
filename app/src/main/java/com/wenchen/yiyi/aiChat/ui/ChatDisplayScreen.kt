@@ -22,6 +22,8 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil3.compose.AsyncImage
+import com.wenchen.yiyi.aiChat.common.ImageManager
 import com.wenchen.yiyi.aiChat.entity.Conversation
 import com.wenchen.yiyi.aiChat.entity.ConversationType
 import com.wenchen.yiyi.aiChat.ui.activity.ChatActivity
@@ -42,6 +44,7 @@ fun ChatDisplayScreen(
 ) {
     val conversations by viewModel.conversations.collectAsState()
     val chatMessageDao = App.appDatabase.chatMessageDao()
+    val imageManager = ImageManager(context)
     DisposableEffect(lifecycleOwner) {
         val observer =
             LifecycleEventObserver { _, event ->
@@ -87,6 +90,7 @@ fun ChatDisplayScreen(
                     GroupItem(
                         conversation = conversation,
                         lastMessageContent = lastMessage,
+                        imageManager = imageManager,
                         onItemClick = { conv ->
                             if (conversation.type == ConversationType.GROUP) {
                                 val intent = Intent(context, GroupChatActivity::class.java)
@@ -113,6 +117,7 @@ fun ChatDisplayScreen(
 fun GroupItem(
     conversation: Conversation,
     lastMessageContent: String,
+    imageManager: ImageManager,
     onItemClick: (Conversation) -> Unit,
 ) {
     Box(
@@ -133,7 +138,7 @@ fun GroupItem(
             Box(
                 modifier =
                     Modifier
-                        .size(40.dp)
+                        .size(50.dp)
                         .clip(RoundedCornerShape(8.dp))
                         .background(
                             if (conversation.type == ConversationType.GROUP) {
@@ -144,11 +149,26 @@ fun GroupItem(
                         ),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(
-                    text = if (conversation.type == ConversationType.GROUP) "群" else "单",
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
+                val avatarImage = imageManager.getAvatarImage(
+                    if (conversation.type == ConversationType.GROUP) {
+                        conversation.id
+                    } else {
+                        conversation.characterIds.keys.first()
+                    }
                 )
+                if (avatarImage != null) {
+                    AsyncImage(
+                        model = avatarImage,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                } else {
+                    Text(
+                        text = if (conversation.type == ConversationType.GROUP) "群" else "单",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.width(12.dp))

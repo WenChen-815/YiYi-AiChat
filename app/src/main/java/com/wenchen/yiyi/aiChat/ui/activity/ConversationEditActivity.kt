@@ -248,6 +248,16 @@ class ConversationEditActivity : ComponentActivity() {
 
         withContext(Dispatchers.IO) {
             try {
+                // 清理旧图片（如果有新图片被选择）
+                if (hasNewAvatar.value) {
+                    imageManager.deleteAvatarImage(conversationId)
+                    imageManager.saveAvatarImage(conversationId, avatarBitmap.value!!)
+                }
+                if (hasNewBackground.value) {
+                    imageManager.deleteBackgroundImage(conversationId)
+                    imageManager.saveBackgroundImage(conversationId, backgroundBitmap.value!!)
+                }
+
                 val existingConversation = conversationDao.getById(conversationId)
                 if (existingConversation != null) {
                     if (hasNewAvatar.value) {
@@ -339,16 +349,6 @@ class ConversationEditActivity : ComponentActivity() {
                                     ""
                                 },
                         )
-
-                    // 清理旧图片（如果有新图片被选择）
-                    if (hasNewAvatar.value) {
-                        imageManager.deleteAvatarImage(conversationId)
-                        imageManager.saveAvatarImage(conversationId, avatarBitmap.value!!)
-                    }
-                    if (hasNewBackground.value) {
-                        imageManager.deleteBackgroundImage(conversationId)
-                        imageManager.saveBackgroundImage(conversationId, backgroundBitmap.value!!)
-                    }
 
                     conversationDao.insert(newConversation)
 
