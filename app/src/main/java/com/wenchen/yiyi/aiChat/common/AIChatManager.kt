@@ -374,7 +374,8 @@ object AIChatManager {
             append(
                 """
                 # [RULES — STRICT]严格遵守以下行为准则
-                [PRIORITY 1]收到系统旁白消息时，必须根据其中提示内容进行扩写
+                [PRIORITY 1]记住你要扮演的角色是[${aiCharacter.name}]，请保持这个身份进行对话，不要改变身份
+                [PRIORITY 2]收到系统旁白消息时，必须根据其中提示内容进行扩写
                 其他规则:
                 """.trimIndent()
             )

@@ -265,7 +265,7 @@ fun ChatMessageItem(
                             MessageType.SYSTEM -> WhiteText
                         }
                         StyledBracketText(
-                            text = content,
+                            text = content.trim(),
                             normalTextStyle = MaterialTheme.typography.bodyLarge.copy(color = color),
                             specialTextStyle = MaterialTheme.typography.bodyLarge.copy(
                                 color = specialTextColor,
