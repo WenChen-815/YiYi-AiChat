@@ -348,7 +348,7 @@ class ChatViewModel : ViewModel() {
 
     fun sendGroupMessage(messageText: String = "", isSendSystemMessage: Boolean = false) {
         if (_uiState.value.conversation.characterIds.isEmpty()) return
-        Log.d("ChatViewModel", "sendGroupMessage: $messageText")
+        _uiState.value = _uiState.value.copy(isAiReplying = true)
         viewModelScope.launch {
             lastGroupChatReply = AIChatManager.sendGroupMessage(
                 conversation = _uiState.value.conversation,

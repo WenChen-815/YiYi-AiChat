@@ -49,6 +49,7 @@ import com.wenchen.yiyi.aiChat.ui.ModelsDialog
 import com.wenchen.yiyi.aiChat.ui.NavigationDrawerContent
 import com.wenchen.yiyi.aiChat.vm.ChatViewModel
 import com.wenchen.yiyi.common.App
+import com.wenchen.yiyi.common.components.BlinkingReplyIndicator
 import com.wenchen.yiyi.common.theme.AIChatTheme
 import com.wenchen.yiyi.common.theme.BlackBg
 import com.wenchen.yiyi.common.theme.HalfTransparentBlack
@@ -138,6 +139,10 @@ class GroupChatActivity : ComponentActivity() {
 
                 override fun onMessageReceived(message: ChatMessage) {
                     viewModel.addMessage(message)
+                }
+
+                override fun onAllReplyCompleted() {
+                    viewModel.hideProgress()
                 }
 
                 override fun onError(error: String) {
@@ -529,9 +534,14 @@ class GroupChatActivity : ComponentActivity() {
                                     )
                                 }
                             }
-                            item {
-                                Spacer(Modifier.height(16.dp))
-                            }
+                        }
+                        Spacer(Modifier.height(16.dp))
+                        if (uiState.isAiReplying) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().align(Alignment.BottomCenter),
+                                horizontalArrangement = Arrangement.Center,
+                                content = { BlinkingReplyIndicator(text = "回复中...") }
+                            )
                         }
                     }
                     // 输入区域

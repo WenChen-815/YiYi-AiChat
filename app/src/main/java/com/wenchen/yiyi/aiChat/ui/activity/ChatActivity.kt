@@ -57,6 +57,7 @@ import com.wenchen.yiyi.aiChat.ui.DisplayChatMessageItem
 import com.wenchen.yiyi.aiChat.ui.ModelsDialog
 import com.wenchen.yiyi.aiChat.ui.NavigationDrawerContent
 import com.wenchen.yiyi.aiChat.vm.ChatViewModel
+import com.wenchen.yiyi.common.components.BlinkingReplyIndicator
 import com.wenchen.yiyi.common.theme.AIChatTheme
 import com.wenchen.yiyi.common.theme.BlackBg
 import com.wenchen.yiyi.common.theme.HalfTransparentBlack
@@ -409,6 +410,8 @@ class ChatActivity : ComponentActivity() {
                     viewModel.hideProgress()
                 }
 
+                override fun onAllReplyCompleted() {}
+
                 override fun onError(error: String) {
                     runOnUiThread {
                         Log.e("ChatActivity", error)
@@ -587,9 +590,14 @@ fun ChatScreen(
                                 )
                             }
                         }
-                        item {
-                            Spacer(Modifier.height(16.dp))
-                        }
+                    }
+                    Spacer(Modifier.height(16.dp))
+                    if (uiState.isAiReplying) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().align(Alignment.BottomCenter),
+                            horizontalArrangement = Arrangement.Center,
+                            content = { BlinkingReplyIndicator(text = "回复中...") }
+                        )
                     }
                 }
                 // 输入区域

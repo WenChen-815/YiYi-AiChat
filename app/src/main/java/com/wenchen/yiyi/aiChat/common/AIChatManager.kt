@@ -203,6 +203,7 @@ object AIChatManager {
                 Log.e(TAG, "处理消息队列时出错", e)
             } finally {
                 clearMessageQueue(queueKey)
+                listeners.forEach { it.onAllReplyCompleted() }
             }
             replyCount
         }
@@ -717,6 +718,7 @@ object AIChatManager {
     interface AIChatMessageListener {
         fun onMessageSent(message: ChatMessage)
         fun onMessageReceived(message: ChatMessage)
+        fun onAllReplyCompleted()
         fun onError(error: String)
         fun onShowToast(message: String)
     }

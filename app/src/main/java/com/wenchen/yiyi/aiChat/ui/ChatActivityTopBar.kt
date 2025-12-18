@@ -143,12 +143,7 @@ fun ChatActivityTopBar(
             Column(modifier = Modifier.padding(horizontal = 12.dp + offsetX, vertical = 8.dp)) {
                 if (uiState.conversation.type == ConversationType.SINGLE) {
                     Text(
-                        text =
-                            if (uiState.isAiReplying) {
-                                "对方输入中..."
-                            } else {
-                                uiState.currentCharacter?.name ?: "未选择角色"
-                            },
+                        text = uiState.currentCharacter?.name ?: "未选择角色",
                         style = MaterialTheme.typography.titleMedium.copy(color = WhiteText),
                     )
                 } else if (uiState.conversation.type == ConversationType.GROUP) {
