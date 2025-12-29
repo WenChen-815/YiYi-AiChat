@@ -197,7 +197,13 @@ fun ConfigScreen(configManager: ConfigManager, activity: ComponentActivity) {
                 setLoading = { isLoadingModels = it },
                 setModels = { models = it },
                 setSelectedModel = { selectedModel = it },
-                configManager = configManager
+                configManager = configManager,
+                showSuccessToast = { message ->
+                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                },
+                showErrorToast = { message ->
+                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                }
             )
         }
 
@@ -211,7 +217,13 @@ fun ConfigScreen(configManager: ConfigManager, activity: ComponentActivity) {
                 setLoading = { isLoadingImgModels = it },
                 setModels = { imgModels = it },
                 setSelectedModel = { selectedImgModel = it },
-                configManager = configManager
+                configManager = configManager,
+                showSuccessToast = { message ->
+                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                },
+                showErrorToast = { message ->
+                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                }
             )
         }
     }
@@ -505,7 +517,13 @@ fun ConfigScreen(configManager: ConfigManager, activity: ComponentActivity) {
                                     setLoading = { isLoadingModels = it },
                                     setModels = { models = it },
                                     setSelectedModel = { selectedModel = it },
-                                    configManager = configManager
+                                    configManager = configManager,
+                                    showSuccessToast = { message ->
+                                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                    },
+                                    showErrorToast = { message ->
+                                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                    }
                                 )
                             },
                             color = WhiteText
@@ -618,7 +636,13 @@ fun ConfigScreen(configManager: ConfigManager, activity: ComponentActivity) {
                                         setLoading = { isLoadingImgModels = it },
                                         setModels = { imgModels = it },
                                         setSelectedModel = { selectedImgModel = it },
-                                        configManager = configManager
+                                        configManager = configManager,
+                                        showSuccessToast = { message ->
+                                            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                        },
+                                        showErrorToast = { message ->
+                                            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                        }
                                     )
                                 },
                                 color = WhiteText
@@ -734,7 +758,9 @@ private fun loadModels(
     setLoading: (Boolean) -> Unit,
     setModels: (List<Model>) -> Unit,
     setSelectedModel: (String) -> Unit,
-    configManager: ConfigManager
+    configManager: ConfigManager,
+    showSuccessToast: ((String) -> Unit)? = null,
+    showErrorToast: ((String) -> Unit)? = null
 ) {
     setLoading(true)
 
@@ -812,9 +838,11 @@ private fun loadModels(
                                 setSelectedModel(selectedId)
                             }
                             setLoading(false)
+                            showSuccessToast?.invoke("模型加载成功，共${modelList.size}个模型")
                         } catch (e: Exception) {
                             Log.e("ConfigActivity", "设置模型列表或选中项时出错", e)
                             setLoading(false)
+                            showErrorToast?.invoke("模型加载失败: ${e.message}")
                         }
                     }
                 } catch (e: Exception) {
@@ -822,6 +850,7 @@ private fun loadModels(
                     // 确保无论如何都停止加载状态
                     CoroutineScope(Dispatchers.Main + SupervisorJob()).launch {
                         setLoading(false)
+                        showErrorToast?.invoke("模型加载失败: ${e.message}")
                     }
                 }
             },
@@ -830,6 +859,7 @@ private fun loadModels(
                 // 确保在主线程中更新UI
                 CoroutineScope(Dispatchers.Main + SupervisorJob()).launch {
                     setLoading(false)
+                    showErrorToast?.invoke("模型加载失败: $errorMsg")
                 }
             }
         )
