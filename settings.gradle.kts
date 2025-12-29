@@ -1,3 +1,5 @@
+@file:Suppress("UnstableApiUsage")
+
 pluginManagement {
     repositories {
         google {
@@ -10,17 +12,16 @@ pluginManagement {
         mavenCentral()
         gradlePluginPortal()
     }
-    plugins {
-        id 'com.google.devtools.ksp' version '2.2.10-2.0.2'
-    }
 }
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         google()
         mavenCentral()
+        // JitPack 远程仓库：https://jitpack.io
+        maven { url = uri("https://jitpack.io") }
     }
 }
 
 rootProject.name = "YiYi-AiChat"
-include ':app'
+include(":app")
