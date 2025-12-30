@@ -25,7 +25,7 @@
 -keep class okhttp3.Request { *; }
 -keep class okhttp3.Response { *; }
 # Gson
--keep class com.wenchen.yiyi.common.entity.** { *; }
--keep class com.wenchen.yiyi.aiChat.entity.** { *; }
--keep class com.wenchen.yiyi.worldBook.entity.** { *; }
--keep class com.wenchen.yiyi.common.ApiService$* { *; }
+-keep class com.wenchen.yiyi.core.common.entity.** { *; }
+-keep class com.wenchen.yiyi.feature.aiChat.entity.** { *; }
+-keep class com.wenchen.yiyi.feature.worldBook.entity.** { *; }
+-keep class com.wenchen.yiyi.core.common.ApiService$* { *; }

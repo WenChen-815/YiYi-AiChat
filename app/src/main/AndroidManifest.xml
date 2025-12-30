@@ -18,7 +18,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
 
     <application
-        android:name=".common.App"
+        android:name=".App"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -30,20 +30,20 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <activity
-            android:name=".common.TestActivity"
+            android:name="com.wenchen.yiyi.core.common.TestActivity"
             android:exported="false" />
         <activity
-            android:name=".worldBook.ui.activity.WorldBookListActivity"
+            android:name="com.wenchen.yiyi.feature.worldBook.ui.activity.WorldBookListActivity"
             android:exported="false" />
         <activity
-            android:name=".worldBook.ui.activity.WorldBookEditActivity"
+            android:name="com.wenchen.yiyi.feature.worldBook.ui.activity.WorldBookEditActivity"
             android:exported="false" />
         <activity
-            android:name=".aiChat.ui.activity.GroupChatActivity"
+            android:name="com.wenchen.yiyi.feature.aiChat.ui.activity.GroupChatActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
         <activity
-            android:name=".common.MainActivity"
+            android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -52,19 +52,19 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".config.ui.activity.ConfigActivity"
+            android:name="com.wenchen.yiyi.feature.config.ui.activity.ConfigActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
         <activity
-            android:name=".aiChat.ui.activity.ChatActivity"
+            android:name="com.wenchen.yiyi.feature.aiChat.ui.activity.ChatActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
         <activity
-            android:name=".aiChat.ui.activity.CharacterEditActivity"
+            android:name="com.wenchen.yiyi.feature.aiChat.ui.activity.CharacterEditActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
         <activity
-            android:name=".aiChat.ui.activity.ConversationEditActivity"
+            android:name="com.wenchen.yiyi.feature.aiChat.ui.activity.ConversationEditActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
     </application>
