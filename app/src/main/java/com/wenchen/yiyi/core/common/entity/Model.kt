@@ -1,6 +1,9 @@
 package com.wenchen.yiyi.core.common.entity
 
+import kotlinx.serialization.Serializable
+
 // AI模型列表响应的顶层结构
+@Serializable
 data class ModelsResponse(
     val `object`: String,
     val data: List<Model>,
@@ -8,17 +11,19 @@ data class ModelsResponse(
 )
 
 // 单个模型的详细信息
+@Serializable
 data class Model(
     val id: String,  // 模型ID，如"gpt-3.5-turbo"
     val `object`: String,
     val created: Long,
     val owned_by: String,
-    val permission: List<Permission>?,
-    val root: String?,
-    val parent: String?
+    val permission: List<Permission>? = null,
+    val root: String? = null,
+    val parent: String? = null
 )
 
 // 模型权限信息
+@Serializable
 data class Permission(
     val id: String,
     val `object`: String,

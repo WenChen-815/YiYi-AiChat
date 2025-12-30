@@ -49,6 +49,7 @@ import com.wenchen.yiyi.feature.home.ui.HomeScreen
 import com.wenchen.yiyi.navigation.AppNavigator
 import com.wenchen.yiyi.feature.worldBook.ui.activity.WorldBookEditActivity
 import com.wenchen.yiyi.feature.worldBook.ui.activity.WorldBookListActivity
+import com.wenchen.yiyi.navigation.AppNavHost
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import kotlin.jvm.java
@@ -76,7 +77,8 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             AIChatTheme {
-                MainScreen()
+//                MainScreen()
+                AppNavHost(navigator = navigator)
             }
         }
 
