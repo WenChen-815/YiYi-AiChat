@@ -39,6 +39,21 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+//    // ABI 分包配置 - 一次性打包多个架构版本
+//    splits {
+//        abi {
+//            // 启用 ABI 分包
+//            isEnable = true
+//            // 重置默认列表
+//            reset()
+//            // 包含的架构：32位和64位 ARM
+//            include("armeabi-v7a", "arm64-v8a")
+//            // 是否生成通用 APK（包含所有架构）
+//            // 设置为 true 会额外生成一个包含所有架构的 APK
+//            isUniversalApk = true
+//        }
+//    }
+
     // 自定义打包名称
     applicationVariants.all {
         outputs.all {
@@ -54,18 +69,32 @@ android {
             storePassword = keystoreProperties["KEY_STORE_PASSWORD"] as String
             keyAlias = keystoreProperties["KEY_ALIAS"] as String
             keyPassword = keystoreProperties["KEY_PASSWORD"] as String
+
+            // 启用所有签名方案以确保最大兼容性
+            // JAR 签名 (Android 1.0+)
+            enableV1Signing = true
+            // APK 签名 v2 (Android 7.0+)
+            enableV2Signing = true
+            // APK 签名 v3 (Android 9.0+)
+            enableV3Signing = true
+            // APK 签名 v4 (Android 11.0+)
+            enableV4Signing = true
         }
     }
     buildTypes {
         release {
             isDebuggable = false
             isMinifyEnabled = true
+            // 是否启用资源压缩
+            isShrinkResources = true
+            buildConfigField("Boolean", "DEBUG", "false")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfig = signingConfigs.getByName("config")
         }
         debug {
             isDebuggable = true
             signingConfig = signingConfigs.getByName("config")
+            buildConfigField("Boolean", "DEBUG", "true")
         }
     }
     compileOptions {
@@ -74,7 +103,10 @@ android {
     }
 
     buildFeatures {
+        // 开启 Compose 支持
         compose = true
+        // 开启 BuildConfig 支持
+        buildConfig = true
     }
 }
 
