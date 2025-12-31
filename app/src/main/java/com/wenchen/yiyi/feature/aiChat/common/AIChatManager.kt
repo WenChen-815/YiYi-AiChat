@@ -10,7 +10,7 @@ import com.wenchen.yiyi.feature.aiChat.entity.Conversation
 import com.wenchen.yiyi.feature.aiChat.entity.MessageContentType
 import com.wenchen.yiyi.feature.aiChat.entity.MessageType
 import com.wenchen.yiyi.feature.aiChat.entity.TempChatMessage
-import com.wenchen.yiyi.App
+import com.wenchen.yiyi.Application
 import com.wenchen.yiyi.core.common.entity.AICharacter
 import com.wenchen.yiyi.feature.aiChat.entity.AIChatMemory
 import com.wenchen.yiyi.feature.aiChat.entity.ConversationType
@@ -54,9 +54,9 @@ object AIChatManager {
     private var summarizeTriggerCount: Int = 20
 
     // 数据访问对象
-    private val chatMessageDao = App.appDatabase.chatMessageDao()
-    private val tempChatMessageDao = App.appDatabase.tempChatMessageDao()
-    private val aiChatMemoryDao = App.appDatabase.aiChatMemoryDao()
+    private val chatMessageDao = Application.appDatabase.chatMessageDao()
+    private val tempChatMessageDao = Application.appDatabase.tempChatMessageDao()
+    private val aiChatMemoryDao = Application.appDatabase.aiChatMemoryDao()
 
     // 并发控制
     private val characterLocks = ConcurrentHashMap<String, Mutex>()

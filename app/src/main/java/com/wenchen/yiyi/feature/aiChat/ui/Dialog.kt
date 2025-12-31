@@ -22,7 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.wenchen.yiyi.App
+import com.wenchen.yiyi.Application
 import com.wenchen.yiyi.core.common.components.SettingTextFieldItem
 import com.wenchen.yiyi.core.common.entity.Model
 
@@ -155,7 +155,7 @@ fun ShowMemoryDialog(
     val memoryCount = remember { mutableIntStateOf(0) }
     LaunchedEffect(characterId, conversationId) {
         try {
-            val memory = App.appDatabase.aiChatMemoryDao().getByCharacterIdAndConversationId(characterId, conversationId)
+            val memory = Application.appDatabase.aiChatMemoryDao().getByCharacterIdAndConversationId(characterId, conversationId)
             memory?.content?.let {
                 memoryContent.value = it
             } ?: run {

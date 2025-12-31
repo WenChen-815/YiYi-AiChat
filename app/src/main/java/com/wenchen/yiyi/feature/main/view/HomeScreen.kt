@@ -1,4 +1,4 @@
-package com.wenchen.yiyi.feature.home.ui
+package com.wenchen.yiyi.feature.main.view
 
 import android.content.Context
 import android.content.Intent
@@ -21,6 +21,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
@@ -36,13 +37,15 @@ import com.wenchen.yiyi.core.common.theme.GrayBg
 import com.wenchen.yiyi.core.common.theme.GrayText
 import com.wenchen.yiyi.core.common.theme.WhiteText
 import com.wenchen.yiyi.feature.config.common.ConfigManager
-import com.wenchen.yiyi.feature.home.vm.CharacterViewModel
+import com.wenchen.yiyi.feature.main.viewmodel.HomeViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
+import timber.log.Timber
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     context: Context,
-    viewModel: CharacterViewModel = viewModel(),
+    viewModel: HomeViewModel = hiltViewModel(),
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
 ) {
     var searchQuery by remember { mutableStateOf("") }
@@ -140,7 +143,7 @@ fun HomeScreen(
                 TextButton(
                     onClick = {
                         characterToDelete?.let { character ->
-                            Log.d("HomeScreen", "删除角色: ${character.name}")
+                            Timber.tag("HomeScreen").d("删除角色: ${character.name}")
                             viewModel.deleteCharacter(character)
                         }
                         showDeleteDialog = false
@@ -256,19 +259,13 @@ fun CharacterItem(
                         val prompt =
                             buildString {
                                 if (character.roleIdentity.isNotBlank()) {
-                                    append("# 角色身份\n${character.roleIdentity}\n")
+                                    append("${character.roleIdentity}\n")
                                 }
                                 if (character.roleAppearance.isNotBlank()) {
-                                    append("# 角色外貌\n${character.roleAppearance}\n")
+                                    append("${character.roleAppearance}\n")
                                 }
                                 if (character.roleDescription.isNotBlank()) {
-                                    append("# 角色描述\n${character.roleDescription}\n")
-                                }
-                                if (character.outputExample.isNotBlank()) {
-                                    append("# 输出示例\n${character.outputExample}\n")
-                                }
-                                if (character.behaviorRules.isNotBlank()) {
-                                    append("# 行为规则\n${character.behaviorRules}\n")
+                                    append("${character.roleDescription}\n")
                                 }
                             }.trim()
                         Text(

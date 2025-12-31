@@ -3,7 +3,7 @@ package com.wenchen.yiyi.feature.aiChat.common
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Bitmap.CompressFormat
-import com.wenchen.yiyi.App
+import com.wenchen.yiyi.Application
 import com.wenchen.yiyi.core.common.entity.AICharacter
 import java.io.File
 import java.io.IOException
@@ -13,7 +13,7 @@ import java.util.*
 /**
  * 通用图片管理器：管理聊天图片和角色图片
  */
-class ImageManager(private val context: Context = App.instance) {
+class ImageManager(private val context: Context = Application.instance) {
 
     /**
      * 获取图片存储的根目录

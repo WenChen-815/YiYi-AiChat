@@ -8,7 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
 import com.wenchen.yiyi.feature.aiChat.entity.ChatMessage
 import com.wenchen.yiyi.feature.aiChat.entity.TempChatMessage
-import com.wenchen.yiyi.App
+import com.wenchen.yiyi.Application
 import com.wenchen.yiyi.core.common.entity.AICharacter
 import com.wenchen.yiyi.feature.aiChat.common.AIChatManager
 import com.wenchen.yiyi.feature.config.common.ConfigManager
@@ -40,11 +40,11 @@ class ChatViewModel : ViewModel() {
 
     private var isInitialLoading = false
 
-    private val chatMessageDao = App.appDatabase.chatMessageDao()
-    private val tempChatMessageDao = App.appDatabase.tempChatMessageDao()
-    private val aiCharacterDao = App.appDatabase.aiCharacterDao()
-    private val aiChatMemoryDao = App.appDatabase.aiChatMemoryDao()
-    private val conversationDao = App.appDatabase.conversationDao()
+    private val chatMessageDao = Application.appDatabase.chatMessageDao()
+    private val tempChatMessageDao = Application.appDatabase.tempChatMessageDao()
+    private val aiCharacterDao = Application.appDatabase.aiCharacterDao()
+    private val aiChatMemoryDao = Application.appDatabase.aiChatMemoryDao()
+    private val conversationDao = Application.appDatabase.conversationDao()
 
     private val PAGE_SIZE = 15
     private var currentPage = 0
@@ -101,7 +101,7 @@ class ChatViewModel : ViewModel() {
             val id = characterId ?: configManager.getSelectedCharacterId() ?: ""
             if (id.isNotEmpty()) {
                 viewModelScope.launch(Dispatchers.IO) {
-                    App.appDatabase.aiCharacterDao().getCharacterById(id)
+                    Application.appDatabase.aiCharacterDao().getCharacterById(id)
                         ?.let { character ->
                             currentAICharacter = character
                             // 初始化会话ID
@@ -181,7 +181,7 @@ class ChatViewModel : ViewModel() {
     fun refreshCharacterInfo() {
         currentAICharacter?.let { character ->
             viewModelScope.launch(Dispatchers.IO) {
-                App.appDatabase.aiCharacterDao().getCharacterById(character.aiCharacterId)
+                Application.appDatabase.aiCharacterDao().getCharacterById(character.aiCharacterId)
                     ?.let { updatedCharacter ->
                         currentAICharacter = updatedCharacter
                         withContext(Dispatchers.Main) {

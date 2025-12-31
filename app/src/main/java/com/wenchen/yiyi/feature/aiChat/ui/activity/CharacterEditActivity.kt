@@ -38,7 +38,7 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.wenchen.yiyi.feature.aiChat.vm.CharacterEditViewModel
-import com.wenchen.yiyi.App
+import com.wenchen.yiyi.Application
 import com.wenchen.yiyi.core.common.entity.AICharacter
 import com.wenchen.yiyi.feature.aiChat.entity.AIChatMemory
 import com.wenchen.yiyi.feature.config.common.ConfigManager
@@ -76,9 +76,9 @@ import com.wenchen.yiyi.feature.worldBook.entity.WorldBook
 class CharacterEditActivity : ComponentActivity(), CoroutineScope by MainScope() {
     private var characterId: String? = null
     private var conversationId: String? = null
-    private var aiCharacterDao = App.appDatabase.aiCharacterDao()
-    private var aiChatMemoryDao = App.appDatabase.aiChatMemoryDao()
-    private var conversationDao = App.appDatabase.conversationDao()
+    private var aiCharacterDao = Application.appDatabase.aiCharacterDao()
+    private var aiChatMemoryDao = Application.appDatabase.aiChatMemoryDao()
+    private var conversationDao = Application.appDatabase.conversationDao()
     private val userId = ConfigManager().getUserId().toString()
     private lateinit var imageManager: ImageManager
     private var isNewCharacter = mutableStateOf(false)

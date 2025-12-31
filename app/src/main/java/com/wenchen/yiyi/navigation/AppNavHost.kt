@@ -47,8 +47,9 @@ fun AppNavHost(
     }
 
     SharedTransitionLayout {
-        Scaffold(bottomBar = {StackStatusView(navController)
-        }) {
+        Scaffold(
+//            bottomBar = {StackStatusView(navController) }
+        ) {
             NavHost(
                 navController = navController,
                 startDestination = MainRoutes.Main,
@@ -83,13 +84,7 @@ fun AppNavHost(
                 }
             ) {
                 mainGraph(navController, this@SharedTransitionLayout)
-//                composable<HomeRoutes.Home> { HomeScreen(navController) }
-//                composable<NavWithDataRoutes.SetDataScreen> { SetDataScreen(navController) }
-//                composable<NavWithDataRoutes.GetDataScreen> { GetDataScreen(navController) }
-//                composable<BackDataRoutes.BackData> { BackDataScreen(navController) }
-//                composable<BackDataRoutes.SetData2Back> { SetData2BackScreen(navController) }
-//                composable<FakeLoginRoutes.Login> { LoginScreen(navController) }
-//                composable<FakeLoginRoutes.LoginSuccess> { LoginSuccessScreen(navController) }
+
             }
         }
     }

@@ -1,18 +1,29 @@
-package com.wenchen.yiyi.feature.aiChat.vm
+package com.wenchen.yiyi.feature.main.viewmodel
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.wenchen.yiyi.Application
+import com.wenchen.yiyi.core.base.viewmodel.BaseViewModel
+import com.wenchen.yiyi.core.state.UserState
 import com.wenchen.yiyi.feature.aiChat.entity.Conversation
-import com.wenchen.yiyi.App
+import com.wenchen.yiyi.navigation.AppNavigator
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class ChatDisplayViewModel : ViewModel() {
+@HiltViewModel
+class ConversationListViewModel @Inject constructor(
+    navigator: AppNavigator,
+    userState: UserState
+) : BaseViewModel(
+    navigator = navigator,
+    userState = userState
+) {
     private val _conversations = MutableStateFlow<List<Conversation>>(emptyList())
     val conversations: StateFlow<List<Conversation>> = _conversations
 
-    private val conversationDao = App.appDatabase.conversationDao()
+    private val conversationDao = Application.Companion.appDatabase.conversationDao()
 
     init {
         loadConversations()

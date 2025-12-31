@@ -48,7 +48,7 @@ import com.wenchen.yiyi.feature.aiChat.ui.DisplayChatMessageItem
 import com.wenchen.yiyi.feature.aiChat.ui.ModelsDialog
 import com.wenchen.yiyi.feature.aiChat.ui.NavigationDrawerContent
 import com.wenchen.yiyi.feature.aiChat.vm.ChatViewModel
-import com.wenchen.yiyi.App
+import com.wenchen.yiyi.Application
 import com.wenchen.yiyi.core.common.components.BlinkingReplyIndicator
 import com.wenchen.yiyi.core.common.theme.AIChatTheme
 import com.wenchen.yiyi.core.common.theme.BlackBg
@@ -64,7 +64,7 @@ import java.io.File
 
 class GroupChatActivity : ComponentActivity() {
     private val viewModel: ChatViewModel by viewModels()
-    private val conversationDao = App.appDatabase.conversationDao()
+    private val conversationDao = Application.appDatabase.conversationDao()
 
     private val pickImageLauncher =
         registerForActivityResult(

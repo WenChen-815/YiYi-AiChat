@@ -3,15 +3,15 @@ package com.wenchen.yiyi.feature.aiChat.vm
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.wenchen.yiyi.App
+import com.wenchen.yiyi.Application
 import com.wenchen.yiyi.core.common.entity.AICharacter
 import com.wenchen.yiyi.feature.aiChat.entity.AIChatMemory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class CharacterEditViewModel : ViewModel() {
-    private val aiCharacterDao = App.appDatabase.aiCharacterDao()
-    private val aiChatMemoryDao = App.appDatabase.aiChatMemoryDao()
+    private val aiCharacterDao = Application.appDatabase.aiCharacterDao()
+    private val aiChatMemoryDao = Application.appDatabase.aiChatMemoryDao()
 
     fun loadCharacterData(
         conversationId: String,

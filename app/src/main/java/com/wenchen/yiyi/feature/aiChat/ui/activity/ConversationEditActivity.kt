@@ -59,7 +59,7 @@ import com.wenchen.yiyi.feature.aiChat.entity.AIChatMemory
 import com.wenchen.yiyi.feature.aiChat.entity.Conversation
 import com.wenchen.yiyi.feature.aiChat.entity.ConversationType
 import com.wenchen.yiyi.feature.aiChat.ui.ShowMemoryDialog
-import com.wenchen.yiyi.App
+import com.wenchen.yiyi.Application
 import com.wenchen.yiyi.core.common.components.SettingTextFieldItem
 import com.wenchen.yiyi.core.common.entity.AICharacter
 import com.wenchen.yiyi.core.common.theme.AIChatTheme
@@ -80,7 +80,7 @@ import java.util.UUID
 
 class ConversationEditActivity : ComponentActivity() {
     private lateinit var conversationId: String
-    private var conversationDao = App.appDatabase.conversationDao()
+    private var conversationDao = Application.appDatabase.conversationDao()
     private lateinit var imageManager: ImageManager
     private var isCreateNew = mutableStateOf(false)
 
@@ -440,8 +440,8 @@ fun ConversationEditScreen(
 
     val scrollState = rememberScrollState()
     val context = LocalContext.current
-    val conversationDao = App.appDatabase.conversationDao()
-    val aiCharacterDao = App.appDatabase.aiCharacterDao()
+    val conversationDao = Application.appDatabase.conversationDao()
+    val aiCharacterDao = Application.appDatabase.aiCharacterDao()
     var avatarPath by remember { mutableStateOf("") }
     var backgroundPath by remember { mutableStateOf("") }
     var conversation by remember { mutableStateOf<Conversation?>(null) }
@@ -819,7 +819,7 @@ fun ConversationEditScreen(
                                     // 启动新线程保存角色记忆
                                     coroutineScope.launch(Dispatchers.IO) {
                                         try {
-                                            val memoryDao = App.appDatabase.aiChatMemoryDao()
+                                            val memoryDao = Application.appDatabase.aiChatMemoryDao()
                                             // 检查是否已存在该角色的记忆
                                             val existingMemory = memoryDao.getByCharacterIdAndConversationId(selectCharacterId, conversationId)
 

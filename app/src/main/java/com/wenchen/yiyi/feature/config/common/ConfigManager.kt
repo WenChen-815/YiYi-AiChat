@@ -3,12 +3,12 @@ package com.wenchen.yiyi.feature.config.common
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
-import com.wenchen.yiyi.App
+import com.wenchen.yiyi.Application
 
 class ConfigManager() {
     private val PREF_NAME = "ai_chat_config"
     private val prefs: SharedPreferences =
-        App.instance.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        Application.instance.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
 
     // 检查是否有完整的配置
     fun hasCompleteConfig(): Boolean {

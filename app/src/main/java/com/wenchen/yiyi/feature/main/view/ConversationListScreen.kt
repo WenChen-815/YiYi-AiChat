@@ -1,4 +1,4 @@
-package com.wenchen.yiyi.feature.aiChat.ui
+package com.wenchen.yiyi.feature.main.view
 
 import android.content.Context
 import android.content.Intent
@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
@@ -28,8 +29,8 @@ import com.wenchen.yiyi.feature.aiChat.entity.Conversation
 import com.wenchen.yiyi.feature.aiChat.entity.ConversationType
 import com.wenchen.yiyi.feature.aiChat.ui.activity.ChatActivity
 import com.wenchen.yiyi.feature.aiChat.ui.activity.GroupChatActivity
-import com.wenchen.yiyi.feature.aiChat.vm.ChatDisplayViewModel
-import com.wenchen.yiyi.App
+import com.wenchen.yiyi.feature.main.viewmodel.ConversationListViewModel
+import com.wenchen.yiyi.Application
 import com.wenchen.yiyi.core.common.theme.BlackBg
 import com.wenchen.yiyi.core.common.theme.WhiteBg
 import com.wenchen.yiyi.core.common.utils.ChatUtil
@@ -37,13 +38,13 @@ import com.wenchen.yiyi.feature.config.common.ConfigManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatDisplayScreen(
+fun ConversationListScreen(
     context: Context,
-    viewModel: ChatDisplayViewModel = viewModel(),
+    viewModel: ConversationListViewModel = hiltViewModel(),
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
 ) {
     val conversations by viewModel.conversations.collectAsState()
-    val chatMessageDao = App.appDatabase.chatMessageDao()
+    val chatMessageDao = Application.appDatabase.chatMessageDao()
     val imageManager = ImageManager(context)
     DisposableEffect(lifecycleOwner) {
         val observer =
