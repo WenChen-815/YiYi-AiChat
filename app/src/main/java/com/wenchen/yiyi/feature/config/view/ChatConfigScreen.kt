@@ -1,18 +1,16 @@
-package com.wenchen.yiyi.feature.config.ui.activity
+package com.wenchen.yiyi.feature.config.view
 
 import android.app.Activity.RESULT_OK
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.os.Build
-import android.os.Bundle
 import android.provider.MediaStore
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -29,6 +27,7 @@ import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material.icons.rounded.RemoveCircleOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,15 +39,13 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import com.wenchen.yiyi.feature.aiChat.common.AIChatManager
-import com.wenchen.yiyi.feature.config.common.ConfigManager
-import com.wenchen.yiyi.core.common.ApiService
 import com.wenchen.yiyi.feature.aiChat.common.ImageManager
 import com.wenchen.yiyi.core.common.entity.Model
-import com.wenchen.yiyi.core.common.theme.AIChatTheme
 import com.wenchen.yiyi.core.common.theme.BlackBg
 import com.wenchen.yiyi.core.common.theme.Gold
 import com.wenchen.yiyi.core.common.theme.Pink
@@ -60,63 +57,92 @@ import com.wenchen.yiyi.core.common.theme.BlackText
 import com.wenchen.yiyi.core.common.theme.DarkGray
 import com.wenchen.yiyi.core.common.theme.GrayText
 import com.wenchen.yiyi.core.common.theme.LightGray
-import com.wenchen.yiyi.feature.config.ui.SwitchWithText
-import kotlinx.coroutines.*
-import kotlinx.coroutines.launch
+import com.wenchen.yiyi.core.model.config.UserConfig
+import com.wenchen.yiyi.feature.config.component.SwitchWithText
+import com.wenchen.yiyi.feature.config.viewModel.ChatConfigViewModel
 import java.io.File
 
-class ConfigActivity : ComponentActivity() {
-    private lateinit var configManager: ConfigManager
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        configManager = ConfigManager()
+/**
+ * 配置页面路由
+ *
+ * @param viewModel 配置页面 ViewModel
+ */
+@Composable
+internal fun ChatConfigRoute(
+    viewModel: ChatConfigViewModel = hiltViewModel(),
+    navController: NavController
+) {
+    ChatConfigScreen(
+        viewModel = viewModel,
+        navController = navController
+    )
+}
 
-        setContent {
-            AIChatTheme {
-                ConfigScreen(configManager, this)
-            }
-        }
-    }
+@Composable
+fun ChatConfigScreen(
+    viewModel: ChatConfigViewModel = hiltViewModel(),
+    navController: NavController = NavController(LocalContext.current)
+) {
+    ChatConfigScreenContent(
+        viewModel = viewModel,
+        navController = navController
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ConfigScreen(configManager: ConfigManager, activity: ComponentActivity) {
+fun ChatConfigScreenContent(
+    viewModel : ChatConfigViewModel,
+    navController: NavController
+){
+    val activity = LocalActivity.current
     if (isSystemInDarkTheme()) {
-        StatusBarUtil.setStatusBarTextColor(activity, false)
+        StatusBarUtil.setStatusBarTextColor(activity as ComponentActivity, false)
     } else {
-        StatusBarUtil.setStatusBarTextColor(activity, true)
+        StatusBarUtil.setStatusBarTextColor(activity as ComponentActivity, true)
     }
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
-    var userId by remember { mutableStateOf(configManager.getUserId() ?: "123123") }
-    var userName by remember { mutableStateOf(configManager.getUserName() ?: "温辰") }
+//    var userId by remember { mutableStateOf(configManager.getUserId() ?: "123123") }
+//    var userName by remember { mutableStateOf(configManager.getUserName() ?: "温辰") }
+    var userId by remember { mutableStateOf(viewModel.userConfig?.userId ?: "123123") }
+    var userName by remember { mutableStateOf(viewModel.userConfig?.userName ?: "温辰") }
 
     // 对话模型配置
-    var apiKey by remember { mutableStateOf(configManager.getApiKey() ?: "") }
-    var baseUrl by remember { mutableStateOf(configManager.getBaseUrl() ?: "") }
+//    var apiKey by remember { mutableStateOf(configManager.getApiKey() ?: "") }
+//    var baseUrl by remember { mutableStateOf(configManager.getBaseUrl() ?: "") }
+//    var models by remember { mutableStateOf<List<Model>>(emptyList()) }
+//    var selectedModel by remember { mutableStateOf(configManager.getSelectedModel() ?: "") }
+    var apiKey by remember { mutableStateOf(viewModel.userConfig?.baseApiKey ?: "") }
+    var baseUrl by remember { mutableStateOf(viewModel.userConfig?.baseUrl ?: "") }
+    var selectedModel by remember { mutableStateOf(viewModel.userConfig?.selectedModel ?: "") }
     var models by remember { mutableStateOf<List<Model>>(emptyList()) }
-    var selectedModel by remember { mutableStateOf(configManager.getSelectedModel() ?: "") }
     var isLoadingModels by remember { mutableStateOf(false) }
 
     // 图片识别配置
-    var imgRecognitionEnabled by remember { mutableStateOf(configManager.isImgRecognitionEnabled()) }
-    var imgApiKey by remember { mutableStateOf(configManager.getImgApiKey() ?: "") }
-    var imgBaseUrl by remember { mutableStateOf(configManager.getImgBaseUrl() ?: "") }
+//    var imgRecognitionEnabled by remember { mutableStateOf(configManager.isImgRecognitionEnabled()) }
+//    var imgApiKey by remember { mutableStateOf(configManager.getImgApiKey() ?: "") }
+//    var imgBaseUrl by remember { mutableStateOf(configManager.getImgBaseUrl() ?: "") }
+//    var imgModels by remember { mutableStateOf<List<Model>>(emptyList()) }
+//    var selectedImgModel by remember { mutableStateOf(configManager.getSelectedImgModel() ?: "") }
+    var imgRecognitionEnabled by remember { mutableStateOf(viewModel.userConfig?.imgRecognitionEnabled ?: false) }
+    var imgApiKey by remember { mutableStateOf(viewModel.userConfig?.imgApiKey ?: "") }
+    var imgBaseUrl by remember { mutableStateOf(viewModel.userConfig?.imgBaseUrl ?: "") }
     var imgModels by remember { mutableStateOf<List<Model>>(emptyList()) }
-    var selectedImgModel by remember { mutableStateOf(configManager.getSelectedImgModel() ?: "") }
+    var selectedImgModel by remember { mutableStateOf(viewModel.userConfig?.selectedImgModel ?: "") }
     var isLoadingImgModels by remember { mutableStateOf(false) }
 
     // 其他配置
-    var maxContextCount by remember { mutableStateOf(configManager.getMaxContextMessageSize().toString()) }
-    var summarizeCount by remember { mutableStateOf(configManager.getSummarizeTriggerCount().toString()) }
-    var maxSummarizeCount by remember { mutableStateOf(configManager.getMaxSummarizeCount().toString()) }
-    var enableSeparator by remember { mutableStateOf(configManager.isSeparatorEnabled()) }
-    var enableTimePrefix by remember { mutableStateOf(configManager.isTimePrefixEnabled()) }
+    var maxContextCount by remember { mutableStateOf(viewModel.userConfig?.maxContextMessageSize?.toString() ?: "10") }
+    var summarizeCount by remember { mutableStateOf(viewModel.userConfig?.summarizeTriggerCount?.toString() ?: "20") }
+    var maxSummarizeCount by remember { mutableStateOf(viewModel.userConfig?.maxSummarizeCount?.toString() ?: "20") }
+    var enableSeparator by remember { mutableStateOf(viewModel.userConfig?.enableSeparator ?: false) }
+    var enableTimePrefix by remember { mutableStateOf(viewModel.userConfig?.enableTimePrefix ?: true) }
 
     // 用户头像相关
-    var userAvatarPath by remember { mutableStateOf(configManager.getUserAvatarPath()) }
+//    var userAvatarPath by remember { mutableStateOf(configManager.getUserAvatarPath()) }
+    var userAvatarPath by remember { mutableStateOf(viewModel.userConfig?.userAvatarPath) }
     val userAvatarBitmap = remember { mutableStateOf<Bitmap?>(null) }
     val hasNewUserAvatar = remember { mutableStateOf(false) }
 
@@ -162,7 +188,7 @@ fun ConfigScreen(configManager: ConfigManager, activity: ComponentActivity) {
     fun saveUserAvatar() {
         if (hasNewUserAvatar.value && userAvatarBitmap.value != null) {
             // 删除旧头像文件
-            val oldAvatarPath = configManager.getUserAvatarPath()
+            val oldAvatarPath = viewModel.userConfig?.userAvatarPath
             if (!oldAvatarPath.isNullOrEmpty()) {
                 try {
                     val oldFile = File(oldAvatarPath)
@@ -176,11 +202,12 @@ fun ConfigScreen(configManager: ConfigManager, activity: ComponentActivity) {
 
             // 保存新头像
             val imageManager = ImageManager(activity)
-            val userId = configManager.getUserId() ?: "default_user"
+            val userId = viewModel.userConfig?.userId ?: "123123"
             val savedFile = imageManager.saveAvatarImage("user_$userId", userAvatarBitmap.value!!)
 
             if (savedFile != null) {
-                configManager.saveUserAvatarPath(savedFile.toUri().toString())
+//                configManager.saveUserAvatarPath(savedFile.toUri().toString())
+
                 userAvatarPath = savedFile.toUri().toString()
             }
         }
@@ -189,7 +216,7 @@ fun ConfigScreen(configManager: ConfigManager, activity: ComponentActivity) {
     LaunchedEffect(Unit) {
         // 自动加载对话模型
         if (apiKey.isNotEmpty() && baseUrl.isNotEmpty()) {
-            loadModels(
+            viewModel.loadModels(
                 apiKey = apiKey,
                 baseUrl = baseUrl,
                 type = 0,
@@ -197,7 +224,6 @@ fun ConfigScreen(configManager: ConfigManager, activity: ComponentActivity) {
                 setLoading = { isLoadingModels = it },
                 setModels = { models = it },
                 setSelectedModel = { selectedModel = it },
-                configManager = configManager,
                 showSuccessToast = { message ->
                     Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                 },
@@ -209,7 +235,7 @@ fun ConfigScreen(configManager: ConfigManager, activity: ComponentActivity) {
 
         // 如果图片识别功能已启用，则自动加载图片识别模型
         if (imgRecognitionEnabled && imgApiKey.isNotEmpty() && imgBaseUrl.isNotEmpty()) {
-            loadModels(
+            viewModel.loadModels(
                 apiKey = imgApiKey,
                 baseUrl = imgBaseUrl,
                 type = 1,
@@ -217,7 +243,6 @@ fun ConfigScreen(configManager: ConfigManager, activity: ComponentActivity) {
                 setLoading = { isLoadingImgModels = it },
                 setModels = { imgModels = it },
                 setSelectedModel = { selectedImgModel = it },
-                configManager = configManager,
                 showSuccessToast = { message ->
                     Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                 },
@@ -242,7 +267,7 @@ fun ConfigScreen(configManager: ConfigManager, activity: ComponentActivity) {
                     imageVector = Icons.Rounded.ArrowBackIosNew,
                     contentDescription = "返回",
                     modifier = Modifier
-                        .clickable { activity.finish() }
+                        .clickable { viewModel.navigateBack() }
                         .size(18.dp)
                         .align(Alignment.CenterStart)
                 )
@@ -298,32 +323,29 @@ fun ConfigScreen(configManager: ConfigManager, activity: ComponentActivity) {
                                 return@TextButton
                             }
                         }
-                        // 保存配置
-                        configManager.saveUserId(userId)
-                        configManager.saveUserName(userName)
-                        configManager.saveApiKey(apiKey)
-                        configManager.saveBaseUrl(baseUrl)
-                        configManager.saveSelectedModel(selectedModel)
-                        configManager.saveImgRecognitionEnabled(imgRecognitionEnabled)
-
-                        if (imgRecognitionEnabled) {
-                            configManager.saveImgApiKey(imgApiKey)
-                            configManager.saveImgBaseUrl(imgBaseUrl)
-                            configManager.saveSelectedImgModel(selectedImgModel)
-                        }
-
-                        configManager.saveMaxContextMessageSize(maxContextCount.toIntOrNull() ?:15)
-                        configManager.saveSummarizeTriggerCount(summarizeCount.toIntOrNull() ?: 20)
-                        configManager.saveMaxSummarizeCount(maxSummarizeCount.toIntOrNull() ?: 20)
-                        configManager.saveEnableSeparator(enableSeparator)
-                        configManager.saveEnableTimePrefix(enableTimePrefix)
-
                         // 保存用户头像
                         saveUserAvatar()
-
+                        // 保存配置
+                        val userConfig = UserConfig(
+                            userId,
+                            userName,
+                            userAvatarPath,
+                            apiKey,
+                            baseUrl,
+                            selectedModel,
+                            imgRecognitionEnabled,
+                            imgApiKey,
+                            imgBaseUrl,
+                            selectedImgModel,
+                            maxContextCount.toIntOrNull() ?: 15,
+                            summarizeCount.toIntOrNull() ?: 20,
+                            maxSummarizeCount.toIntOrNull() ?: 20,
+                            enableSeparator,
+                            enableTimePrefix
+                        )
+                        viewModel.updateUserConfig(userConfig)
                         Toast.makeText(context, "配置保存成功", Toast.LENGTH_SHORT).show()
-                        AIChatManager.init()
-                        activity.finish()
+                        viewModel.navigateBack()
                     },
                     Modifier
                         .padding(60.dp, 3.dp)
@@ -509,7 +531,7 @@ fun ConfigScreen(configManager: ConfigManager, activity: ComponentActivity) {
                                     return@clickable
                                 }
 
-                                loadModels(
+                                viewModel.loadModels(
                                     apiKey = apiKey,
                                     baseUrl = baseUrl,
                                     type = 0,
@@ -517,7 +539,6 @@ fun ConfigScreen(configManager: ConfigManager, activity: ComponentActivity) {
                                     setLoading = { isLoadingModels = it },
                                     setModels = { models = it },
                                     setSelectedModel = { selectedModel = it },
-                                    configManager = configManager,
                                     showSuccessToast = { message ->
                                         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                                     },
@@ -628,7 +649,7 @@ fun ConfigScreen(configManager: ConfigManager, activity: ComponentActivity) {
                                         return@clickable
                                     }
 
-                                    loadModels(
+                                    viewModel.loadModels(
                                         apiKey = imgApiKey,
                                         baseUrl = imgBaseUrl,
                                         type = 1,
@@ -636,7 +657,6 @@ fun ConfigScreen(configManager: ConfigManager, activity: ComponentActivity) {
                                         setLoading = { isLoadingImgModels = it },
                                         setModels = { imgModels = it },
                                         setSelectedModel = { selectedImgModel = it },
-                                        configManager = configManager,
                                         showSuccessToast = { message ->
                                             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                                         },
@@ -747,121 +767,5 @@ fun ConfigScreen(configManager: ConfigManager, activity: ComponentActivity) {
                 }
             }
         }
-    }
-}
-
-private fun loadModels(
-    apiKey: String,
-    baseUrl: String,
-    type: Int,
-    coroutineScope: CoroutineScope,
-    setLoading: (Boolean) -> Unit,
-    setModels: (List<Model>) -> Unit,
-    setSelectedModel: (String) -> Unit,
-    configManager: ConfigManager,
-    showSuccessToast: ((String) -> Unit)? = null,
-    showErrorToast: ((String) -> Unit)? = null
-) {
-    setLoading(true)
-
-    coroutineScope.launch(Dispatchers.IO + CoroutineExceptionHandler { _, throwable ->
-        Log.e("ConfigActivity", "IO协程异常", throwable)
-        setLoading(false)
-    }) {
-        val apiService = ApiService(baseUrl, apiKey)
-        apiService.getSupportedModels(
-            onSuccess = { modelList ->
-                Log.d("ConfigActivity", "获取模型列表成功, 模型数量: ${modelList.size}")
-                try {
-                    // 直接在当前线程更新数据，然后启动Main线程更新UI
-                    setModels(modelList)
-
-                    // 设置默认选中项
-                    var selectedId: String
-                    if (type == 0) {
-                        val savedModel = configManager.getSelectedModel()
-                        if (savedModel != null) {
-                            val position = modelList.indexOfFirst { it.id == savedModel }
-                            selectedId = if (position != -1) {
-                                Log.d("ConfigActivity", "找到保存的模型: ${modelList[position].id}")
-                                modelList[position].id
-                            } else {
-                                // 未找到保存的模型，选中第一个
-                                Log.d(
-                                    "ConfigActivity",
-                                    "未找到保存的模型，选中第一个: ${modelList.firstOrNull()?.id}"
-                                )
-                                modelList.firstOrNull()?.id ?: ""
-                            }
-                        } else {
-                            // 没有保存的模型，选中第一个
-                            Log.d(
-                                "ConfigActivity",
-                                "没有保存的模型，选中第一个: ${modelList.firstOrNull()?.id}"
-                            )
-                            selectedId = modelList.firstOrNull()?.id ?: ""
-                        }
-                    } else {
-                        val savedImgModel = configManager.getSelectedImgModel()
-                        if (savedImgModel != null) {
-                            val position = modelList.indexOfFirst { it.id == savedImgModel }
-                            selectedId = if (position != -1) {
-                                Log.d(
-                                    "ConfigActivity",
-                                    "找到保存的图片识别模型: ${modelList[position].id}"
-                                )
-                                modelList[position].id
-                            } else {
-                                // 未找到保存的模型，选中第一个
-                                Log.d(
-                                    "ConfigActivity",
-                                    "未找到保存的图片识别模型，选中第一个: ${modelList.firstOrNull()?.id}"
-                                )
-                                modelList.firstOrNull()?.id ?: ""
-                            }
-                        } else {
-                            // 没有保存的模型，选中第一个
-                            Log.d(
-                                "ConfigActivity",
-                                "没有保存的图片识别模型，选中第一个: ${modelList.firstOrNull()?.id}"
-                            )
-                            selectedId = modelList.firstOrNull()?.id ?: ""
-                        }
-                    }
-
-
-                    // 在主线程中执行UI更新操作
-                    CoroutineScope(Dispatchers.Main + SupervisorJob()).launch {
-                        try {
-                            Log.d("ConfigActivity", "设置默认选中项: $selectedId")
-                            if (selectedId.isNotEmpty()) {
-                                setSelectedModel(selectedId)
-                            }
-                            setLoading(false)
-                            showSuccessToast?.invoke("模型加载成功，共${modelList.size}个模型")
-                        } catch (e: Exception) {
-                            Log.e("ConfigActivity", "设置模型列表或选中项时出错", e)
-                            setLoading(false)
-                            showErrorToast?.invoke("模型加载失败: ${e.message}")
-                        }
-                    }
-                } catch (e: Exception) {
-                    Log.e("ConfigActivity", "处理模型数据时出错", e)
-                    // 确保无论如何都停止加载状态
-                    CoroutineScope(Dispatchers.Main + SupervisorJob()).launch {
-                        setLoading(false)
-                        showErrorToast?.invoke("模型加载失败: ${e.message}")
-                    }
-                }
-            },
-            onError = { errorMsg ->
-                Log.e("ConfigActivity", "加载模型失败: $errorMsg")
-                // 确保在主线程中更新UI
-                CoroutineScope(Dispatchers.Main + SupervisorJob()).launch {
-                    setLoading(false)
-                    showErrorToast?.invoke("模型加载失败: $errorMsg")
-                }
-            }
-        )
     }
 }

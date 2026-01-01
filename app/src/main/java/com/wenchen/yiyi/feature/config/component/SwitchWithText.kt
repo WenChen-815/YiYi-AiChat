@@ -1,4 +1,4 @@
-package com.wenchen.yiyi.feature.config.ui
+package com.wenchen.yiyi.feature.config.component
 
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer

@@ -11,5 +11,5 @@ object ConfigRoutes {
      * 全局聊天设置页
      */
     @Serializable
-    data object GlobalChatSetting
+    data object ChatConfig
 }

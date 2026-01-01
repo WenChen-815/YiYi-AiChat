@@ -1,14 +1,12 @@
-package com.wenchen.yiyi.feature.profile.ui
+package com.wenchen.yiyi.feature.profile.view
 
 import android.content.Context
-import android.content.Intent
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.wenchen.yiyi.feature.config.ui.activity.ConfigActivity
 
 @Composable
 fun ProfileScreen(
@@ -27,7 +25,9 @@ fun ProfileScreen(
         )
 
         Button(
-            onClick = { context.startActivity(Intent(context, ConfigActivity::class.java)) },
+            onClick = {
+//                context.startActivity(Intent(context, ConfigActivity::class.java))
+                      },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 4.dp)

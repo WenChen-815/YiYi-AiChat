@@ -56,7 +56,6 @@ import com.wenchen.yiyi.core.common.theme.HalfTransparentBlack
 import com.wenchen.yiyi.core.common.theme.WhiteBg
 import com.wenchen.yiyi.core.common.utils.StatusBarUtil
 import com.wenchen.yiyi.core.common.utils.ThemeColorExtractor
-import com.wenchen.yiyi.feature.config.ui.activity.ConfigActivity
 import dev.chrisbanes.haze.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -242,12 +241,12 @@ class GroupChatActivity : ComponentActivity() {
                     NavigationDrawerContent(
                         viewModel = viewModel,
                         onNavConfigClick = {
-                            startActivity(
-                                Intent(
-                                    this@GroupChatActivity,
-                                    ConfigActivity::class.java,
-                                ),
-                            )
+//                            startActivity(
+//                                Intent(
+//                                    this@GroupChatActivity,
+//                                    ConfigActivity::class.java,
+//                                ),
+//                            )
                         },
                         onNavSwitchModelClick = {
                             showModelsDialog = true

@@ -1,4 +1,4 @@
-package com.wenchen.yiyi.feature.worldBook.ui.activity
+package com.wenchen.yiyi.feature.worldBook.view
 
 import android.os.Bundle
 import android.util.Log

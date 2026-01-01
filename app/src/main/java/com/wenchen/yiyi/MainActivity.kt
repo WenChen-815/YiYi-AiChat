@@ -15,13 +15,11 @@ import com.wenchen.yiyi.core.common.theme.AIChatTheme
 import com.wenchen.yiyi.core.common.utils.PermissionUtils
 import com.wenchen.yiyi.core.common.utils.StatusBarUtil
 import com.wenchen.yiyi.feature.config.common.ConfigManager
-import com.wenchen.yiyi.feature.config.ui.activity.ConfigActivity
 import com.wenchen.yiyi.navigation.AppNavigator
 import com.wenchen.yiyi.navigation.AppNavHost
 import dagger.hilt.android.AndroidEntryPoint
 import timber.log.Timber
 import javax.inject.Inject
-import kotlin.jvm.java
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -51,11 +49,11 @@ class MainActivity : ComponentActivity() {
         }
 
         // 初始化配置管理器
-        configManager = ConfigManager()
+//        configManager = ConfigManager()
         // 检查是否有配置，如果没有则跳转到配置页面
-        if (!configManager.hasCompleteConfig()) {
-            startActivity(Intent(this, ConfigActivity::class.java))
-        }
+//        if (!configManager.hasCompleteConfig()) {
+//            startActivity(Intent(this, ConfigActivity::class.java))
+//        }
     }
 
     @OptIn(ExperimentalMaterial3Api::class)

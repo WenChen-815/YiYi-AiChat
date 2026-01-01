@@ -1,4 +1,4 @@
-package com.wenchen.yiyi.core.common.database
+package com.wenchen.yiyi.core.database
 
 import androidx.room.TypeConverter
 import com.google.gson.Gson

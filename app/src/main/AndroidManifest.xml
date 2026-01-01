@@ -33,10 +33,10 @@
             android:name="com.wenchen.yiyi.core.common.TestActivity"
             android:exported="false" />
         <activity
-            android:name="com.wenchen.yiyi.feature.worldBook.ui.activity.WorldBookListActivity"
+            android:name="com.wenchen.yiyi.feature.worldBook.view.WorldBookListActivity"
             android:exported="false" />
         <activity
-            android:name="com.wenchen.yiyi.feature.worldBook.ui.activity.WorldBookEditActivity"
+            android:name="com.wenchen.yiyi.feature.worldBook.view.WorldBookEditActivity"
             android:exported="false" />
         <activity
             android:name="com.wenchen.yiyi.feature.aiChat.ui.activity.GroupChatActivity"
@@ -52,7 +52,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="com.wenchen.yiyi.feature.config.ui.activity.ConfigActivity"
+            android:name="com.wenchen.yiyi.feature.config.view.activity.ConfigActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
         <activity

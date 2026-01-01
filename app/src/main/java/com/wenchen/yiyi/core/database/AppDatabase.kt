@@ -1,4 +1,4 @@
-package com.wenchen.yiyi.core.common.database
+package com.wenchen.yiyi.core.database
 
 import android.content.Context
 import androidx.room.Database
@@ -18,7 +18,9 @@ import com.wenchen.yiyi.feature.aiChat.entity.dao.AIChatMemoryDao
 import com.wenchen.yiyi.core.common.entity.AICharacter
 import com.wenchen.yiyi.feature.aiChat.entity.AIChatMemory
 
-
+/**
+ * 应用数据库
+ */
 @Database(
     entities = [
         AICharacter::class,
@@ -39,23 +41,22 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun conversationDao(): ConversationDao
 
     companion object {
-        // 单例模式防止多次实例化数据库
+        const val DATABASE_NAME = "ai_chat_database"
         @Volatile
         private var INSTANCE: AppDatabase? = null
-
-        fun getDatabase(context: Context): AppDatabase {
-            return INSTANCE ?: synchronized(this) {
-                val instance = Room.databaseBuilder(
-                    context.applicationContext,
-                    AppDatabase::class.java,
-                    "ai_chat_database"
-                )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
-                    .build()
-                INSTANCE = instance
-                instance
-            }
-        }
+//        fun getDatabase(context: Context): AppDatabase {
+//            return INSTANCE ?: synchronized(this) {
+//                val instance = Room.databaseBuilder(
+//                    context.applicationContext,
+//                    AppDatabase::class.java,
+//                    DATABASE_NAME
+//                )
+//                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+//                    .build()
+//                INSTANCE = instance
+//                instance
+//            }
+//        }
 
         val MIGRATION_2_3 = object : Migration(2, 3) {
             override fun migrate(db: SupportSQLiteDatabase) {

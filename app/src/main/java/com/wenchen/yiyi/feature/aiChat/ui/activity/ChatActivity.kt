@@ -64,7 +64,6 @@ import com.wenchen.yiyi.core.common.theme.HalfTransparentBlack
 import com.wenchen.yiyi.core.common.theme.WhiteBg
 import com.wenchen.yiyi.core.common.utils.StatusBarUtil
 import com.wenchen.yiyi.core.common.utils.ThemeColorExtractor
-import com.wenchen.yiyi.feature.config.ui.activity.ConfigActivity
 import dev.chrisbanes.haze.HazeProgressive
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
@@ -199,12 +198,12 @@ class ChatActivity : ComponentActivity() {
                             NavigationDrawerContent(
                                 viewModel = viewModel,
                                 onNavConfigClick = {
-                                    startActivity(
-                                        Intent(
-                                            this@ChatActivity,
-                                            ConfigActivity::class.java,
-                                        ),
-                                    )
+//                                    startActivity(
+//                                        Intent(
+//                                            this@ChatActivity,
+//                                            ConfigActivity::class.java,
+//                                        ),
+//                                    )
                                 },
                                 onNavSwitchModelClick = {
                                     showModelsDialog = true

@@ -70,7 +70,7 @@ import com.wenchen.yiyi.core.common.theme.LightGray
 import com.wenchen.yiyi.core.common.theme.WhiteText
 import com.wenchen.yiyi.core.common.utils.FilesUtil
 import com.wenchen.yiyi.core.common.utils.StatusBarUtil
-import com.wenchen.yiyi.feature.config.ui.SwitchWithText
+import com.wenchen.yiyi.feature.config.component.SwitchWithText
 import com.wenchen.yiyi.feature.worldBook.entity.WorldBook
 
 class CharacterEditActivity : ComponentActivity(), CoroutineScope by MainScope() {

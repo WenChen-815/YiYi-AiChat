@@ -1,5 +1,6 @@
 package com.wenchen.yiyi.feature.main.view
 
+import android.content.Intent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -61,6 +62,7 @@ import com.wenchen.yiyi.core.common.theme.WhiteBg
 import com.wenchen.yiyi.core.common.theme.WhiteText
 import com.wenchen.yiyi.core.common.utils.StatusBarUtil
 import com.wenchen.yiyi.feature.main.viewmodel.MainViewModel
+import com.wenchen.yiyi.navigation.routes.ConfigRoutes
 
 /**
  * 主页面路由
@@ -144,7 +146,7 @@ private fun MainScreenContent(
                                 iconTint = MaterialTheme.colorScheme.primary,
                                 text = "设置",
                                 modifier = Modifier.clickable{
-                                    // TODO 跳转设置页面
+                                    viewModel.navigate(ConfigRoutes.ChatConfig)
                                 }
                                     .padding(horizontal = 8.dp),
                                 iconModifier = Modifier.size(24.dp),

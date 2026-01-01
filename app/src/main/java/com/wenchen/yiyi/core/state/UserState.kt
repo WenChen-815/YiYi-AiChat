@@ -32,6 +32,33 @@ class UserState @Inject constructor(
     @param:ApplicationScope private val applicationScope: CoroutineScope
 ) {
     // 用户登录状态
-    private val _isLoggedIn = MutableStateFlow(true)
+    private val _isLoggedIn = MutableStateFlow(true) // TODO 模拟已登录状态
     val isLoggedIn: StateFlow<Boolean> = _isLoggedIn.asStateFlow()
+
+    // 用户ID
+    private val _userId = MutableStateFlow("")
+    val userId: StateFlow<String> = _userId.asStateFlow()
+
+    /**
+     * 初始化应用状态
+     * 由外部调用而不是自动初始化
+     */
+    fun initialize(initComplete : () -> Unit = {}) {
+        applicationScope.launch {
+            initializeState()
+            initComplete()
+        }
+    }
+
+    /**
+     * 从本地存储初始化应用状态
+     */
+    private suspend fun initializeState() {
+        // 获取认证信息
+
+        // 仅在已登录状态下加载用户信息
+        if (true) { // 假装已登录状态
+            _userId.value = "123123"
+        }
+    }
 }

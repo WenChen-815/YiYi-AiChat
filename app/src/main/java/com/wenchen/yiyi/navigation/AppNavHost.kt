@@ -26,6 +26,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.wenchen.yiyi.feature.config.navigation.configGraph
 import com.wenchen.yiyi.feature.main.navigation.mainGraph
 import com.wenchen.yiyi.navigation.routes.MainRoutes
 import kotlinx.coroutines.flow.collectLatest
@@ -84,7 +85,7 @@ fun AppNavHost(
                 }
             ) {
                 mainGraph(navController, this@SharedTransitionLayout)
-
+                configGraph(navController, this@SharedTransitionLayout)
             }
         }
     }
