@@ -1,4 +1,4 @@
-package com.wenchen.yiyi.feature.aiChat.ui
+package com.wenchen.yiyi.feature.aiChat.component
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
@@ -29,11 +29,15 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -58,7 +62,6 @@ import com.wenchen.yiyi.feature.aiChat.entity.ChatMessage
 import com.wenchen.yiyi.feature.aiChat.entity.ConversationType
 import com.wenchen.yiyi.feature.aiChat.entity.MessageContentType
 import com.wenchen.yiyi.feature.aiChat.entity.MessageType
-import com.wenchen.yiyi.feature.aiChat.vm.ChatViewModel
 import com.wenchen.yiyi.core.common.components.SettingTextFieldItem
 import com.wenchen.yiyi.core.common.components.StyledBracketText
 import com.wenchen.yiyi.core.common.theme.BlackBg
@@ -66,20 +69,24 @@ import com.wenchen.yiyi.core.common.theme.BlackText
 import com.wenchen.yiyi.core.common.theme.Gold
 import com.wenchen.yiyi.core.common.theme.HalfTransparentBlack
 import com.wenchen.yiyi.core.common.theme.IconBg
+import com.wenchen.yiyi.core.common.theme.WhiteBg
 import com.wenchen.yiyi.core.common.theme.WhiteText
 import com.wenchen.yiyi.core.common.utils.ChatUtil
+import com.wenchen.yiyi.core.util.toast.ToastUtils
+import com.wenchen.yiyi.feature.aiChat.vm.BaseChatViewModel
 import com.wenchen.yiyi.feature.config.common.ConfigManager
 import kotlinx.coroutines.launch
 
 @Composable
 fun DisplayChatMessageItem(
     message: ChatMessage,
-    viewModel: ChatViewModel,
+    viewModel: BaseChatViewModel,
     chatWindowHazeState: HazeState,
 ) {
     // 解析AI回复中的日期和角色名称
     val parseMessage = ChatUtil.parseMessage(message)
-    val uiState = viewModel.uiState.collectAsState().value
+    val uiState by viewModel.uiState.collectAsState()
+    val conversation by viewModel.conversation.collectAsState()
     when (message.type) {
         MessageType.USER, MessageType.SYSTEM -> ChatMessageItem(
             viewModel = viewModel,
@@ -98,7 +105,7 @@ fun DisplayChatMessageItem(
         )
 
         MessageType.ASSISTANT -> {
-            val avatarUrl = if (uiState.conversation.type == ConversationType.SINGLE) {
+            val avatarUrl = if (conversation.type == ConversationType.SINGLE) {
                 uiState.currentCharacter?.avatarPath
                     ?: "android.resource://${LocalContext.current.packageName}/${R.mipmap.ai_closed}"
             } else {
@@ -129,7 +136,7 @@ fun DisplayChatMessageItem(
                     messageId = message.id,
                     content = parseMessage.cleanedContent,
                     avatarUrl = if (uiState.currentCharacter?.avatarPath?.isNotBlank() == true) {
-                        uiState.currentCharacter.avatarPath
+                        uiState.currentCharacter?.avatarPath
                     } else "android.resource://${LocalContext.current.packageName}/${R.mipmap.ai_closed}",
                     messageType = message.type,
                     contentType = message.contentType,
@@ -142,7 +149,7 @@ fun DisplayChatMessageItem(
 
 @Composable
 fun ChatMessageItem(
-    viewModel: ChatViewModel,
+    viewModel: BaseChatViewModel,
     messageId: String,
     content: String,
     avatarUrl: String?,
@@ -155,9 +162,9 @@ fun ChatMessageItem(
     val isEditing = remember { mutableStateOf(false) }
     val threshold = with(LocalDensity.current) { 168.dp.toPx() } // 设定阈值
     val topBarHeight = with(LocalDensity.current) { 96.dp.toPx() } // 设定顶部栏高度
-    val isMenuVisible = remember { mutableStateOf(false) }
-    val messageItemBounds = remember { mutableStateOf(Rect.Zero) }
-    val touchPosition = remember { mutableStateOf(androidx.compose.ui.geometry.Offset.Zero) }
+    var isMenuVisible by remember { mutableStateOf(false) }
+    var messageItemBounds by remember { mutableStateOf(Rect.Zero) }
+    var touchPosition by remember { mutableStateOf(Offset.Zero) }
 
     ConstraintLayout(
         modifier = Modifier
@@ -227,7 +234,7 @@ fun ChatMessageItem(
                     }
                 }
                 .onGloballyPositioned { coordinates ->
-                    messageItemBounds.value = coordinates.boundsInWindow()
+                    messageItemBounds = coordinates.boundsInWindow()
                 },
             colors = CardDefaults.cardColors(Color.Transparent)
 
@@ -247,8 +254,8 @@ fun ChatMessageItem(
                         detectTapGestures(
                             onTap = { /* 处理点击事件 */ },
                             onLongPress = { offset ->
-                                touchPosition.value = offset
-                                isMenuVisible.value = true
+                                touchPosition = offset
+                                isMenuVisible = true
                             }
                         )
                     }
@@ -289,34 +296,26 @@ fun ChatMessageItem(
                     MessageContentType.VOICE -> {}
                 }
             }
-        }
+            if (isMenuVisible) {
+                // 计算消息项中心点的 Y 坐标
+                val itemCenterY = (messageItemBounds.top + messageItemBounds.bottom) / 2
+                // 计算控件高度
+                val itemHeight = messageItemBounds.height
+                // 获取屏幕高度
+                val screenHeight = with(LocalDensity.current) {
+                    LocalWindowInfo.current.containerSize.height.toDp().value * density
+                }
+                // 判断显示位置：
+                // 如果消息项中心点在屏幕上方 3/4 区域内，则显示在控件下方
+                // 否则显示在控件上方
+                val showBelow = itemCenterY < screenHeight * 0.75
 
-        if (isMenuVisible.value) {
-            // 计算消息项中心点的 Y 坐标
-            val itemCenterY = (messageItemBounds.value.top + messageItemBounds.value.bottom) / 2
-            // 计算控件高度
-            val itemHeight = messageItemBounds.value.height
-            // 获取屏幕高度
-            val screenHeight = with(LocalDensity.current) {
-                LocalWindowInfo.current.containerSize.height.toDp().value * density
-            }
-            // 判断显示位置：
-            // 如果消息项中心点在屏幕上方 3/4 区域内，则显示在控件下方
-            // 否则显示在控件上方
-            val showBelow = itemCenterY < screenHeight * 0.75
-
-            val yOffset = if (showBelow) {
-                // 显示在控件下方
-                itemHeight.toInt()
-            } else {
-                // 显示在控件上方
-                -itemHeight.toInt()
-            }
+                val yOffset = if (showBelow) itemHeight.toInt() else 0
 
             Popup(
-                onDismissRequest = { isMenuVisible.value = false }, // 点击外部关闭菜单
+                onDismissRequest = { isMenuVisible = false }, // 点击外部关闭菜单
                 offset = IntOffset(
-                    x = touchPosition.value.x.toInt(),
+                    x = touchPosition.x.toInt(),
                     /**
                      * 知识点
                      * popup的坐标原点在于父控件的左上角,是相对坐标，而不是整个屏幕左上角的绝对坐标
@@ -324,7 +323,7 @@ fun ChatMessageItem(
                      * 直接应用会导致偏移甚远
                      */
                     y = if (itemHeight > screenHeight * 0.75) {
-                        touchPosition.value.y.toInt()
+                        touchPosition.y.toInt()
                     } else {
 //                        with(LocalDensity.current) { (-15).dp.toPx().toInt() }
                         yOffset
@@ -334,8 +333,8 @@ fun ChatMessageItem(
                 val iconOffset1 = remember { Animatable(50f) } // 第一个图标初始位置偏移
                 val iconOffset2 = remember { Animatable(50f) } // 第二个图标初始位置偏移
                 // 触发动画
-                LaunchedEffect(isMenuVisible.value) {
-                    if (isMenuVisible.value) {
+                LaunchedEffect(isMenuVisible) {
+                    if (isMenuVisible) {
                         // 并行执行动画
                         coroutineScope {
                             launch {
@@ -375,31 +374,32 @@ fun ChatMessageItem(
                             .offset(y = iconOffset1.value.dp) // 应用动画偏移
                             .clickable {
                                 isEditing.value = true
-                                isMenuVisible.value = false
+                                isMenuVisible = false
                             }
                             .background(IconBg)
 //                            .hazeEffect(chatWindowHazeState)
-                            .padding(4.dp)
-                    )
-                    Spacer(modifier = Modifier.width(10.dp))
-                    // 删除按钮
-                    Icon(
-                        painterResource(id = R.drawable.delete),
-                        contentDescription = "删除",
-                        tint = WhiteText,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(10.dp))
-                            .size(30.dp)
-                            .offset(y = iconOffset2.value.dp) // 应用动画偏移
-                            .clickable {
-                                viewModel.deleteOneMessage(messageId)
-                                isMenuVisible.value = false
-                            }
-                            .background(IconBg)
+                                .padding(4.dp)
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        // 删除按钮
+                        Icon(
+                            painterResource(id = R.drawable.delete),
+                            contentDescription = "删除",
+                            tint = WhiteText,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(10.dp))
+                                .size(30.dp)
+                                .offset(y = iconOffset2.value.dp) // 应用动画偏移
+                                .clickable {
+                                    viewModel.deleteOneMessage(messageId)
+                                    isMenuVisible = false
+                                }
+                                .background(IconBg)
 //                            .hazeEffect(chatWindowHazeState)
-                            .padding(4.dp)
+                                .padding(4.dp)
 
-                    )
+                        )
+                    }
                 }
             }
         }
@@ -412,7 +412,10 @@ fun ChatMessageItem(
                         finalContent = listOfNotNull(
                             parsedMessage.extractedDate,
                             parsedMessage.extractedRole
-                        ).joinToString("") + " " + parsedMessage.cleanedContent.replace(content, editedContent)
+                        ).joinToString("") + " " + parsedMessage.cleanedContent.replace(
+                            content,
+                            editedContent
+                        )
                     }
                     viewModel.updateMessageContent(messageId, finalContent) {
                         isEditing.value = false

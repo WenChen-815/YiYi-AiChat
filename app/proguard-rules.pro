@@ -19,6 +19,20 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# xxp权限混淆规则 地址: https://github.com/getActivity/XXPermissions/blob/master/library/proguard-permissions.pro
+-keepclassmembers interface com.hjq.permissions.start.IStartActivityDelegate {
+    <methods>;
+}
+-keepclassmembers interface com.hjq.permissions.fragment.IFragmentMethodNative {
+    <methods>;
+}
+-keepclassmembers class androidx.fragment.app.Fragment {
+    androidx.fragment.app.FragmentActivity getActivity();
+}
+
+-keep class com.wenchen.yiyi.core.network.** { *; }
+
 # OkHttp
 -dontwarn okhttp3.**
 -keep class okhttp3.OkHttpClient { *; }

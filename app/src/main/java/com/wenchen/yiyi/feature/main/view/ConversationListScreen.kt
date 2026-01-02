@@ -22,19 +22,16 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import com.wenchen.yiyi.feature.aiChat.common.ImageManager
 import com.wenchen.yiyi.feature.aiChat.entity.Conversation
 import com.wenchen.yiyi.feature.aiChat.entity.ConversationType
-import com.wenchen.yiyi.feature.aiChat.ui.activity.ChatActivity
-import com.wenchen.yiyi.feature.aiChat.ui.activity.GroupChatActivity
 import com.wenchen.yiyi.feature.main.viewmodel.ConversationListViewModel
 import com.wenchen.yiyi.Application
 import com.wenchen.yiyi.core.common.theme.BlackBg
 import com.wenchen.yiyi.core.common.theme.WhiteBg
 import com.wenchen.yiyi.core.common.utils.ChatUtil
-import com.wenchen.yiyi.feature.config.common.ConfigManager
+import com.wenchen.yiyi.navigation.routes.AiChatRoutes
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -94,17 +91,18 @@ fun ConversationListScreen(
                         imageManager = imageManager,
                         onItemClick = { conv ->
                             if (conversation.type == ConversationType.GROUP) {
-                                val intent = Intent(context, GroupChatActivity::class.java)
-                                intent.putExtra("conversationId", conversation.id)
-                                context.startActivity(intent)
+//                                val intent = Intent(context, GroupChatActivity::class.java)
+//                                intent.putExtra("conversationId", conversation.id)
+//                                context.startActivity(intent)
+                                viewModel.navigate(AiChatRoutes.GroupChat(conversation.id))
                             } else {
-                                ConfigManager().saveSelectedCharacterId(conv.characterIds.keys.first())
-                                val intent = Intent(context, ChatActivity::class.java)
-                                intent.putExtra(
-                                    "SELECTED_CHARACTER_ID",
-                                    conv.characterIds.keys.first(),
-                                )
-                                context.startActivity(intent)
+                                viewModel.navigate(AiChatRoutes.SingleChat(conv.characterIds.keys.first()))
+//                                val intent = Intent(context, ChatActivity::class.java)
+//                                intent.putExtra(
+//                                    "SELECTED_CHARACTER_ID",
+//                                    conv.characterIds.keys.first(),
+//                                )
+//                                context.startActivity(intent)
                             }
                         },
                     )

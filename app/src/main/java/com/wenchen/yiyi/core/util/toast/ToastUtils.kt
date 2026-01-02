@@ -2,6 +2,7 @@ package com.wenchen.yiyi.core.util.toast
 
 import android.app.Application
 import android.content.Context
+import android.widget.Toast
 import androidx.annotation.StringRes
 import com.hjq.toast.ToastParams
 import com.hjq.toast.Toaster
@@ -9,17 +10,25 @@ import com.hjq.toast.style.BlackToastStyle
 import com.hjq.toast.style.CustomToastStyle
 import com.hjq.toast.style.WhiteToastStyle
 import com.wenchen.yiyi.R
+import dagger.hilt.android.qualifiers.ApplicationContext
 
 /**
  * Toast 工具类，基于 Toaster 框架封装
  * 提供基本的 Toast 显示和特定样式（成功、失败、警告）
  */
 object ToastUtils {
+    /**
+     * 原生Toast 显示
+     */
+    fun showToast(text: CharSequence, duration: Int = Toast.LENGTH_SHORT) {
+        Toast.makeText(context, text, duration).show()
+    }
 
     /**
      * 是否为深色主题
      */
     private var isDarkMode = false
+    private lateinit var context: Context
 
     /**
      * 初始化 Toast，应在 Application 中调用
@@ -31,7 +40,8 @@ object ToastUtils {
     fun init(application: Application, isDarkTheme: Boolean = false) {
         // 保存当前主题模式
         isDarkMode = isDarkTheme
-
+        // 保存 Application 上下文
+        context = application.applicationContext
         // 根据主题选择默认样式
         val style = if (isDarkTheme) WhiteToastStyle() else BlackToastStyle()
         Toaster.init(application, style)

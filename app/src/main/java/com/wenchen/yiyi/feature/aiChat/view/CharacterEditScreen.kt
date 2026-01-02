@@ -1,15 +1,9 @@
-package com.wenchen.yiyi.feature.aiChat.ui.activity
+package com.wenchen.yiyi.feature.aiChat.view
 
-import android.content.Intent
 import android.graphics.Bitmap
-import android.graphics.ImageDecoder
-import android.os.Build
-import android.os.Bundle
-import android.provider.MediaStore
 import android.util.Log
-import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -38,30 +32,21 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.wenchen.yiyi.feature.aiChat.vm.CharacterEditViewModel
-import com.wenchen.yiyi.Application
-import com.wenchen.yiyi.core.common.entity.AICharacter
-import com.wenchen.yiyi.feature.aiChat.entity.AIChatMemory
-import com.wenchen.yiyi.feature.config.common.ConfigManager
 import com.wenchen.yiyi.core.common.theme.AIChatTheme
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.UUID
 import androidx.core.net.toUri
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.lifecycleScope
+import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
-import com.wenchen.yiyi.feature.aiChat.common.ImageManager
-import com.wenchen.yiyi.feature.aiChat.entity.Conversation
-import com.wenchen.yiyi.feature.aiChat.entity.ConversationType
 import com.wenchen.yiyi.core.common.components.SettingTextFieldItem
 import com.wenchen.yiyi.core.common.theme.BlackText
 import com.wenchen.yiyi.core.common.theme.DarkGray
@@ -73,102 +58,72 @@ import com.wenchen.yiyi.core.common.utils.StatusBarUtil
 import com.wenchen.yiyi.feature.config.component.SwitchWithText
 import com.wenchen.yiyi.feature.worldBook.entity.WorldBook
 
-class CharacterEditActivity : ComponentActivity(), CoroutineScope by MainScope() {
-    private var characterId: String? = null
-    private var conversationId: String? = null
-    private var aiCharacterDao = Application.appDatabase.aiCharacterDao()
-    private var aiChatMemoryDao = Application.appDatabase.aiChatMemoryDao()
-    private var conversationDao = Application.appDatabase.conversationDao()
-    private val userId = ConfigManager().getUserId().toString()
-    private lateinit var imageManager: ImageManager
-    private var isNewCharacter = mutableStateOf(false)
+@Composable
+internal fun CharacterEditRoute (
+    viewModel: CharacterEditViewModel = hiltViewModel(),
+    navController: NavController
+){
+    AIChatTheme{
+        CharacterEditScreen(viewModel, navController)
+    }
+}
+@Composable
+private fun CharacterEditScreen(
+    viewModel: CharacterEditViewModel = hiltViewModel(),
+    navController: NavController
+) {
+    val activity = LocalContext.current as ComponentActivity
 
-    // 头像图片选择器
-    private val pickAvatarLauncher = registerForActivityResult(
+    val pickAvatarLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        if (result.resultCode == RESULT_OK && result.data != null) {
-            val imageUri = result.data?.data
-            try {
-                val bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    ImageDecoder.decodeBitmap(
-                        ImageDecoder.createSource(
-                            contentResolver,
-                            imageUri!!
-                        )
-                    )
-                } else {
-                    @Suppress("DEPRECATION")
-                    MediaStore.Images.Media.getBitmap(contentResolver, imageUri)
-                }
-                // 更新UI状态
-                avatarBitmap.value = bitmap
-                hasNewAvatar.value = true
-            } catch (e: Exception) {
-                e.printStackTrace()
-                Toast.makeText(this, "头像加载失败", Toast.LENGTH_SHORT).show()
+        viewModel.handleImageResult(
+            activity = activity,
+            result = result,
+            onImageSelected = { bitmap ->
+                viewModel.avatarBitmap = bitmap
+                viewModel.hasNewAvatar = true
+            },
+            onError = { error ->
+                // 处理错误
             }
-        }
+        )
     }
-
-    // 背景图片选择器
-    private val pickBackgroundLauncher = registerForActivityResult(
+    val pickBackgroundLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        if (result.resultCode == RESULT_OK && result.data != null) {
-            val imageUri = result.data?.data
-            try {
-                val bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    ImageDecoder.decodeBitmap(
-                        ImageDecoder.createSource(
-                            contentResolver,
-                            imageUri!!
-                        )
-                    )
-                } else {
-                    @Suppress("DEPRECATION")
-                    MediaStore.Images.Media.getBitmap(contentResolver, imageUri)
-                }
-                // 更新UI状态
-                backgroundBitmap.value = bitmap
-                hasNewBackground.value = true
-            } catch (e: Exception) {
-                e.printStackTrace()
-                Toast.makeText(this, "背景加载失败", Toast.LENGTH_SHORT).show()
+        viewModel.handleImageResult(
+            activity = activity,
+            result = result,
+            onImageSelected = { bitmap ->
+                viewModel.backgroundBitmap = bitmap
+                viewModel.hasNewBackground = true
+            },
+            onError = { error ->
+                // 处理错误
             }
-        }
+        )
     }
 
-    // 用于存储选择的图片
-    private val avatarBitmap = mutableStateOf<Bitmap?>(null)
-    private val backgroundBitmap = mutableStateOf<Bitmap?>(null)
+//    override fun onCreate(savedInstanceState: Bundle?) {
+//        super.onCreate(savedInstanceState)
+//        // 检查是否是编辑模式
+//        characterId = intent.getStringExtra("CHARACTER_ID")
+//        if (characterId == null) {
+//            characterId = UUID.randomUUID().toString()
+//            isNewCharacter.value = true
+//        }
+//        conversationId = intent.getStringExtra("CONVERSATION_ID")
+//            ?: "${ConfigManager().getUserId()}_$characterId"
+//        Log.d("ComposeCharacterEditActivity", "characterId: $characterId")
 
-    // 用于跟踪是否有新图片选择的变量
-    private var hasNewAvatar = mutableStateOf(false)
-    private var hasNewBackground = mutableStateOf(false)
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        imageManager = ImageManager()
-        // 检查是否是编辑模式
-        characterId = intent.getStringExtra("CHARACTER_ID")
-        if (characterId == null) {
-            characterId = UUID.randomUUID().toString()
-            isNewCharacter.value = true
-        }
-        conversationId = intent.getStringExtra("CONVERSATION_ID")
-            ?: "${ConfigManager().getUserId()}_$characterId"
-        Log.d("ComposeCharacterEditActivity", "characterId: $characterId")
-
-        setContent {
-            AIChatTheme {
-                CharacterEditScreen(
-                    activity = this,
-                    conversationId = conversationId.toString(),
-                    characterId = characterId,
-                    isNewCharacter = isNewCharacter.value,
+//        setContent {
+//            AIChatTheme {
+        CharacterEditScreenContent(
+                    activity = activity,
+                    isNewCharacter = viewModel.isNewCharacter.value,
                     onSaveClick = { name, roleIdentity, roleAppearance, roleDescription, outputExample, behaviorRules, memory, memoryCount, playerName, playGender, playerDescription, chatWorldId ->
-                        lifecycleScope.launch {
-                            saveCharacter(
+                            viewModel.saveCharacter(
                                 name,
                                 roleIdentity,
                                 roleAppearance,
@@ -182,194 +137,42 @@ class CharacterEditActivity : ComponentActivity(), CoroutineScope by MainScope()
                                 playerDescription,
                                 chatWorldId
                             )
-                        }
                     },
                     onCancelClick = {
-                        finish()
+                        viewModel.navigateBack()
                     },
                     onAvatarClick = {
-                        pickImageFromGallery(true)
+                        val intent = viewModel.createImagePickerIntent()
+                        pickAvatarLauncher.launch(intent)
                     },
                     onBackgroundClick = {
-                        pickImageFromGallery(false)
+                        val intent = viewModel.createImagePickerIntent()
+                        pickBackgroundLauncher.launch(intent)
                     },
-                    avatarBitmap = avatarBitmap.value,
-                    backgroundBitmap = backgroundBitmap.value,
+                    avatarBitmap = viewModel.avatarBitmap,
+                    backgroundBitmap = viewModel.backgroundBitmap,
                     onAvatarDeleteClick = {
-                        hasNewAvatar.value = false
-                        avatarBitmap.value = null
+                        viewModel.hasNewAvatar = false
+                        viewModel.avatarBitmap = null
                     },
                     onBackgroundDeleteClick = {
-                        hasNewBackground.value = false
-                        backgroundBitmap.value = null
+                        viewModel.hasNewBackground = false
+                        viewModel.backgroundBitmap = null
                     },
                     onResetCountClick = {
-                        Toast.makeText(this, "点击保存以生效", Toast.LENGTH_SHORT).show()
+                        // TODO 弹窗提示
+//                        Toast.makeText(this, "点击保存以生效", Toast.LENGTH_SHORT).show()
                     },
                 )
-            }
-        }
-    }
-
-    // 保存角色数据
-    private suspend fun saveCharacter(
-        name: String,
-        roleIdentity: String,
-        roleAppearance: String,
-        roleDescription: String,
-        outputExample: String,
-        behaviorRules: String,
-        memory: String,
-        memoryCount: Int,
-        playerName: String,
-        playGender: String,
-        playerDescription: String,
-        chatWorldId: String
-    ) {
-        if (name.isEmpty()) {
-            Toast.makeText(this, "请输入角色名称", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        // 清理旧图片（如果有新图片被选择）
-        if (hasNewAvatar.value) {
-            imageManager.deleteAvatarImage(characterId!!)
-            imageManager.saveAvatarImage(characterId!!, avatarBitmap.value!!)
-        }
-        if (hasNewBackground.value) {
-            imageManager.deleteBackgroundImage(characterId!!)
-            imageManager.saveBackgroundImage(characterId!!, backgroundBitmap.value!!)
-        }
-
-        val character = AICharacter(
-            aiCharacterId = characterId!!,
-            name = name,
-            roleIdentity = roleIdentity,
-            roleAppearance = roleAppearance,
-            roleDescription = roleDescription,
-            outputExample = outputExample,
-            behaviorRules = behaviorRules,
-            userId = userId,
-            createdAt = System.currentTimeMillis(),
-            avatarPath = imageManager.getAvatarImagePath(characterId!!),
-            backgroundPath = imageManager.getBackgroundImagePath(characterId!!)
-        )
-
-        var memoryEntity = aiChatMemoryDao.getByCharacterIdAndConversationId(
-            character.aiCharacterId,
-            conversationId.toString()
-        )
-        if (memoryEntity == null) {
-            memoryEntity = AIChatMemory(
-                id = UUID.randomUUID().toString(),
-                conversationId = conversationId.toString(),
-                characterId = character.aiCharacterId,
-                content = memory.ifEmpty { "" },
-                createdAt = System.currentTimeMillis(),
-                count = memoryCount
-            )
-        } else {
-            memoryEntity.content = memory.ifEmpty { "" }
-            memoryEntity.count = memoryCount
-        }
-
-        launch(Dispatchers.IO) {
-            try {
-                if (isNewCharacter.value) {
-                    // 新增角色
-                    val result = aiCharacterDao.insertAICharacter(character)
-                    val result2 = aiChatMemoryDao.insert(memoryEntity)
-
-                    // 创建初始Conversation
-                    val initialConversation = Conversation(
-                        id = conversationId.toString(),
-                        name = character.name,
-                        type = ConversationType.SINGLE,
-                        characterIds = mapOf(character.aiCharacterId to 1.0f),
-                        characterKeywords = mapOf(character.aiCharacterId to emptyList()),
-                        playerName = playerName.ifEmpty { ConfigManager().getUserName().toString() },
-                        playGender = playGender,
-                        playerDescription = playerDescription,
-                        chatWorldId = chatWorldId,
-                        chatSceneDescription = "",
-                        additionalSummaryRequirement = "",
-                        avatarPath = character.avatarPath,
-                        backgroundPath = character.backgroundPath,
-                    )
-                    conversationDao.insert(initialConversation) // 保存初始对话
-
-                    withContext(Dispatchers.Main) {
-                        if (result > 0 && result2 > 0) {
-                            Toast.makeText(
-                                this@CharacterEditActivity,
-                                "添加成功",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        } else {
-                            Toast.makeText(
-                                this@CharacterEditActivity,
-                                "添加失败",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                        finish()
-                    }
-                } else {
-                    // 更新角色
-                    val result = aiCharacterDao.updateAICharacter(character)
-                    val result2 = aiChatMemoryDao.update(memoryEntity)
-                    withContext(Dispatchers.Main) {
-                        if (result > 0 && result2 > 0) {
-                            Toast.makeText(
-                                this@CharacterEditActivity,
-                                "更新成功",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        } else {
-                            Toast.makeText(
-                                this@CharacterEditActivity,
-                                "更新失败",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                        finish()
-                    }
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(
-                        this@CharacterEditActivity,
-                        "保存失败: ${e.message}",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-        }
-    }
-
-    private fun pickImageFromGallery(isAvatar: Boolean) {
-        val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            Intent(MediaStore.ACTION_PICK_IMAGES).apply {
-                type = "image/*"
-            }
-        } else {
-            Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
-        }
-
-        if (isAvatar) {
-            pickAvatarLauncher.launch(intent)
-        } else {
-            pickBackgroundLauncher.launch(intent)
-        }
-    }
+//            }
+//        }
+//    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CharacterEditScreen(
+private fun CharacterEditScreenContent(
     activity: ComponentActivity,
-    conversationId: String,
-    characterId: String? = null,
     isNewCharacter: Boolean,
     onSaveClick: (String, String, String, String, String, String, String, Int, String, String, String, String) -> Unit,
     onCancelClick: () -> Unit,
@@ -413,22 +216,20 @@ fun CharacterEditScreen(
     val scrollState = rememberScrollState()
 
     // 如果是编辑模式，加载角色数据
-    LaunchedEffect(characterId) {
-        if (characterId != null) {
-            viewModel.loadCharacterData(conversationId, characterId) { character, memoryEntity ->
-                name = character?.name ?: ""
-                roleIdentity = character?.roleIdentity ?: ""
-                roleAppearance = character?.roleAppearance ?: ""
-                roleDescription = character?.roleDescription ?: ""
-                outputExample = character?.outputExample ?: ""
-                behaviorRules = character?.behaviorRules
-                    ?: "- 在 。 ？ ！ … 等表示句子结束处，或根于语境需要使用反斜线 (\\) 分隔,以确保良好的可读性与表达\n- 使用[]描述心理、场景或动作，但严格要求[]中的内容不允许使用分隔符(\\)"
-                memory = memoryEntity?.content ?: ""
-                memoryCount = memoryEntity?.count ?: 0
-                avatarPath = character?.avatarPath ?: ""
-                backgroundPath = character?.backgroundPath ?: ""
-                Log.d("ComposeCharacterEditActivity", "加载角色数据: ${character?.name}")
-            }
+    LaunchedEffect(viewModel.characterId.value) {
+        viewModel.loadCharacterData(viewModel.conversationId.value, viewModel.characterId.value) { character, memoryEntity ->
+            name = character?.name ?: ""
+            roleIdentity = character?.roleIdentity ?: ""
+            roleAppearance = character?.roleAppearance ?: ""
+            roleDescription = character?.roleDescription ?: ""
+            outputExample = character?.outputExample ?: ""
+            behaviorRules = character?.behaviorRules
+                ?: "- 在 。 ？ ！ … 等表示句子结束处，或根于语境需要使用反斜线 (\\) 分隔,以确保良好的可读性与表达\n- 使用[]描述心理、场景或动作，但严格要求[]中的内容不允许使用分隔符(\\)"
+            memory = memoryEntity?.content ?: ""
+            memoryCount = memoryEntity?.count ?: 0
+            avatarPath = character?.avatarPath ?: ""
+            backgroundPath = character?.backgroundPath ?: ""
+            Log.d("ComposeCharacterEditActivity", "加载角色数据: ${character?.name}")
         }
     }
     val coroutineScope = rememberCoroutineScope()

@@ -1,4 +1,4 @@
-package com.wenchen.yiyi.feature.aiChat.ui.activity
+package com.wenchen.yiyi.feature.aiChat.view
 
 import android.content.Intent
 import android.graphics.Bitmap
@@ -58,7 +58,6 @@ import com.wenchen.yiyi.feature.aiChat.common.ImageManager
 import com.wenchen.yiyi.feature.aiChat.entity.AIChatMemory
 import com.wenchen.yiyi.feature.aiChat.entity.Conversation
 import com.wenchen.yiyi.feature.aiChat.entity.ConversationType
-import com.wenchen.yiyi.feature.aiChat.ui.ShowMemoryDialog
 import com.wenchen.yiyi.Application
 import com.wenchen.yiyi.core.common.components.SettingTextFieldItem
 import com.wenchen.yiyi.core.common.entity.AICharacter

@@ -120,7 +120,7 @@ class ThemeColorExtractor {
     private fun kMeansHsv(pixels: List<FloatArray>, k: Int): List<HsvCluster> {
         if (k <= 0) return emptyList()
 
-        var clusters = initializeHsvCenters(pixels, k)
+        val clusters = initializeHsvCenters(pixels, k)
 
         var iterations = 0
         var changed: Boolean
@@ -273,7 +273,7 @@ class ThemeColorExtractor {
     }
 
     /**
-     * 检查两个HSV中心是否相等（明确实现此方法）
+     * 检查两个HSV中心是否相等
      */
     private fun centersEqual(center1: FloatArray, center2: FloatArray): Boolean {
         return abs(center1[0] - center2[0]) < 1 &&
@@ -295,7 +295,7 @@ class ThemeColorExtractor {
     }
 
     /**
-     * HSV聚类数据类 - 改为内部类以访问外部类的方法
+     * HSV聚类数据类
      */
     private inner class HsvCluster(
         var center: FloatArray,

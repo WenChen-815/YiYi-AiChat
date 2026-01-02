@@ -1,4 +1,4 @@
-package com.wenchen.yiyi.feature.aiChat.ui
+package com.wenchen.yiyi.feature.aiChat.view
 
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
@@ -25,7 +25,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -40,12 +42,13 @@ import com.wenchen.yiyi.feature.aiChat.vm.ChatUiState
 import com.wenchen.yiyi.core.common.theme.HalfTransparentBlack
 import com.wenchen.yiyi.core.common.theme.WhiteBg
 import com.wenchen.yiyi.core.common.theme.WhiteText
+import com.wenchen.yiyi.feature.aiChat.vm.BaseChatViewModel
 import com.wenchen.yiyi.feature.config.common.ConfigManager
 
 @Composable
 fun ChatActivityTopBar(
     onOpenDrawer: () -> Unit,
-    uiState: ChatUiState,
+    viewModel: BaseChatViewModel,
     isScrolling: Boolean = false,
     isScrollEnd: Boolean = true,
 ) {
@@ -73,6 +76,8 @@ fun ChatActivityTopBar(
         animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
         label = "iconAlpha",
     )
+    val uiState by viewModel.uiState.collectAsState()
+    val conversation by viewModel.conversation.collectAsState()
     Row(
         modifier =
             Modifier
@@ -102,7 +107,7 @@ fun ChatActivityTopBar(
         ) {
             var offsetX = 0.dp
             Box {
-                if (uiState.conversation.type == ConversationType.SINGLE) {
+                if (conversation.type == ConversationType.SINGLE) {
                     AsyncImage(
                         model = uiState.currentCharacter?.avatarPath,
                         contentScale = ContentScale.Crop,
@@ -112,7 +117,7 @@ fun ChatActivityTopBar(
                                 .size(36.dp)
                                 .clip(CircleShape),
                     )
-                } else if (uiState.conversation.type == ConversationType.GROUP) {
+                } else if (conversation.type == ConversationType.GROUP) {
                     uiState.currentCharacters.take(3).forEach {
                         AsyncImage(
                             model = it.avatarPath,
@@ -141,14 +146,14 @@ fun ChatActivityTopBar(
                 }
             }
             Column(modifier = Modifier.padding(horizontal = 12.dp + offsetX, vertical = 8.dp)) {
-                if (uiState.conversation.type == ConversationType.SINGLE) {
+                if (conversation.type == ConversationType.SINGLE) {
                     Text(
                         text = uiState.currentCharacter?.name ?: "未选择角色",
                         style = MaterialTheme.typography.titleMedium.copy(color = WhiteText),
                     )
-                } else if (uiState.conversation.type == ConversationType.GROUP) {
+                } else if (conversation.type == ConversationType.GROUP) {
                     Text(
-                        text = uiState.conversation.name,
+                        text = conversation.name,
                         style = MaterialTheme.typography.titleMedium.copy(color = WhiteText),
                     )
                 }

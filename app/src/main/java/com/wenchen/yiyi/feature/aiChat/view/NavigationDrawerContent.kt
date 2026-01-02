@@ -1,4 +1,4 @@
-package com.wenchen.yiyi.feature.aiChat.ui
+package com.wenchen.yiyi.feature.aiChat.view
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -16,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -26,17 +27,18 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.wenchen.yiyi.feature.aiChat.entity.Conversation
 import com.wenchen.yiyi.feature.aiChat.entity.ConversationType
-import com.wenchen.yiyi.feature.aiChat.vm.ChatViewModel
 import com.wenchen.yiyi.core.common.entity.AICharacter
 import com.wenchen.yiyi.core.common.theme.*
+import com.wenchen.yiyi.feature.aiChat.component.YiYiChatDrawerItem
+import com.wenchen.yiyi.feature.aiChat.vm.BaseChatViewModel
+import com.wenchen.yiyi.navigation.routes.ConfigRoutes
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.hazeEffect
 
 @Composable
 fun NavigationDrawerContent(
-    viewModel: ChatViewModel,
-    onNavConfigClick: () -> Unit,
+    viewModel: BaseChatViewModel,
     onNavSwitchModelClick: () -> Unit,
     onNavClearChatClick: () -> Unit,
     onNavAboutClick: () -> Unit,
@@ -50,7 +52,8 @@ fun NavigationDrawerContent(
     val density = LocalDensity.current.density
     val windowInfo = LocalWindowInfo.current
     val screenWidthDp = windowInfo.containerSize.width / density
-    val uiState = viewModel.uiState.collectAsState().value
+    val uiState by viewModel.uiState.collectAsState()
+    val conversation by viewModel.conversation.collectAsState()
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
         ModalDrawerSheet(
             // 覆盖默认的窗口内边距，允许内容延伸到状态栏
@@ -85,32 +88,32 @@ fun NavigationDrawerContent(
             ) {
                 YiYiChatDrawerItem(
                     label = "我的昵称",
-                    description = uiState.conversation.playerName,
+                    description = conversation.playerName,
                     onClick = onGotoConversationEdit,
                 )
                 YiYiChatDrawerItem(
                     label = "我的性别",
-                    description = uiState.conversation.playGender,
+                    description = conversation.playGender,
                     onClick = onGotoConversationEdit,
                 )
                 YiYiChatDrawerItem(
                     label = "我的描述",
-                    description = if (uiState.conversation.playerDescription.length > 10) "${
-                        uiState.conversation.playerDescription.substring(
+                    description = if (conversation.playerDescription.length > 10) "${
+                        conversation.playerDescription.substring(
                             0,
                             10
                         )
-                    }..." else uiState.conversation.playerDescription,
+                    }..." else conversation.playerDescription,
                     onClick = onGotoConversationEdit,
                 )
                 YiYiChatDrawerItem(
                     label = "当前场景",
-                    description = if (uiState.conversation.chatSceneDescription.length > 10) "${
-                        uiState.conversation.chatSceneDescription.substring(
+                    description = if (conversation.chatSceneDescription.length > 10) "${
+                        conversation.chatSceneDescription.substring(
                             0,
                             10
                         )
-                    }..." else uiState.conversation.chatSceneDescription,
+                    }..." else conversation.chatSceneDescription,
                     onClick = onGotoConversationEdit,
                 )
             }
@@ -130,7 +133,7 @@ fun NavigationDrawerContent(
             ) {
                 YiYiChatDrawerItem(
                     label = "API配置",
-                    onClick = onNavConfigClick,
+                    onClick = { viewModel.navigate(ConfigRoutes.ChatConfig) },
                 )
                 YiYiChatDrawerItem(
                     label = "切换模型",
@@ -152,7 +155,7 @@ fun NavigationDrawerContent(
                     .background(WhiteBg.copy(0.1f)),
                 verticalArrangement = Arrangement.Bottom
             ) {
-                if (uiState.conversation.type == ConversationType.SINGLE) {
+                if (conversation.type == ConversationType.SINGLE) {
                     YiYiChatDrawerItem(
                         label = "编辑角色",
                         onClick = { onEditClick(uiState.currentCharacter!!) },
@@ -162,10 +165,10 @@ fun NavigationDrawerContent(
                         onClick = { onDeleteClick(uiState.currentCharacter!!) },
                     )
                 }
-                if (uiState.conversation.type == ConversationType.GROUP) {
+                if (conversation.type == ConversationType.GROUP) {
                     YiYiChatDrawerItem(
                         label = "删除会话",
-                        onClick = { onDeleteGroupClick(uiState.conversation) },
+                        onClick = { onDeleteGroupClick(conversation) },
                     )
                 }
                 YiYiChatDrawerItem(

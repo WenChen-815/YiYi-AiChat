@@ -1,21 +1,17 @@
-package com.wenchen.yiyi.feature.aiChat.ui.activity
+package com.wenchen.yiyi.feature.aiChat.view
 
-import android.content.Intent
+import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.graphics.ColorSpace
 import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Build
-import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
@@ -29,149 +25,76 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.lifecycleScope
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.NavController
 import coil3.compose.AsyncImage
-import com.wenchen.yiyi.feature.aiChat.common.AIChatManager
-import com.wenchen.yiyi.feature.aiChat.common.ImageManager
-import com.wenchen.yiyi.feature.aiChat.entity.ChatMessage
-import com.wenchen.yiyi.feature.aiChat.entity.Conversation
-import com.wenchen.yiyi.feature.aiChat.ui.ChatActivityTopBar
-import com.wenchen.yiyi.feature.aiChat.ui.ChatInputArea
-import com.wenchen.yiyi.feature.aiChat.ui.ClearChatDialog
-import com.wenchen.yiyi.feature.aiChat.ui.DeleteCharacterDialog
-import com.wenchen.yiyi.feature.aiChat.ui.DisplayChatMessageItem
-import com.wenchen.yiyi.feature.aiChat.ui.ModelsDialog
-import com.wenchen.yiyi.feature.aiChat.ui.NavigationDrawerContent
-import com.wenchen.yiyi.feature.aiChat.vm.ChatViewModel
-import com.wenchen.yiyi.Application
+import com.wenchen.yiyi.feature.aiChat.component.DisplayChatMessageItem
 import com.wenchen.yiyi.core.common.components.BlinkingReplyIndicator
 import com.wenchen.yiyi.core.common.theme.AIChatTheme
 import com.wenchen.yiyi.core.common.theme.BlackBg
 import com.wenchen.yiyi.core.common.theme.HalfTransparentBlack
 import com.wenchen.yiyi.core.common.theme.WhiteBg
-import com.wenchen.yiyi.core.common.utils.StatusBarUtil
 import com.wenchen.yiyi.core.common.utils.ThemeColorExtractor
+import com.wenchen.yiyi.core.util.toast.ToastUtils
+import com.wenchen.yiyi.feature.aiChat.vm.GroupChatViewModel
 import dev.chrisbanes.haze.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
 
-class GroupChatActivity : ComponentActivity() {
-    private val viewModel: ChatViewModel by viewModels()
-    private val conversationDao = Application.appDatabase.conversationDao()
-
-    private val pickImageLauncher =
-        registerForActivityResult(
-            ActivityResultContracts.StartActivityForResult(),
-        ) { result ->
-            if (result.resultCode == RESULT_OK && result.data != null) {
-                val imageUri = result.data?.data
-                try {
-                    val bitmap =
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                            ImageDecoder.decodeBitmap(
-                                ImageDecoder.createSource(
-                                    contentResolver,
-                                    imageUri!!,
-                                ),
-                            )
-                        } else {
-                            @Suppress("DEPRECATION")
-                            MediaStore.Images.Media.getBitmap(contentResolver, imageUri)
-                        }
-                    // 保存图片并发送
-                    val file = saveImageToCache(bitmap)
-                    if (file != null) {
-                        val savedUri = Uri.fromFile(file)
-                        viewModel.sendImage(bitmap, savedUri)
-                        Toast.makeText(this, "图片选择成功", Toast.LENGTH_SHORT).show()
-                    }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                    Toast.makeText(this, "图片加载失败", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge()
-        StatusBarUtil.transparentNavBar(this)
-        StatusBarUtil.setStatusBarTextColor(this, false)
-        super.onCreate(savedInstanceState)
-
-        // 初始化聊天监听器
-        setupChatListener()
-
-        val conversationId = intent.getStringExtra("conversationId") ?: return
-
-        lifecycleScope.launch {
-            val conversation = conversationDao.getById(conversationId)
-            if (conversation != null) {
-                viewModel.initGroupChat(conversation)
-
-                setContent {
-                    AIChatTheme {
-                        GroupChatScreen(conversation, viewModel)
-                    }
-                }
-            }
-        }
+@Composable
+internal fun GroupChatRoute (
+    viewModel: GroupChatViewModel = hiltViewModel(),
+    navController: NavController
+){
+    AIChatTheme{
+        GroupChatScreen(viewModel, navController)
     }
-
-    override fun onResume() {
-        super.onResume()
-        // 刷新对话信息
-        viewModel.refreshConversationInfo()
-    }
-
-    private fun setupChatListener() {
-        val listener =
-            object : AIChatManager.AIChatMessageListener {
-                override fun onMessageSent(message: ChatMessage) {
-                    viewModel.addMessage(message)
-                }
-
-                override fun onMessageReceived(message: ChatMessage) {
-                    viewModel.addMessage(message)
-                }
-
-                override fun onAllReplyCompleted() {
-                    viewModel.hideProgress()
-                }
-
-                override fun onError(error: String) {
-                    runOnUiThread {
-                        Log.e("ChatActivity", error)
-                        Toast.makeText(this@GroupChatActivity, error, Toast.LENGTH_LONG)
-                            .show()
-                    }
-                }
-
-                override fun onShowToast(message: String) {
-                    runOnUiThread {
-                        Toast.makeText(this@GroupChatActivity, message, Toast.LENGTH_SHORT).show()
-                    }
-                }
-            }
-        AIChatManager.registerListener(listener)
-    }
-
+}
+@Composable
+private fun GroupChatScreen(
+    viewModel: GroupChatViewModel = hiltViewModel(),
+    navController: NavController
+){
+    GroupChatScreenContent(
+        viewModel = viewModel,
+        navController = navController
+    )
+}
+    @SuppressLint("ContextCastToActivity")
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    fun GroupChatScreen(
-        conversation: Conversation,
-        viewModel: ChatViewModel,
+    fun GroupChatScreenContent(
+        viewModel: GroupChatViewModel,
+        navController: NavController
     ) {
+        val activity = LocalContext.current as ComponentActivity
+        val conversation by viewModel.conversation.collectAsState()
         val drawerState = rememberDrawerState(DrawerValue.Closed)
         val scope = rememberCoroutineScope()
         val uiState by viewModel.uiState.collectAsState()
         val bgImgHazeState = rememberHazeState()
         val chatWindowHazeState = rememberHazeState()
+        val launcher = rememberLauncherForActivityResult(
+            ActivityResultContracts.StartActivityForResult()
+        ) { result ->
+            viewModel.handleImageResult(
+                activity = activity,
+                result = result,
+                onImageSelected = { bitmap, uri ->
+                    viewModel.sendImage(bitmap, uri)
+                },
+                onError = { error ->
+                    // 处理错误
+                }
+            )
+        }
 
         val bgBitmap: Bitmap? =
             try {
@@ -182,7 +105,7 @@ class GroupChatActivity : ComponentActivity() {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                             val bitmap =
                                 ImageDecoder.decodeBitmap(
-                                    ImageDecoder.createSource(contentResolver, uri),
+                                    ImageDecoder.createSource(activity.contentResolver, uri),
                                 ) { decoder, info, source ->
                                     // 禁用硬件加速，确保可以访问像素
                                     decoder.setTargetColorSpace(
@@ -199,7 +122,7 @@ class GroupChatActivity : ComponentActivity() {
                             }
                         } else {
                             @Suppress("DEPRECATION")
-                            MediaStore.Images.Media.getBitmap(contentResolver, uri)
+                            MediaStore.Images.Media.getBitmap(activity.contentResolver, uri)
                         }
                     } else {
                         Log.e(
@@ -240,14 +163,6 @@ class GroupChatActivity : ComponentActivity() {
                 drawerContent = {
                     NavigationDrawerContent(
                         viewModel = viewModel,
-                        onNavConfigClick = {
-//                            startActivity(
-//                                Intent(
-//                                    this@GroupChatActivity,
-//                                    ConfigActivity::class.java,
-//                                ),
-//                            )
-                        },
                         onNavSwitchModelClick = {
                             showModelsDialog = true
                         },
@@ -256,13 +171,14 @@ class GroupChatActivity : ComponentActivity() {
                         },
                         onDeleteGroupClick = { showDeleteDialog = true },
                         onGotoConversationEdit = {
-                            val intent =
-                                Intent(
-                                    this@GroupChatActivity,
-                                    ConversationEditActivity::class.java,
-                                )
-                            intent.putExtra("CONVERSATION_ID", conversation.id)
-                            this@GroupChatActivity.startActivity(intent)
+                            // TODO 跳转到会话编辑页面
+//                            val intent =
+//                                Intent(
+//                                    this@GroupChatActivity,
+//                                    ConversationEditActivity::class.java,
+//                                )
+//                            intent.putExtra("CONVERSATION_ID", conversation.id)
+//                            this@GroupChatActivity.startActivity(intent)
                         },
                         onNavAboutClick = {
                             // 获取聊天消息列表
@@ -345,7 +261,8 @@ class GroupChatActivity : ComponentActivity() {
                                 }
                             },
                             onPickImage = {
-                                pickImageFromGallery()
+                                val intent = viewModel.createImagePickerIntent()
+                                launcher.launch(intent)
                             },
                             modifier = Modifier.fillMaxSize(),
                             themeBgColor = colors[0],
@@ -365,12 +282,7 @@ class GroupChatActivity : ComponentActivity() {
                                 .value.currentModelName,
                         onModelSelected = { modelId ->
                             viewModel.selectModel(modelId)
-                            Toast
-                                .makeText(
-                                    this@GroupChatActivity,
-                                    "已选择模型：$modelId",
-                                    Toast.LENGTH_SHORT,
-                                ).show()
+                            ToastUtils.show("已选择模型：$modelId")
                         },
                         onDismiss = { showModelsDialog = false },
                     )
@@ -380,12 +292,7 @@ class GroupChatActivity : ComponentActivity() {
                     ClearChatDialog(
                         onConfirm = {
                             viewModel.clearChatHistory()
-                            Toast
-                                .makeText(
-                                    this@GroupChatActivity,
-                                    "聊天记录已清空",
-                                    Toast.LENGTH_SHORT,
-                                ).show()
+                            ToastUtils.show("聊天记录已清空")
                         },
                         onDismiss = { showClearChatDialog = false },
                     )
@@ -402,20 +309,9 @@ class GroupChatActivity : ComponentActivity() {
                             // 使用协程调用挂起函数
                             viewModel.viewModelScope.launch {
                                 if (viewModel.deleteConversation(conversation)) {
-                                    Toast
-                                        .makeText(
-                                            this@GroupChatActivity,
-                                            "对话已删除",
-                                            Toast.LENGTH_SHORT,
-                                        ).show()
-                                    this@GroupChatActivity.finish()
+                                    ToastUtils.show("对话已删除")
                                 } else {
-                                    Toast
-                                        .makeText(
-                                            this@GroupChatActivity,
-                                            "删除对话失败",
-                                            Toast.LENGTH_SHORT,
-                                        ).show()
+                                    ToastUtils.show("删除对话失败")
                                 }
                                 showDeleteDialog = false
                             }
@@ -430,7 +326,7 @@ class GroupChatActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
     @Composable
     fun GroupChatContent(
-        viewModel: ChatViewModel,
+        viewModel: GroupChatViewModel,
         onOpenDrawer: () -> Unit,
         onPickImage: () -> Unit,
         modifier: Modifier = Modifier,
@@ -486,20 +382,27 @@ class GroupChatActivity : ComponentActivity() {
         LaunchedEffect(listState, initFinish.value) {
             Log.i("ChatScreen", "initFinish: ${initFinish.value}")
             if (!initFinish.value) return@LaunchedEffect
-            snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull { it.index == uiState.messages.size - 1 } }
-                .collect { lastVisibleItem ->
-                    if (lastVisibleItem != null && lastVisibleItem.index > 10) {
-                        if (viewModel.canLoadMore()) {
-                            viewModel.loadMoreMessages()
-                        }
+            snapshotFlow { listState.firstVisibleItemIndex }
+                .collect { firstVisibleIndex ->
+                    // 当用户滚动到顶部附近时加载更多消息
+                    if (firstVisibleIndex < 2 && viewModel.canLoadMore()) {
+                        viewModel.loadMoreMessages()
                     }
                 }
+//            snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull { it.index == uiState.messages.size - 1 } }
+//                .collect { lastVisibleItem ->
+//                    if (lastVisibleItem != null && lastVisibleItem.index > 10) {
+//                        if (viewModel.canLoadMore()) {
+//                            viewModel.loadMoreMessages()
+//                        }
+//                    }
+//                }
         }
 
         Scaffold(
             containerColor = Color.Transparent,
             topBar = {
-                ChatActivityTopBar(onOpenDrawer, uiState, scrollState.value, scrollEndState.value)
+                ChatActivityTopBar(onOpenDrawer, viewModel, scrollState.value, scrollEndState.value)
             },
             content = { padding ->
                 Column(
@@ -575,26 +478,3 @@ class GroupChatActivity : ComponentActivity() {
             },
         )
     }
-
-    private fun pickImageFromGallery() {
-        val intent =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                Intent(MediaStore.ACTION_PICK_IMAGES).apply {
-                    type = "image/*"
-                }
-            } else {
-                Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
-            }
-        pickImageLauncher.launch(intent)
-    }
-
-    private fun saveImageToCache(bitmap: Bitmap): File? =
-        try {
-            val imageManager = ImageManager()
-            val conversationId = viewModel.uiState.value.conversation.id
-            imageManager.saveChatImage(conversationId, bitmap)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
-}

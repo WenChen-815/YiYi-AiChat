@@ -1,8 +1,6 @@
 package com.wenchen.yiyi.feature.main.view
 
 import android.content.Context
-import android.content.Intent
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -26,19 +24,15 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
-import com.google.gson.Gson
-import com.wenchen.yiyi.feature.aiChat.ui.activity.ChatActivity
 import com.wenchen.yiyi.core.common.components.NoBorderTextField
 import com.wenchen.yiyi.core.common.entity.AICharacter
 import com.wenchen.yiyi.core.common.theme.BlackText
 import com.wenchen.yiyi.core.common.theme.GrayBg
 import com.wenchen.yiyi.core.common.theme.GrayText
 import com.wenchen.yiyi.core.common.theme.WhiteText
-import com.wenchen.yiyi.feature.config.common.ConfigManager
 import com.wenchen.yiyi.feature.main.viewmodel.HomeViewModel
-import dagger.hilt.android.lifecycle.HiltViewModel
+import com.wenchen.yiyi.navigation.routes.AiChatRoutes
 import timber.log.Timber
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -120,10 +114,10 @@ fun HomeScreen(
                     CharacterItem(
                         character = characters[index],
                         onItemClick = { character ->
-                            ConfigManager().saveSelectedCharacterId(character.aiCharacterId)
-                            val intent = Intent(context, ChatActivity::class.java)
-                            intent.putExtra("SELECTED_CHARACTER", Gson().toJson(character))
-                            context.startActivity(intent)
+//                            val intent = Intent(context, ChatActivity::class.java)
+//                            intent.putExtra("SELECTED_CHARACTER", Gson().toJson(character))
+//                            context.startActivity(intent)
+                            viewModel.navigate(AiChatRoutes.SingleChat(character.aiCharacterId))
                         },
                     )
                 }

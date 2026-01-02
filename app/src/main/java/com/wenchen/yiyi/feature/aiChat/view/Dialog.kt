@@ -1,4 +1,4 @@
-package com.wenchen.yiyi.feature.aiChat.ui
+package com.wenchen.yiyi.feature.aiChat.view
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement

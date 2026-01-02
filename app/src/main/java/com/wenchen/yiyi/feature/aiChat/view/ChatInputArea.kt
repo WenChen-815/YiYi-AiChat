@@ -1,4 +1,4 @@
-package com.wenchen.yiyi.feature.aiChat.ui
+package com.wenchen.yiyi.feature.aiChat.view
 
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -40,13 +40,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.unit.dp
 import com.wenchen.yiyi.feature.aiChat.entity.ConversationType
-import com.wenchen.yiyi.feature.aiChat.vm.ChatViewModel
 import com.wenchen.yiyi.core.common.components.YiYiTextField
 import com.wenchen.yiyi.core.common.theme.*
+import com.wenchen.yiyi.feature.aiChat.vm.BaseChatViewModel
 
 @Composable
 fun ChatInputArea(
-    viewModel: ChatViewModel,
+    viewModel: BaseChatViewModel,
     modifier: Modifier = Modifier,
     messageText: String,
     onMessageTextChange: (String) -> Unit,
@@ -60,6 +60,7 @@ fun ChatInputArea(
     themeBgColor: Color = if (isSystemInDarkTheme()) BlackBg else WhiteBg,
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val conversation by viewModel.conversation.collectAsState()
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -164,7 +165,7 @@ fun ChatInputArea(
                 modifier = Modifier.weight(1f),
                 placeholder = {
                     Text(
-                        if (uiState.conversation.type == ConversationType.SINGLE) "向${uiState.currentCharacter?.name ?: "[未选择角色]"}发送消息"
+                        if (conversation.type == ConversationType.SINGLE) "向${uiState.currentCharacter?.name ?: "[未选择角色]"}发送消息"
                         else "在群聊发送消息",
                         style = MaterialTheme.typography.bodyLarge.copy(color = WhiteText.copy(0.6f))
                     )

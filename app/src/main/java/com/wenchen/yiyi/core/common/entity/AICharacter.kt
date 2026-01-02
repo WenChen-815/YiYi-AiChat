@@ -2,7 +2,9 @@ package com.wenchen.yiyi.core.common.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import kotlinx.serialization.Serializable
 
+@Serializable
 @Entity(tableName = "ai_characters")
 data class AICharacter(
     @PrimaryKey val aiCharacterId: String,

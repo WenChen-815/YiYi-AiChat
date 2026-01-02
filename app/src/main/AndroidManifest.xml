@@ -39,12 +39,9 @@
             android:name="com.wenchen.yiyi.feature.worldBook.view.WorldBookEditActivity"
             android:exported="false" />
         <activity
-            android:name="com.wenchen.yiyi.feature.aiChat.ui.activity.GroupChatActivity"
-            android:exported="false"
-            android:windowSoftInputMode="adjustResize" />
-        <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -52,19 +49,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="com.wenchen.yiyi.feature.config.view.activity.ConfigActivity"
-            android:exported="false"
-            android:windowSoftInputMode="adjustResize" />
-        <activity
-            android:name="com.wenchen.yiyi.feature.aiChat.ui.activity.ChatActivity"
-            android:exported="false"
-            android:windowSoftInputMode="adjustResize" />
-        <activity
-            android:name="com.wenchen.yiyi.feature.aiChat.ui.activity.CharacterEditActivity"
-            android:exported="false"
-            android:windowSoftInputMode="adjustResize" />
-        <activity
-            android:name="com.wenchen.yiyi.feature.aiChat.ui.activity.ConversationEditActivity"
+            android:name="com.wenchen.yiyi.feature.aiChat.view.ConversationEditActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
     </application>

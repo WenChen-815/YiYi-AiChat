@@ -1,6 +1,5 @@
 package com.wenchen.yiyi.feature.main.view
 
-import android.content.Intent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -62,6 +61,7 @@ import com.wenchen.yiyi.core.common.theme.WhiteBg
 import com.wenchen.yiyi.core.common.theme.WhiteText
 import com.wenchen.yiyi.core.common.utils.StatusBarUtil
 import com.wenchen.yiyi.feature.main.viewmodel.MainViewModel
+import com.wenchen.yiyi.navigation.routes.AiChatRoutes
 import com.wenchen.yiyi.navigation.routes.ConfigRoutes
 
 /**
@@ -83,7 +83,7 @@ internal fun MainRoute(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun MainScreen(
-    viewModel : MainViewModel = hiltViewModel(),
+    viewModel: MainViewModel = hiltViewModel(),
     navController: NavController = NavController(LocalContext.current)
 ) {
     MainScreenContent(
@@ -133,25 +133,27 @@ private fun MainScreenContent(
                                 icon = Icons.Rounded.Book,
                                 iconTint = MaterialTheme.colorScheme.primary,
                                 text = "世界",
-                                modifier = Modifier.clickable{
-                                    // TODO 跳转世界书籍列表页面
-                                }
+                                modifier = Modifier
+                                    .clickable {
+                                        // TODO 跳转世界书籍列表页面
+                                    }
                                     .padding(horizontal = 8.dp),
                                 iconModifier = Modifier.size(24.dp),
                                 textModifier = Modifier.padding(top = 4.dp),
-                                textStyle = MaterialTheme.typography.labelSmall.copy(MaterialTheme.colorScheme.primary,)
+                                textStyle = MaterialTheme.typography.labelSmall.copy(MaterialTheme.colorScheme.primary)
                             )
                             IconWithText(
                                 icon = Icons.Rounded.Settings,
                                 iconTint = MaterialTheme.colorScheme.primary,
                                 text = "设置",
-                                modifier = Modifier.clickable{
-                                    viewModel.navigate(ConfigRoutes.ChatConfig)
-                                }
+                                modifier = Modifier
+                                    .clickable {
+                                        viewModel.navigate(ConfigRoutes.ChatConfig)
+                                    }
                                     .padding(horizontal = 8.dp),
                                 iconModifier = Modifier.size(24.dp),
                                 textModifier = Modifier.padding(top = 4.dp),
-                                textStyle = MaterialTheme.typography.labelSmall.copy(MaterialTheme.colorScheme.primary,)
+                                textStyle = MaterialTheme.typography.labelSmall.copy(MaterialTheme.colorScheme.primary)
                             )
                         },
                         colors =
@@ -201,16 +203,19 @@ private fun MainScreenContent(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Box(
-                        modifier = Modifier.fillMaxHeight().weight(1f).clickable(
-                            indication = null,
-                            interactionSource = remember { MutableInteractionSource() }
-                        ){ currentPosition = 0 },
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .weight(1f)
+                            .clickable(
+                                indication = null,
+                                interactionSource = remember { MutableInteractionSource() }
+                            ) { currentPosition = 0 },
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
                             text = "角色",
                             style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = when(currentPosition) {
+                                fontWeight = when (currentPosition) {
                                     0 -> FontWeight.Bold
                                     else -> FontWeight.Normal
                                 }
@@ -262,10 +267,17 @@ private fun MainScreenContent(
                                             .fillMaxWidth()
                                             .clickable {
                                                 showAddPopup = false
-                                                // TODO 跳转角色编辑页面
+                                                viewModel.navigate(
+                                                    AiChatRoutes.CharacterEdit(
+                                                        "",
+                                                        true
+                                                    )
+                                                )
                                             }
                                             .padding(12.dp),
-                                        style = MaterialTheme.typography.bodyLarge.copy(MaterialTheme.colorScheme.primary)
+                                        style = MaterialTheme.typography.bodyLarge.copy(
+                                            MaterialTheme.colorScheme.primary
+                                        )
                                     )
 
                                     HorizontalDivider()
@@ -280,23 +292,28 @@ private fun MainScreenContent(
                                                 // TODO 跳转世界书籍创建页面
                                             }
                                             .padding(12.dp),
-                                        style = MaterialTheme.typography.bodyLarge.copy(MaterialTheme.colorScheme.primary)
+                                        style = MaterialTheme.typography.bodyLarge.copy(
+                                            MaterialTheme.colorScheme.primary
+                                        )
                                     )
                                 }
                             }
                         }
                     }
                     Box(
-                        modifier = Modifier.fillMaxHeight().weight(1f).clickable(
-                            indication = null,
-                            interactionSource = remember { MutableInteractionSource() }
-                        ){ currentPosition = 1 },
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .weight(1f)
+                            .clickable(
+                                indication = null,
+                                interactionSource = remember { MutableInteractionSource() }
+                            ) { currentPosition = 1 },
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
                             text = "聊天",
                             style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = when(currentPosition) {
+                                fontWeight = when (currentPosition) {
                                     1 -> FontWeight.Bold
                                     else -> FontWeight.Normal
                                 }
