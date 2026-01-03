@@ -6,6 +6,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import com.wenchen.yiyi.feature.aiChat.view.CharacterEditRoute
+import com.wenchen.yiyi.feature.aiChat.view.ConversationEditRoute
 import com.wenchen.yiyi.feature.aiChat.view.GroupChatRoute
 import com.wenchen.yiyi.feature.aiChat.view.SingleChatRoute
 import com.wenchen.yiyi.navigation.routes.AiChatRoutes
@@ -31,5 +32,8 @@ fun NavGraphBuilder.aiChatScreen(
 
     composable<AiChatRoutes.CharacterEdit> {
         CharacterEditRoute(navController = navController)
+    }
+    composable<AiChatRoutes.ConversationEdit> {
+        ConversationEditRoute(navController = navController)
     }
 }

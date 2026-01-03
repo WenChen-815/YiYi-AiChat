@@ -57,7 +57,7 @@ object StatusBarUtil {
      * @param statusBarColor 状态栏背景颜色，默认透明
      */
     fun setStatusBarTextColor(
-        activity: ComponentActivity,
+        activity: Activity,
         isDarkText: Boolean,
         statusBarColor: Color = Color.Transparent
     ) {

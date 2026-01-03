@@ -37,6 +37,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.io.File
 import kotlin.collections.toMutableList
 
@@ -133,11 +134,11 @@ fun init() {
                         MediaStore.Images.Media.getBitmap(activity.contentResolver, uri)
                     }
                 } else {
-                    Log.e("ChatActivity", "背景图片文件不存在: $backgroundPath")
+                    Timber.tag("ChatActivity").e("背景图片文件不存在: $backgroundPath")
                     null
                 }
             } catch (e: Exception) {
-                Log.e("ChatActivity", "加载背景图片失败: ${e.message}", e)
+                Timber.tag("ChatActivity").e(e, "加载背景图片失败: ${e.message}")
                 null
             }
         }
@@ -237,7 +238,7 @@ fun init() {
                     _conversation.value = updatedConversation
                 }
             } catch (e: Exception) {
-                Log.e("ChatViewModel", "刷新对话信息失败", e)
+                Timber.tag("ChatViewModel").e(e, "刷新对话信息失败")
             }
         }
     }
@@ -265,7 +266,7 @@ fun init() {
         if (isInitialLoading) return
         isInitialLoading = true
 
-        Log.d("ChatViewModel", "loadInitialData: ${conversation.value.id}")
+        Timber.tag("ChatViewModel").d("loadInitialData: ${conversation.value.id}")
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
             val initialMessages = chatMessageDao.getMessagesByPage(
@@ -297,7 +298,7 @@ fun init() {
     // 加载更多消息的方法
     fun loadMoreMessages() {
         if (_uiState.value.isLoading || !_uiState.value.hasMoreData || isInitialLoading) return
-        Log.d("ChatViewModel", "loadMoreMessages: $currentPage")
+        Timber.tag("ChatViewModel").d("loadMoreMessages: $currentPage")
 
         viewModelScope.launch(Dispatchers.IO) {
             _uiState.value = _uiState.value.copy(isLoading = true)

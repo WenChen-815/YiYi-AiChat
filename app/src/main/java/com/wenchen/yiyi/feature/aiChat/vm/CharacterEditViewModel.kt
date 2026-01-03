@@ -93,13 +93,11 @@ class CharacterEditViewModel @Inject constructor(
                 val character = aiCharacterDao.getCharacterById(characterId)
                 val memory =
                     aiChatMemoryDao.getByCharacterIdAndConversationId(characterId, conversationId)
-                Log.i(
-                    "CharacterEditViewModel",
-                    "加载角色记忆: $memory characterId:$characterId conversationId:$conversationId"
-                )
+                Timber.tag("CharacterEditViewModel")
+                    .i("加载角色记忆: $memory characterId:$characterId conversationId:$conversationId")
                 onLoadComplete(character, memory)
             } catch (e: Exception) {
-                Log.e("CharacterEditViewModel", "加载角色数据失败: $characterId", e)
+                Timber.tag("CharacterEditViewModel").e(e, "加载角色数据失败: $characterId")
                 onLoadComplete(null, null)
             }
         }

@@ -27,8 +27,8 @@ object AiChatRoutes {
     data class CharacterEdit(val characterId :String, val isNewCharacter: Boolean = false)
 
     /**
-     * 会话设置页
+     * 会话编辑页
      */
     @Serializable
-    data class ConversationSetting(val conversationId: String)
+    data class ConversationEdit(val conversationId: String, val isNewConversation: Boolean = false)
 }

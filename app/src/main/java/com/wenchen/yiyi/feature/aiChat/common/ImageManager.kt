@@ -261,20 +261,20 @@ class ImageManager(private val context: Context = Application.instance) {
 
     /**
      * 获取头像图片的完整路径
-     * @param characterId 角色ID
+     * @param id 角色ID/会话ID
      * @return 完整路径字符串
      */
-    fun getAvatarImagePath(characterId: String): String? {
-        return getAvatarImage(characterId)?.absolutePath
+    fun getAvatarImagePath(id: String): String? {
+        return getAvatarImage(id)?.absolutePath
     }
 
     /**
      * 获取背景图片的完整路径
-     * @param characterId 角色ID
+     * @param id 角色ID/会话ID
      * @return 完整路径字符串
      */
-    fun getBackgroundImagePath(characterId: String): String? {
-        return getBackgroundImage(characterId)?.absolutePath
+    fun getBackgroundImagePath(id: String): String? {
+        return getBackgroundImage(id)?.absolutePath
     }
 
     /**

@@ -174,7 +174,7 @@ private fun MainScreenContent(
                         },
                         actions = {
                             TextButton(onClick = {
-                                // TODO 跳转创建群组页面
+                                viewModel.navigate(AiChatRoutes.ConversationEdit("", true))
                             }) {
                                 Text("创建群组")
                             }

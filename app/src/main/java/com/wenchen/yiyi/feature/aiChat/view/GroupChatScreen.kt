@@ -43,9 +43,11 @@ import com.wenchen.yiyi.core.common.theme.WhiteBg
 import com.wenchen.yiyi.core.common.utils.ThemeColorExtractor
 import com.wenchen.yiyi.core.util.toast.ToastUtils
 import com.wenchen.yiyi.feature.aiChat.vm.GroupChatViewModel
+import com.wenchen.yiyi.navigation.routes.AiChatRoutes
 import dev.chrisbanes.haze.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.io.File
 
 @Composable
@@ -171,14 +173,9 @@ private fun GroupChatScreen(
                         },
                         onDeleteGroupClick = { showDeleteDialog = true },
                         onGotoConversationEdit = {
-                            // TODO 跳转到会话编辑页面
-//                            val intent =
-//                                Intent(
-//                                    this@GroupChatActivity,
-//                                    ConversationEditActivity::class.java,
-//                                )
-//                            intent.putExtra("CONVERSATION_ID", conversation.id)
-//                            this@GroupChatActivity.startActivity(intent)
+                            viewModel.navigate(AiChatRoutes.ConversationEdit(
+                                viewModel.conversation.value.id
+                            ))
                         },
                         onNavAboutClick = {
                             // 获取聊天消息列表
@@ -186,7 +183,7 @@ private fun GroupChatScreen(
                             // 提取所有消息内容
                             val contents = messages.map { it.content }
                             // 记录到日志
-                            Log.d("Data", "聊天消息列表: $contents")
+                            Timber.tag("Data").d("聊天消息列表: $contents")
                         },
                         themeBgColor = colors[0],
                         hazeState = bgImgHazeState,

@@ -48,10 +48,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name="com.wenchen.yiyi.feature.aiChat.view.ConversationEditActivity"
-            android:exported="false"
-            android:windowSoftInputMode="adjustResize" />
     </application>
 
 </manifest>

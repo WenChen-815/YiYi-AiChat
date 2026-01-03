@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -60,6 +61,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 import kotlin.collections.map
 
 @Composable
@@ -88,13 +90,12 @@ private fun SingleChatScreen(
         navController = navController
     )
 }
-@SuppressLint("ContextCastToActivity")
 @Composable
 private fun SingleChatScreenContent(
     viewModel: SingleChatViewModel,
     navController: NavController
 ){
-    val activity = LocalContext.current as ComponentActivity
+    val activity = LocalActivity.current as ComponentActivity
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val uiState by viewModel.uiState.collectAsState()
@@ -211,14 +212,9 @@ private fun SingleChatScreenContent(
                     },
                     onDeleteClick = { showDeleteDialog = true },
                     onGotoConversationEdit = {
-                        // TODO 跳转到会话编辑页面
-//                        val intent =
-//                            Intent(
-//                                this@ChatActivity,
-//                                ConversationEditActivity::class.java,
-//                            )
-//                        intent.putExtra("CONVERSATION_ID", uiState.conversation.id)
-//                        this@ChatActivity.startActivity(intent)
+                        viewModel.navigate(AiChatRoutes.ConversationEdit(
+                            viewModel.conversation.value.id
+                        ))
                     },
                     onNavAboutClick = {
 //                                scope.launch {
@@ -229,7 +225,7 @@ private fun SingleChatScreenContent(
                         // 提取所有消息内容
                         val contents = messages.map { it.content }
                         // 记录到日志
-                        Log.d("Data", "聊天消息列表: $contents")
+                        Timber.tag("Data").d("聊天消息列表: $contents")
                     },
                     themeBgColor = colors[0],
                     hazeState = bgImgHazeState,

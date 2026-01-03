@@ -91,18 +91,9 @@ fun ConversationListScreen(
                         imageManager = imageManager,
                         onItemClick = { conv ->
                             if (conversation.type == ConversationType.GROUP) {
-//                                val intent = Intent(context, GroupChatActivity::class.java)
-//                                intent.putExtra("conversationId", conversation.id)
-//                                context.startActivity(intent)
                                 viewModel.navigate(AiChatRoutes.GroupChat(conversation.id))
                             } else {
                                 viewModel.navigate(AiChatRoutes.SingleChat(conv.characterIds.keys.first()))
-//                                val intent = Intent(context, ChatActivity::class.java)
-//                                intent.putExtra(
-//                                    "SELECTED_CHARACTER_ID",
-//                                    conv.characterIds.keys.first(),
-//                                )
-//                                context.startActivity(intent)
                             }
                         },
                     )

@@ -1,8 +1,10 @@
 package com.wenchen.yiyi.feature.aiChat.view
 
+import android.app.Activity
 import android.graphics.Bitmap
 import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -57,13 +59,16 @@ import com.wenchen.yiyi.core.common.utils.FilesUtil
 import com.wenchen.yiyi.core.common.utils.StatusBarUtil
 import com.wenchen.yiyi.feature.config.component.SwitchWithText
 import com.wenchen.yiyi.feature.worldBook.entity.WorldBook
+import timber.log.Timber
+import androidx.compose.runtime.collectAsState
+import com.wenchen.yiyi.core.util.toast.ToastUtils
 
 @Composable
-internal fun CharacterEditRoute (
+internal fun CharacterEditRoute(
     viewModel: CharacterEditViewModel = hiltViewModel(),
     navController: NavController
-){
-    AIChatTheme{
+) {
+    AIChatTheme {
         CharacterEditScreen(viewModel, navController)
     }
 }
@@ -72,7 +77,7 @@ private fun CharacterEditScreen(
     viewModel: CharacterEditViewModel = hiltViewModel(),
     navController: NavController
 ) {
-    val activity = LocalContext.current as ComponentActivity
+    val activity = LocalActivity.current as ComponentActivity
 
     val pickAvatarLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -105,74 +110,56 @@ private fun CharacterEditScreen(
         )
     }
 
-//    override fun onCreate(savedInstanceState: Bundle?) {
-//        super.onCreate(savedInstanceState)
-//        // 检查是否是编辑模式
-//        characterId = intent.getStringExtra("CHARACTER_ID")
-//        if (characterId == null) {
-//            characterId = UUID.randomUUID().toString()
-//            isNewCharacter.value = true
-//        }
-//        conversationId = intent.getStringExtra("CONVERSATION_ID")
-//            ?: "${ConfigManager().getUserId()}_$characterId"
-//        Log.d("ComposeCharacterEditActivity", "characterId: $characterId")
-
-//        setContent {
-//            AIChatTheme {
-        CharacterEditScreenContent(
-                    activity = activity,
-                    isNewCharacter = viewModel.isNewCharacter.value,
-                    onSaveClick = { name, roleIdentity, roleAppearance, roleDescription, outputExample, behaviorRules, memory, memoryCount, playerName, playGender, playerDescription, chatWorldId ->
-                            viewModel.saveCharacter(
-                                name,
-                                roleIdentity,
-                                roleAppearance,
-                                roleDescription,
-                                outputExample,
-                                behaviorRules,
-                                memory,
-                                memoryCount,
-                                playerName,
-                                playGender,
-                                playerDescription,
-                                chatWorldId
-                            )
-                    },
-                    onCancelClick = {
-                        viewModel.navigateBack()
-                    },
-                    onAvatarClick = {
-                        val intent = viewModel.createImagePickerIntent()
-                        pickAvatarLauncher.launch(intent)
-                    },
-                    onBackgroundClick = {
-                        val intent = viewModel.createImagePickerIntent()
-                        pickBackgroundLauncher.launch(intent)
-                    },
-                    avatarBitmap = viewModel.avatarBitmap,
-                    backgroundBitmap = viewModel.backgroundBitmap,
-                    onAvatarDeleteClick = {
-                        viewModel.hasNewAvatar = false
-                        viewModel.avatarBitmap = null
-                    },
-                    onBackgroundDeleteClick = {
-                        viewModel.hasNewBackground = false
-                        viewModel.backgroundBitmap = null
-                    },
-                    onResetCountClick = {
-                        // TODO 弹窗提示
-//                        Toast.makeText(this, "点击保存以生效", Toast.LENGTH_SHORT).show()
-                    },
-                )
-//            }
-//        }
-//    }
+    CharacterEditScreenContent(
+        activity = activity,
+        isNewCharacter = viewModel.isNewCharacter.collectAsState().value,
+        onSaveClick = { name, roleIdentity, roleAppearance, roleDescription, outputExample, behaviorRules, memory, memoryCount, playerName, playGender, playerDescription, chatWorldId ->
+            viewModel.saveCharacter(
+                name,
+                roleIdentity,
+                roleAppearance,
+                roleDescription,
+                outputExample,
+                behaviorRules,
+                memory,
+                memoryCount,
+                playerName,
+                playGender,
+                playerDescription,
+                chatWorldId
+            )
+        },
+        onCancelClick = {
+            viewModel.navigateBack()
+        },
+        onAvatarClick = {
+            val intent = viewModel.createImagePickerIntent()
+            pickAvatarLauncher.launch(intent)
+        },
+        onBackgroundClick = {
+            val intent = viewModel.createImagePickerIntent()
+            pickBackgroundLauncher.launch(intent)
+        },
+        avatarBitmap = viewModel.avatarBitmap,
+        backgroundBitmap = viewModel.backgroundBitmap,
+        onAvatarDeleteClick = {
+            viewModel.hasNewAvatar = false
+            viewModel.avatarBitmap = null
+        },
+        onBackgroundDeleteClick = {
+            viewModel.hasNewBackground = false
+            viewModel.backgroundBitmap = null
+        },
+        onResetCountClick = {
+            ToastUtils.showToast("点击保存以生效")
+        },
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CharacterEditScreenContent(
-    activity: ComponentActivity,
+    activity: Activity,
     isNewCharacter: Boolean,
     onSaveClick: (String, String, String, String, String, String, String, Int, String, String, String, String) -> Unit,
     onCancelClick: () -> Unit,
@@ -216,8 +203,11 @@ private fun CharacterEditScreenContent(
     val scrollState = rememberScrollState()
 
     // 如果是编辑模式，加载角色数据
-    LaunchedEffect(viewModel.characterId.value) {
-        viewModel.loadCharacterData(viewModel.conversationId.value, viewModel.characterId.value) { character, memoryEntity ->
+    LaunchedEffect(viewModel.characterId.collectAsState().value) {
+        viewModel.loadCharacterData(
+            viewModel.conversationId.value,
+            viewModel.characterId.value
+        ) { character, memoryEntity ->
             name = character?.name ?: ""
             roleIdentity = character?.roleIdentity ?: ""
             roleAppearance = character?.roleAppearance ?: ""
@@ -229,7 +219,7 @@ private fun CharacterEditScreenContent(
             memoryCount = memoryEntity?.count ?: 0
             avatarPath = character?.avatarPath ?: ""
             backgroundPath = character?.backgroundPath ?: ""
-            Log.d("ComposeCharacterEditActivity", "加载角色数据: ${character?.name}")
+            Timber.tag("ComposeCharacterEditActivity").d("加载角色数据: ${character?.name}")
         }
     }
     val coroutineScope = rememberCoroutineScope()
@@ -262,7 +252,7 @@ private fun CharacterEditScreenContent(
                     imageVector = Icons.Rounded.ArrowBackIosNew,
                     contentDescription = "返回",
                     modifier = Modifier
-                        .clickable { activity.finish() }
+                        .clickable { viewModel.navigateBack() }
                         .size(18.dp)
                         .align(Alignment.CenterStart)
                 )
@@ -590,7 +580,7 @@ private fun CharacterEditScreenContent(
                 }
             }
 
-            if(isNewCharacter){
+            if (isNewCharacter) {
                 SwitchWithText(
                     modifier = Modifier.fillMaxWidth(),
                     text = "预设“我”和世界",
@@ -704,8 +694,8 @@ private suspend fun loadWorldBooks(
     onLoaded: (List<WorldBook>) -> Unit
 ) = withContext(Dispatchers.IO) {
     val worldBookFiles = FilesUtil.listFileNames("world_book")
-    Log.d("WorldBookListActivity", "loadWorldBooks: $worldBookFiles")
-    val worldBooks = mutableListOf(WorldBook("","未选择世界"))
+    Timber.tag("WorldBookListActivity").d("loadWorldBooks: $worldBookFiles")
+    val worldBooks = mutableListOf(WorldBook("", "未选择世界"))
 
     worldBookFiles.forEach { fileName ->
         try {
