@@ -278,7 +278,7 @@ fun ConversationEditScreenContent(
                     contentDescription = "返回",
                     modifier =
                         Modifier
-                            .clickable { activity.finish() }
+                            .clickable { viewModel.navigateBack() }
                             .size(18.dp)
                             .align(Alignment.CenterStart),
                 )

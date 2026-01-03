@@ -63,6 +63,7 @@ import com.wenchen.yiyi.core.common.utils.StatusBarUtil
 import com.wenchen.yiyi.feature.main.viewmodel.MainViewModel
 import com.wenchen.yiyi.navigation.routes.AiChatRoutes
 import com.wenchen.yiyi.navigation.routes.ConfigRoutes
+import com.wenchen.yiyi.navigation.routes.WorldBookRoutes
 
 /**
  * 主页面路由
@@ -135,7 +136,7 @@ private fun MainScreenContent(
                                 text = "世界",
                                 modifier = Modifier
                                     .clickable {
-                                        // TODO 跳转世界书籍列表页面
+                                        viewModel.navigate(WorldBookRoutes.WorldBookList)
                                     }
                                     .padding(horizontal = 8.dp),
                                 iconModifier = Modifier.size(24.dp),
@@ -289,7 +290,7 @@ private fun MainScreenContent(
                                             .fillMaxWidth()
                                             .clickable {
                                                 showAddPopup = false
-                                                // TODO 跳转世界书籍创建页面
+                                                viewModel.navigate(WorldBookRoutes.WorldBookEdit("", true))
                                             }
                                             .padding(12.dp),
                                         style = MaterialTheme.typography.bodyLarge.copy(

@@ -114,9 +114,6 @@ fun HomeScreen(
                     CharacterItem(
                         character = characters[index],
                         onItemClick = { character ->
-//                            val intent = Intent(context, ChatActivity::class.java)
-//                            intent.putExtra("SELECTED_CHARACTER", Gson().toJson(character))
-//                            context.startActivity(intent)
                             viewModel.navigate(AiChatRoutes.SingleChat(character.aiCharacterId))
                         },
                     )

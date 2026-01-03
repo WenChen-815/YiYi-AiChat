@@ -30,6 +30,7 @@ import com.wenchen.yiyi.core.common.entity.Model
 import com.wenchen.yiyi.core.common.utils.LimitMutableList
 import com.wenchen.yiyi.core.common.utils.limitMutableListOf
 import com.wenchen.yiyi.core.state.UserState
+import com.wenchen.yiyi.core.util.toast.ToastUtils
 import com.wenchen.yiyi.navigation.AppNavigator
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -159,11 +160,11 @@ fun init() {
                 override fun onAllReplyCompleted() {}
 
                 override fun onError(error: String) {
-                    // TODO show Toast
+                    ToastUtils.showToast(error)
                 }
 
                 override fun onShowToast(message: String) {
-                    // TODO show Toast
+                    ToastUtils.showToast(message)
                 }
             }
         AIChatManager.registerListener(listener)

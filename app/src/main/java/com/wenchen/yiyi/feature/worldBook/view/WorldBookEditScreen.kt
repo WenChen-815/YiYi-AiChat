@@ -1,10 +1,8 @@
 package com.wenchen.yiyi.feature.worldBook.view
 
-import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
@@ -20,7 +18,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.lifecycleScope
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.navigation.NavController
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import com.wenchen.yiyi.core.common.components.SettingTextFieldItem
@@ -30,80 +29,43 @@ import com.wenchen.yiyi.core.common.utils.FilesUtil
 import com.wenchen.yiyi.core.common.utils.StatusBarUtil
 import com.wenchen.yiyi.feature.worldBook.entity.WorldBook
 import com.wenchen.yiyi.feature.worldBook.entity.WorldBookItem
+import com.wenchen.yiyi.feature.worldBook.viewmodel.WorldBookEditViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.*
+import androidx.compose.runtime.collectAsState
+import com.wenchen.yiyi.core.util.toast.ToastUtils
+import timber.log.Timber
 
-class WorldBookEditActivity : ComponentActivity() {
-    private lateinit var worldId: String
-    private var isCreateNew = mutableStateOf(false)
-    val moshi: Moshi = Moshi.Builder().build()
-    // 生成WorldBook类的适配器
-    val worldBookAdapter: JsonAdapter<WorldBook> = moshi.adapter(WorldBook::class.java)
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        worldId = intent.getStringExtra("WORLD_BOOK_ID")?: run {
-            isCreateNew.value = true
-            UUID.randomUUID().toString()
-        }
-        Log.d("WorldBookEditActivity", "onCreate: $worldId")
-
-        setContent {
-            AIChatTheme {
-                WorldBookEditScreen(
-                    activity = this,
-                    isCreateNew = isCreateNew.value,
-                    worldId = worldId,
-                    onSaveClick = { name, description, worldItems ->
-                        lifecycleScope.launch {
-                            saveWorldBook(name, description, worldItems)
-                        }
-                    }
-                )
-            }
-        }
+@Composable
+internal fun WorldBookEditRoute(
+    viewModel: WorldBookEditViewModel = hiltViewModel(),
+    navController: NavController
+) {
+    AIChatTheme {
+        WorldBookEditScreen(viewModel, navController)
     }
+}
 
-    private suspend fun saveWorldBook(
-        name: String,
-        description: String,
-        worldItems: List<WorldBookItem>
-    ) {
-        try {
-            val worldBook = WorldBook(
-                id = worldId,
-                worldName = name,
-                worldDesc = description,
-                worldItems = worldItems
-            )
-            val json = worldBookAdapter.toJson(worldBook)
-            val filePath = FilesUtil.saveToFile(json, "world_book/$worldId.json")
-            if (filePath.isNotEmpty()) {
-                Log.d("WorldBookEditActivity", "saveWorldBook: $filePath")
-            }
-            withContext(Dispatchers.Main) {
-                Toast.makeText(this@WorldBookEditActivity, "世界保存成功", Toast.LENGTH_SHORT).show()
-                this@WorldBookEditActivity.finish()
-            }
-        } catch (e: Exception) {
-            withContext(Dispatchers.Main) {
-                Toast.makeText(this@WorldBookEditActivity, "世界保存失败: ${e.message}", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
+//}
+@Composable
+private fun WorldBookEditScreen(
+    viewModel: WorldBookEditViewModel = hiltViewModel(),
+    navController: NavController
+) {
+    WorldBookEditScreenContent(
+        viewModel = viewModel,
+        navController = navController
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WorldBookEditScreen(
-    activity: ComponentActivity,
-    isCreateNew: Boolean,
-    worldId: String,
-    onSaveClick: (String, String, List<WorldBookItem>) -> Unit,
+private fun WorldBookEditScreenContent(
+    viewModel: WorldBookEditViewModel,
+    navController: NavController
 ) {
+    val activity = LocalActivity.current as ComponentActivity
     if (isSystemInDarkTheme()) {
         StatusBarUtil.setStatusBarTextColor(activity, false)
     } else {
@@ -129,12 +91,12 @@ fun WorldBookEditScreen(
                 TextButton(
                     onClick = {
                         // 执行删除操作
-                        val deleted = FilesUtil.deleteFile("world_book/$worldId.json")
+                        val deleted = FilesUtil.deleteFile("world_book/${viewModel.worldId.value}.json")
                         if (deleted) {
-                            Toast.makeText(context, "世界删除成功", Toast.LENGTH_SHORT).show()
-                            activity.finish()
+                            ToastUtils.showToast("世界删除成功")
+                            viewModel.navigateBack()
                         } else {
-                            Toast.makeText(context, "世界删除失败", Toast.LENGTH_SHORT).show()
+                            ToastUtils.showToast("世界删除失败")
                         }
                         showDeleteDialog = false
                     }
@@ -149,16 +111,20 @@ fun WorldBookEditScreen(
             }
         )
     }
-    LaunchedEffect(worldId) {
+    LaunchedEffect(viewModel.worldId.collectAsState().value) {
         launch(Dispatchers.IO) {
             try {
-                if (!isCreateNew) {
-                    val json = FilesUtil.readFile("world_book/$worldId.json")
-                    Log.d("WorldBookEditScreen", "json: $json")
-                    val worldBookAdapter: JsonAdapter<WorldBook> = Moshi.Builder().build().adapter(WorldBook::class.java)
+                if (!viewModel.isNewWorld.value) {
+                    val json = FilesUtil.readFile("world_book/${viewModel.worldId.value}.json")
+                    Timber.tag("WorldBookEditScreen").d("json: $json")
+                    val worldBookAdapter: JsonAdapter<WorldBook> =
+                        Moshi.Builder().build().adapter(WorldBook::class.java)
                     // 转换为 WorldBook 对象
                     val worldList = FilesUtil.listFileNames("world_book")
-                    worldBook = worldBookAdapter.fromJson(json) ?: WorldBook(worldId, "无名世界${worldList.size + 1}")
+                    worldBook = worldBookAdapter.fromJson(json) ?: WorldBook(
+                        viewModel.worldId.value,
+                        "无名世界${worldList.size + 1}"
+                    )
                     name = worldBook?.worldName ?: "无名世界${worldList.size + 1}"
                     description = worldBook?.worldDesc ?: ""
 
@@ -194,7 +160,7 @@ fun WorldBookEditScreen(
                     contentDescription = "返回",
                     modifier =
                         Modifier
-                            .clickable { activity.finish() }
+                            .clickable { viewModel.navigateBack() }
                             .size(18.dp)
                             .align(Alignment.CenterStart),
                 )
@@ -204,7 +170,7 @@ fun WorldBookEditScreen(
                     modifier = Modifier.align(Alignment.Center),
                 )
                 // 删除按钮 仅在编辑现有世界时显示
-                if (!isCreateNew) {
+                if (!viewModel.isNewWorld.collectAsState().value) {
                     Text(
                         text = "删除世界",
                         modifier = Modifier
@@ -227,7 +193,7 @@ fun WorldBookEditScreen(
             ) {
                 Button(
                     onClick = {
-                        onSaveClick(name, description, worldItems.toList())
+                        viewModel.saveWorldBook(name, description, worldItems.toList())
                     },
                     modifier = Modifier.weight(1f),
                     colors =
@@ -296,7 +262,7 @@ fun WorldBookEditScreen(
                 update = { _, _ -> },
                 addItem = { newName, newDesc ->
                     worldItems.add(WorldBookItem(newName, newDesc))
-                    Log.d("WorldBookEditActivity", "worldItems: $worldItems")
+                    Timber.tag("WorldBookEditActivity").d("worldItems: $worldItems")
                 },
                 deleteItem = { _ -> }
             )
@@ -309,7 +275,9 @@ fun WorldBookEditScreen(
                 // 知识点：使用key强制重组
                 key(name) {
                     WorldItem(
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 4.dp),
                         name = name,
                         desc = desc,
                         update = { newName, newDesc ->
@@ -322,7 +290,7 @@ fun WorldBookEditScreen(
                         addItem = { _, _ -> },
                         deleteItem = { name ->
                             worldItems.removeIf { it.name == name }
-                            Log.d("WorldBookEditActivity", "worldItems: $worldItems")
+                            Timber.tag("WorldBookEditActivity").d("worldItems: $worldItems")
                         }
                     )
                 }
@@ -344,8 +312,10 @@ fun WorldItem(
 ) {
     var lastName by remember { mutableStateOf(name) }
     var lastDesc by remember { mutableStateOf(desc) }
-    Row(modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         SettingTextFieldItem(
             value = lastName,
             label = "",
@@ -353,7 +323,9 @@ fun WorldItem(
                 if (!isAddOne) update(it, desc)
                 lastName = it
             },
-            modifier = Modifier.weight(1f).padding(end = 4.dp),
+            modifier = Modifier
+                .weight(1f)
+                .padding(end = 4.dp),
             placeholder = { Text("请输入") },
         )
         SettingTextFieldItem(
@@ -377,6 +349,7 @@ fun WorldItem(
                     deleteItem(name)
                 }
             },
-            color = MaterialTheme.colorScheme.primary)
+            color = MaterialTheme.colorScheme.primary
+        )
     }
 }

@@ -7,14 +7,12 @@ import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.os.Build
 import android.provider.MediaStore
-import android.util.Log
 import androidx.activity.result.ActivityResult
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.toRoute
 import com.squareup.moshi.JsonAdapter
 import com.wenchen.yiyi.Application

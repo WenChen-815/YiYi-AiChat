@@ -1,12 +1,5 @@
 package com.wenchen.yiyi.feature.worldBook.view
 
-import android.os.Bundle
-import androidx.activity.enableEdgeToEdge
-import android.content.Context
-import android.content.Intent
-import android.util.Log
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -21,41 +14,46 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.navigation.NavController
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.JsonAdapter
 import com.wenchen.yiyi.core.common.theme.AIChatTheme
 import com.wenchen.yiyi.core.common.theme.BlackBg
 import com.wenchen.yiyi.core.common.theme.WhiteBg
-import com.wenchen.yiyi.core.common.utils.FilesUtil
 import com.wenchen.yiyi.feature.worldBook.entity.WorldBook
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import com.wenchen.yiyi.feature.worldBook.viewmodel.WorldBookListViewModel
+import com.wenchen.yiyi.navigation.routes.WorldBookRoutes
 
-class WorldBookListActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent {
-            AIChatTheme{
-                WorldBookListScreen(this)
-            }
-        }
+@Composable
+internal fun WorldBookListRoute(
+    viewModel: WorldBookListViewModel = hiltViewModel(),
+    navController: NavController
+) {
+    AIChatTheme {
+        WorldBookListScreen(viewModel, navController)
     }
+}
+
+@Composable
+private fun WorldBookListScreen(
+    viewmodel: WorldBookListViewModel = hiltViewModel(),
+    navController: NavController
+) {
+    WorldBookListScreenContent(viewmodel, navController)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WorldBookListScreen(
-    context: Context,
-    lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
+fun WorldBookListScreenContent(
+    viewmodel: WorldBookListViewModel,
+    navController: NavController
 ) {
+    val lifecycleOwner = LocalLifecycleOwner.current
     var worldBooks by remember { mutableStateOf<List<WorldBook>>(emptyList()) }
-    val coroutineScope = rememberCoroutineScope()
     val moshi: Moshi = Moshi.Builder().build()
     val worldBookAdapter: JsonAdapter<WorldBook> = moshi.adapter(WorldBook::class.java)
 
@@ -63,11 +61,9 @@ fun WorldBookListScreen(
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                coroutineScope.launch {
-                    loadWorldBooks(worldBookAdapter) { loadedBooks ->
+                    viewmodel.loadWorldBooks(worldBookAdapter) { loadedBooks ->
                         worldBooks = loadedBooks
                     }
-                }
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -88,8 +84,7 @@ fun WorldBookListScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    val intent = Intent(context, WorldBookEditActivity::class.java)
-                    context.startActivity(intent)
+                    viewmodel.navigate(WorldBookRoutes.WorldBookEdit("", true))
                 },
                 containerColor = MaterialTheme.colorScheme.primary,
             ) {
@@ -119,39 +114,13 @@ fun WorldBookListScreen(
                         WorldBookItem(
                             worldBook = worldBook,
                             onItemClick = {
-                                val intent = Intent(context, WorldBookEditActivity::class.java)
-                                intent.putExtra("WORLD_BOOK_ID", worldBook.id)
-                                context.startActivity(intent)
+                                viewmodel.navigate(WorldBookRoutes.WorldBookEdit(worldId = worldBook.id))
                             }
                         )
                     }
                 }
             }
         }
-    }
-}
-
-// 从文件加载世界书列表
-private suspend fun loadWorldBooks(
-    adapter: JsonAdapter<WorldBook>,
-    onLoaded: (List<WorldBook>) -> Unit
-) = withContext(Dispatchers.IO) {
-    val worldBookFiles = FilesUtil.listFileNames("world_book")
-    Log.d("WorldBookListActivity", "loadWorldBooks: $worldBookFiles")
-    val worldBooks = mutableListOf<WorldBook>()
-
-    worldBookFiles.forEach { fileName ->
-        try {
-            val json = FilesUtil.readFile("world_book/$fileName")
-            val worldBook = adapter.fromJson(json)
-            worldBook?.let { worldBooks.add(it) }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
-    withContext(Dispatchers.Main) {
-        onLoaded(worldBooks)
     }
 }
 
