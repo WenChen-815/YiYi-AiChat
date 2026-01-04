@@ -1,0 +1,21 @@
+package com.wenchen.yiyi.core.database.entity
+
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+import kotlinx.serialization.Serializable
+
+@Serializable
+@Entity(tableName = "ai_characters")
+data class AICharacter(
+    @PrimaryKey val aiCharacterId: String,
+    val name: String,
+    val roleIdentity: String,
+    val roleAppearance: String,
+    val roleDescription: String,
+    val outputExample: String,
+    val behaviorRules: String,
+    val userId: String,
+    val createdAt: Long,
+    val avatarPath: String?,
+    val backgroundPath: String?,
+)

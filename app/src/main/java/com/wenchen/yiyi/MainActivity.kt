@@ -1,6 +1,5 @@
 package com.wenchen.yiyi
 
-import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
@@ -12,8 +11,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import com.wenchen.yiyi.feature.aiChat.common.AIChatManager
 import com.wenchen.yiyi.core.common.theme.AIChatTheme
-import com.wenchen.yiyi.core.common.utils.PermissionUtils
-import com.wenchen.yiyi.core.common.utils.StatusBarUtil
+import com.wenchen.yiyi.core.util.PermissionUtils
+import com.wenchen.yiyi.core.util.StatusBarUtil
 import com.wenchen.yiyi.navigation.AppNavigator
 import com.wenchen.yiyi.navigation.AppNavHost
 import dagger.hilt.android.AndroidEntryPoint

@@ -23,8 +23,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.wenchen.yiyi.Application
-import com.wenchen.yiyi.core.common.components.SettingTextFieldItem
-import com.wenchen.yiyi.core.common.entity.Model
+import com.wenchen.yiyi.core.designSystem.component.SettingTextFieldItem
+import com.wenchen.yiyi.core.database.entity.Model
 
 @Composable
 fun ModelsDialog(

@@ -3,7 +3,7 @@ package com.wenchen.yiyi.feature.main.viewmodel
 import androidx.lifecycle.viewModelScope
 import com.wenchen.yiyi.Application
 import com.wenchen.yiyi.core.base.viewmodel.BaseViewModel
-import com.wenchen.yiyi.core.common.entity.AICharacter
+import com.wenchen.yiyi.core.database.entity.AICharacter
 import com.wenchen.yiyi.core.state.UserState
 import com.wenchen.yiyi.navigation.AppNavigator
 import dagger.hilt.android.lifecycle.HiltViewModel

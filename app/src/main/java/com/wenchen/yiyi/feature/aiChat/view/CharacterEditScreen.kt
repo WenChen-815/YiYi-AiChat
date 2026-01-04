@@ -2,7 +2,6 @@ package com.wenchen.yiyi.feature.aiChat.view
 
 import android.app.Activity
 import android.graphics.Bitmap
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -33,7 +32,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.wenchen.yiyi.feature.aiChat.vm.CharacterEditViewModel
+import com.wenchen.yiyi.feature.aiChat.viewmodel.CharacterEditViewModel
 import com.wenchen.yiyi.core.common.theme.AIChatTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -49,16 +48,16 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
-import com.wenchen.yiyi.core.common.components.SettingTextFieldItem
+import com.wenchen.yiyi.core.designSystem.component.SettingTextFieldItem
 import com.wenchen.yiyi.core.common.theme.BlackText
 import com.wenchen.yiyi.core.common.theme.DarkGray
 import com.wenchen.yiyi.core.common.theme.Gold
 import com.wenchen.yiyi.core.common.theme.LightGray
 import com.wenchen.yiyi.core.common.theme.WhiteText
-import com.wenchen.yiyi.core.common.utils.FilesUtil
-import com.wenchen.yiyi.core.common.utils.StatusBarUtil
-import com.wenchen.yiyi.feature.config.component.SwitchWithText
-import com.wenchen.yiyi.feature.worldBook.entity.WorldBook
+import com.wenchen.yiyi.core.util.FilesUtil
+import com.wenchen.yiyi.core.util.StatusBarUtil
+import com.wenchen.yiyi.core.designSystem.component.SwitchWithText
+import com.wenchen.yiyi.feature.worldBook.model.WorldBook
 import timber.log.Timber
 import androidx.compose.runtime.collectAsState
 import com.wenchen.yiyi.core.util.toast.ToastUtils

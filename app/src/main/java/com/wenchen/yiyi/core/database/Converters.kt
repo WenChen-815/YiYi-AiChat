@@ -3,9 +3,9 @@ package com.wenchen.yiyi.core.database
 import androidx.room.TypeConverter
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import com.wenchen.yiyi.feature.aiChat.entity.ConversationType
-import com.wenchen.yiyi.feature.aiChat.entity.MessageContentType
-import com.wenchen.yiyi.feature.aiChat.entity.MessageType
+import com.wenchen.yiyi.core.database.entity.ConversationType
+import com.wenchen.yiyi.core.database.entity.MessageContentType
+import com.wenchen.yiyi.core.database.entity.MessageType
 
 class Converters {
 

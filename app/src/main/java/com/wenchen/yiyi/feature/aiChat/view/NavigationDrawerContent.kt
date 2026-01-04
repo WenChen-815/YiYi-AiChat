@@ -25,12 +25,12 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import com.wenchen.yiyi.feature.aiChat.entity.Conversation
-import com.wenchen.yiyi.feature.aiChat.entity.ConversationType
-import com.wenchen.yiyi.core.common.entity.AICharacter
+import com.wenchen.yiyi.core.database.entity.Conversation
+import com.wenchen.yiyi.core.database.entity.ConversationType
+import com.wenchen.yiyi.core.database.entity.AICharacter
 import com.wenchen.yiyi.core.common.theme.*
-import com.wenchen.yiyi.feature.aiChat.component.YiYiChatDrawerItem
-import com.wenchen.yiyi.feature.aiChat.vm.BaseChatViewModel
+import com.wenchen.yiyi.core.designSystem.component.YiYiChatDrawerItem
+import com.wenchen.yiyi.feature.aiChat.viewmodel.BaseChatViewModel
 import com.wenchen.yiyi.navigation.routes.ConfigRoutes
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle

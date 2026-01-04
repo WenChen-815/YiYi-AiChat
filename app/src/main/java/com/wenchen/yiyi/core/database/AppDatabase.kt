@@ -1,22 +1,20 @@
 package com.wenchen.yiyi.core.database
 
-import android.content.Context
 import androidx.room.Database
-import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
-import com.wenchen.yiyi.feature.aiChat.entity.ChatMessage
-import com.wenchen.yiyi.feature.aiChat.entity.Conversation
-import com.wenchen.yiyi.feature.aiChat.entity.TempChatMessage
-import com.wenchen.yiyi.feature.aiChat.entity.dao.ChatMessageDao
-import com.wenchen.yiyi.feature.aiChat.entity.dao.ConversationDao
-import com.wenchen.yiyi.feature.aiChat.entity.dao.TempChatMessageDao
-import com.wenchen.yiyi.core.common.entity.dao.AICharacterDao
-import com.wenchen.yiyi.feature.aiChat.entity.dao.AIChatMemoryDao
-import com.wenchen.yiyi.core.common.entity.AICharacter
-import com.wenchen.yiyi.feature.aiChat.entity.AIChatMemory
+import com.wenchen.yiyi.core.database.entity.ChatMessage
+import com.wenchen.yiyi.core.database.entity.Conversation
+import com.wenchen.yiyi.core.database.entity.TempChatMessage
+import com.wenchen.yiyi.core.database.dao.ChatMessageDao
+import com.wenchen.yiyi.core.database.dao.ConversationDao
+import com.wenchen.yiyi.core.database.dao.TempChatMessageDao
+import com.wenchen.yiyi.core.database.dao.AICharacterDao
+import com.wenchen.yiyi.core.database.dao.AIChatMemoryDao
+import com.wenchen.yiyi.core.database.entity.AICharacter
+import com.wenchen.yiyi.core.database.entity.AIChatMemory
 
 /**
  * 应用数据库

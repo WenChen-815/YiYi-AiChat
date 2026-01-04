@@ -1,6 +1,5 @@
 package com.wenchen.yiyi.navigation.routes
 
-import com.wenchen.yiyi.core.common.entity.AICharacter
 import kotlinx.serialization.Serializable
 
 /**

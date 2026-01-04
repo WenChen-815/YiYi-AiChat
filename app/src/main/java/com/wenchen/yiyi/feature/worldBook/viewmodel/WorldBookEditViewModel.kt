@@ -6,13 +6,12 @@ import androidx.navigation.toRoute
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import com.wenchen.yiyi.core.base.viewmodel.BaseViewModel
-import com.wenchen.yiyi.core.common.utils.FilesUtil
+import com.wenchen.yiyi.core.util.FilesUtil
 import com.wenchen.yiyi.core.state.UserState
 import com.wenchen.yiyi.core.util.toast.ToastUtils
-import com.wenchen.yiyi.feature.worldBook.entity.WorldBook
-import com.wenchen.yiyi.feature.worldBook.entity.WorldBookItem
+import com.wenchen.yiyi.feature.worldBook.model.WorldBook
+import com.wenchen.yiyi.feature.worldBook.model.WorldBookItem
 import com.wenchen.yiyi.navigation.AppNavigator
-import com.wenchen.yiyi.navigation.routes.AiChatRoutes
 import com.wenchen.yiyi.navigation.routes.WorldBookRoutes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow

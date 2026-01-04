@@ -44,22 +44,22 @@ import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import com.wenchen.yiyi.feature.aiChat.common.ImageManager
-import com.wenchen.yiyi.core.common.entity.Model
+import com.wenchen.yiyi.core.datastore.storage.ImageManager
+import com.wenchen.yiyi.core.database.entity.Model
 import com.wenchen.yiyi.core.common.theme.BlackBg
 import com.wenchen.yiyi.core.common.theme.Gold
 import com.wenchen.yiyi.core.common.theme.Pink
 import com.wenchen.yiyi.core.common.theme.WhiteBg
 import com.wenchen.yiyi.core.common.theme.WhiteText
-import com.wenchen.yiyi.core.common.utils.StatusBarUtil
-import com.wenchen.yiyi.core.common.components.SettingTextFieldItem
+import com.wenchen.yiyi.core.util.StatusBarUtil
+import com.wenchen.yiyi.core.designSystem.component.SettingTextFieldItem
 import com.wenchen.yiyi.core.common.theme.BlackText
 import com.wenchen.yiyi.core.common.theme.DarkGray
 import com.wenchen.yiyi.core.common.theme.GrayText
 import com.wenchen.yiyi.core.common.theme.LightGray
 import com.wenchen.yiyi.core.model.config.UserConfig
-import com.wenchen.yiyi.feature.config.component.SwitchWithText
-import com.wenchen.yiyi.feature.config.viewModel.ChatConfigViewModel
+import com.wenchen.yiyi.core.designSystem.component.SwitchWithText
+import com.wenchen.yiyi.feature.config.viewmodel.ChatConfigViewModel
 import java.io.File
 
 /**

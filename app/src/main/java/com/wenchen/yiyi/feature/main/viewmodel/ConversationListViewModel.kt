@@ -4,7 +4,7 @@ import androidx.lifecycle.viewModelScope
 import com.wenchen.yiyi.Application
 import com.wenchen.yiyi.core.base.viewmodel.BaseViewModel
 import com.wenchen.yiyi.core.state.UserState
-import com.wenchen.yiyi.feature.aiChat.entity.Conversation
+import com.wenchen.yiyi.core.database.entity.Conversation
 import com.wenchen.yiyi.navigation.AppNavigator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow

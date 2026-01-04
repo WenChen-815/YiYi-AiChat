@@ -52,14 +52,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.wenchen.yiyi.core.common.components.IconWithText
+import com.wenchen.yiyi.core.designSystem.component.IconWithText
 import com.wenchen.yiyi.core.common.theme.AIChatTheme
 import com.wenchen.yiyi.core.common.theme.Gold
 import com.wenchen.yiyi.core.common.theme.GrayText
 import com.wenchen.yiyi.core.common.theme.Pink
 import com.wenchen.yiyi.core.common.theme.WhiteBg
 import com.wenchen.yiyi.core.common.theme.WhiteText
-import com.wenchen.yiyi.core.common.utils.StatusBarUtil
+import com.wenchen.yiyi.core.util.StatusBarUtil
 import com.wenchen.yiyi.feature.main.viewmodel.MainViewModel
 import com.wenchen.yiyi.navigation.routes.AiChatRoutes
 import com.wenchen.yiyi.navigation.routes.ConfigRoutes

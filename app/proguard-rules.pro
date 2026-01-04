@@ -39,7 +39,7 @@
 -keep class okhttp3.Request { *; }
 -keep class okhttp3.Response { *; }
 # Gson
--keep class com.wenchen.yiyi.core.common.entity.** { *; }
--keep class com.wenchen.yiyi.feature.aiChat.entity.** { *; }
--keep class com.wenchen.yiyi.feature.worldBook.entity.** { *; }
+-keep class com.wenchen.yiyi.core.database.entity.** { *; }
+-keep class com.wenchen.yiyi.core.database.entity.** { *; }
+-keep class com.wenchen.yiyi.feature.worldBook.model.** { *; }
 -keep class com.wenchen.yiyi.core.common.ApiService$* { *; }

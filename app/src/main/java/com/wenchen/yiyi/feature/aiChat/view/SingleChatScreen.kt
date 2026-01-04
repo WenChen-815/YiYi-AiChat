@@ -1,6 +1,5 @@
 package com.wenchen.yiyi.feature.aiChat.view
 
-import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -31,7 +30,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
@@ -41,16 +39,15 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
-import com.wenchen.yiyi.feature.aiChat.component.DisplayChatMessageItem
-import com.wenchen.yiyi.core.common.components.BlinkingReplyIndicator
+import com.wenchen.yiyi.core.designSystem.component.DisplayChatMessageItem
+import com.wenchen.yiyi.core.designSystem.component.BlinkingReplyIndicator
 import com.wenchen.yiyi.core.common.theme.AIChatTheme
 import com.wenchen.yiyi.core.common.theme.BlackBg
 import com.wenchen.yiyi.core.common.theme.HalfTransparentBlack
 import com.wenchen.yiyi.core.common.theme.WhiteBg
-import com.wenchen.yiyi.core.common.utils.ThemeColorExtractor
-import com.wenchen.yiyi.feature.aiChat.vm.SingleChatViewModel
+import com.wenchen.yiyi.core.util.ThemeColorExtractor
+import com.wenchen.yiyi.feature.aiChat.viewmodel.SingleChatViewModel
 import com.wenchen.yiyi.navigation.routes.AiChatRoutes
-import com.wenchen.yiyi.navigation.routes.ConfigRoutes
 import dev.chrisbanes.haze.HazeProgressive
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle

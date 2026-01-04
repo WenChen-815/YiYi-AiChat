@@ -1,6 +1,6 @@
 package com.wenchen.yiyi.core.data.repository
 
-import com.wenchen.yiyi.core.common.entity.ModelsResponse
+import com.wenchen.yiyi.core.database.entity.ModelsResponse
 import com.wenchen.yiyi.core.model.network.NetworkResponse
 import com.wenchen.yiyi.core.network.datasource.chat.AiHubNetworkDataSource
 import kotlinx.coroutines.Dispatchers

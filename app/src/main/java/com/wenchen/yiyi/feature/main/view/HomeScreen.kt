@@ -25,8 +25,8 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import coil3.compose.AsyncImage
-import com.wenchen.yiyi.core.common.components.NoBorderTextField
-import com.wenchen.yiyi.core.common.entity.AICharacter
+import com.wenchen.yiyi.core.designSystem.component.NoBorderTextField
+import com.wenchen.yiyi.core.database.entity.AICharacter
 import com.wenchen.yiyi.core.common.theme.BlackText
 import com.wenchen.yiyi.core.common.theme.GrayBg
 import com.wenchen.yiyi.core.common.theme.GrayText

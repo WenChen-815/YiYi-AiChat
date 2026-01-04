@@ -24,7 +24,7 @@ import com.squareup.moshi.JsonAdapter
 import com.wenchen.yiyi.core.common.theme.AIChatTheme
 import com.wenchen.yiyi.core.common.theme.BlackBg
 import com.wenchen.yiyi.core.common.theme.WhiteBg
-import com.wenchen.yiyi.feature.worldBook.entity.WorldBook
+import com.wenchen.yiyi.feature.worldBook.model.WorldBook
 import com.wenchen.yiyi.feature.worldBook.viewmodel.WorldBookListViewModel
 import com.wenchen.yiyi.navigation.routes.WorldBookRoutes
 

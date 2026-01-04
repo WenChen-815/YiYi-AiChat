@@ -1,7 +1,6 @@
 package com.wenchen.yiyi.feature.main.view
 
 import android.content.Context
-import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -23,14 +22,14 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import coil3.compose.AsyncImage
-import com.wenchen.yiyi.feature.aiChat.common.ImageManager
-import com.wenchen.yiyi.feature.aiChat.entity.Conversation
-import com.wenchen.yiyi.feature.aiChat.entity.ConversationType
+import com.wenchen.yiyi.core.datastore.storage.ImageManager
+import com.wenchen.yiyi.core.database.entity.Conversation
+import com.wenchen.yiyi.core.database.entity.ConversationType
 import com.wenchen.yiyi.feature.main.viewmodel.ConversationListViewModel
 import com.wenchen.yiyi.Application
 import com.wenchen.yiyi.core.common.theme.BlackBg
 import com.wenchen.yiyi.core.common.theme.WhiteBg
-import com.wenchen.yiyi.core.common.utils.ChatUtil
+import com.wenchen.yiyi.core.util.ChatUtil
 import com.wenchen.yiyi.navigation.routes.AiChatRoutes
 
 @OptIn(ExperimentalMaterial3Api::class)
