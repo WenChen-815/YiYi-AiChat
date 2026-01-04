@@ -43,7 +43,6 @@ import com.wenchen.yiyi.core.common.theme.HalfTransparentBlack
 import com.wenchen.yiyi.core.common.theme.WhiteBg
 import com.wenchen.yiyi.core.common.theme.WhiteText
 import com.wenchen.yiyi.feature.aiChat.vm.BaseChatViewModel
-import com.wenchen.yiyi.feature.config.common.ConfigManager
 
 @Composable
 fun ChatActivityTopBar(
@@ -78,6 +77,8 @@ fun ChatActivityTopBar(
     )
     val uiState by viewModel.uiState.collectAsState()
     val conversation by viewModel.conversation.collectAsState()
+    val userConfig by viewModel.userConfigState.userConfig.collectAsState()
+
     Row(
         modifier =
             Modifier
@@ -133,7 +134,7 @@ fun ChatActivityTopBar(
                         offsetX += 9.dp
                     }
                     AsyncImage(
-                        model = ConfigManager().getUserAvatarPath(),
+                        model = userConfig?.userAvatarPath,
                         contentScale = ContentScale.Crop,
                         contentDescription = "角色头像",
                         modifier =

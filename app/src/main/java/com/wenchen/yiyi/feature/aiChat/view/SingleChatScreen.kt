@@ -526,7 +526,7 @@ fun ChatScreen(
                                 DisplayChatMessageItem(
                                     message = message,
                                     viewModel = viewModel,
-                                    chatWindowHazeState = chatWindowHazeState,
+                                    chatWindowHazeState = chatWindowHazeState
                                 )
                             }
                         }

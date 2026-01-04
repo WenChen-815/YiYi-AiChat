@@ -18,6 +18,7 @@ import com.squareup.moshi.JsonAdapter
 import com.wenchen.yiyi.Application
 import com.wenchen.yiyi.core.base.viewmodel.BaseViewModel
 import com.wenchen.yiyi.core.common.utils.FilesUtil
+import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.core.state.UserState
 import com.wenchen.yiyi.core.util.toast.ToastUtils
 import com.wenchen.yiyi.feature.aiChat.common.ImageManager
@@ -41,6 +42,7 @@ import javax.inject.Inject
 class ConversationEditViewModel @Inject constructor(
     navigator: AppNavigator,
     userState: UserState,
+    val userConfigState: UserConfigState,
     savedStateHandle: SavedStateHandle
 ) : BaseViewModel(
     navigator = navigator,

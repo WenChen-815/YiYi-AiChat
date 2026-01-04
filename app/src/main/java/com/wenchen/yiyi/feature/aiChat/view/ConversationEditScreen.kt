@@ -66,7 +66,6 @@ import com.wenchen.yiyi.core.common.theme.LightGray
 import com.wenchen.yiyi.core.common.theme.WhiteText
 import com.wenchen.yiyi.core.common.utils.StatusBarUtil
 import com.wenchen.yiyi.feature.aiChat.vm.ConversationEditViewModel
-import com.wenchen.yiyi.feature.config.common.ConfigManager
 import com.wenchen.yiyi.feature.worldBook.entity.WorldBook
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -193,10 +192,10 @@ fun ConversationEditScreenContent(
     } else {
         StatusBarUtil.setStatusBarTextColor(activity, true)
     }
-    val configManager = ConfigManager()
+    val userConfig by viewModel.userConfigState.userConfig.collectAsState()
     val coroutineScope = rememberCoroutineScope()
     var name by remember { mutableStateOf("") }
-    var playerName by remember { mutableStateOf(configManager.getUserName().toString()) }
+    var playerName by remember { mutableStateOf(userConfig?.userName ?: "") }
     var playGender by remember { mutableStateOf("") }
     var playerDescription by remember { mutableStateOf("") }
     var chatWorldId by remember { mutableStateOf("") }

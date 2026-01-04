@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.core.state.UserState
 import com.wenchen.yiyi.feature.aiChat.entity.Conversation
 import com.wenchen.yiyi.feature.aiChat.entity.ConversationType
@@ -21,10 +22,12 @@ import kotlin.collections.component2
 class GroupChatViewModel @Inject constructor(
     navigator: AppNavigator,
     userState: UserState,
+    userConfigState: UserConfigState,
     savedStateHandle: SavedStateHandle
 ): BaseChatViewModel(
     navigator = navigator,
     userState = userState,
+    userConfigState = userConfigState,
     savedStateHandle = savedStateHandle
 ){
     init {
@@ -34,7 +37,7 @@ class GroupChatViewModel @Inject constructor(
             initGroupChat(conversationId)
         }
         // 更新最大上下文消息数
-        chatContext.setLimit(configManager.getMaxContextMessageSize())
+        chatContext.setLimit(userConfigState.userConfig.value?.maxContextMessageSize ?: 15)
         init()
     }
 

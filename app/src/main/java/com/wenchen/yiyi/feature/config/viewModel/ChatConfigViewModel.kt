@@ -11,7 +11,6 @@ import com.wenchen.yiyi.core.model.config.UserConfig
 import com.wenchen.yiyi.core.model.network.NetworkResponse
 import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.core.state.UserState
-import com.wenchen.yiyi.feature.config.common.ConfigManager
 import com.wenchen.yiyi.navigation.AppNavigator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineExceptionHandler

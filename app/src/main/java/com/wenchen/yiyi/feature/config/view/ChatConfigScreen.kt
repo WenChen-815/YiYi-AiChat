@@ -104,16 +104,10 @@ fun ChatConfigScreenContent(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
-//    var userId by remember { mutableStateOf(configManager.getUserId() ?: "123123") }
-//    var userName by remember { mutableStateOf(configManager.getUserName() ?: "温辰") }
     var userId by remember { mutableStateOf(viewModel.userConfig?.userId ?: "123123") }
     var userName by remember { mutableStateOf(viewModel.userConfig?.userName ?: "温辰") }
 
     // 对话模型配置
-//    var apiKey by remember { mutableStateOf(configManager.getApiKey() ?: "") }
-//    var baseUrl by remember { mutableStateOf(configManager.getBaseUrl() ?: "") }
-//    var models by remember { mutableStateOf<List<Model>>(emptyList()) }
-//    var selectedModel by remember { mutableStateOf(configManager.getSelectedModel() ?: "") }
     var apiKey by remember { mutableStateOf(viewModel.userConfig?.baseApiKey ?: "") }
     var baseUrl by remember { mutableStateOf(viewModel.userConfig?.baseUrl ?: "") }
     var selectedModel by remember { mutableStateOf(viewModel.userConfig?.selectedModel ?: "") }
@@ -121,11 +115,6 @@ fun ChatConfigScreenContent(
     var isLoadingModels by remember { mutableStateOf(false) }
 
     // 图片识别配置
-//    var imgRecognitionEnabled by remember { mutableStateOf(configManager.isImgRecognitionEnabled()) }
-//    var imgApiKey by remember { mutableStateOf(configManager.getImgApiKey() ?: "") }
-//    var imgBaseUrl by remember { mutableStateOf(configManager.getImgBaseUrl() ?: "") }
-//    var imgModels by remember { mutableStateOf<List<Model>>(emptyList()) }
-//    var selectedImgModel by remember { mutableStateOf(configManager.getSelectedImgModel() ?: "") }
     var imgRecognitionEnabled by remember { mutableStateOf(viewModel.userConfig?.imgRecognitionEnabled ?: false) }
     var imgApiKey by remember { mutableStateOf(viewModel.userConfig?.imgApiKey ?: "") }
     var imgBaseUrl by remember { mutableStateOf(viewModel.userConfig?.imgBaseUrl ?: "") }
@@ -141,7 +130,6 @@ fun ChatConfigScreenContent(
     var enableTimePrefix by remember { mutableStateOf(viewModel.userConfig?.enableTimePrefix ?: true) }
 
     // 用户头像相关
-//    var userAvatarPath by remember { mutableStateOf(configManager.getUserAvatarPath()) }
     var userAvatarPath by remember { mutableStateOf(viewModel.userConfig?.userAvatarPath) }
     val userAvatarBitmap = remember { mutableStateOf<Bitmap?>(null) }
     val hasNewUserAvatar = remember { mutableStateOf(false) }
@@ -206,8 +194,6 @@ fun ChatConfigScreenContent(
             val savedFile = imageManager.saveAvatarImage("user_$userId", userAvatarBitmap.value!!)
 
             if (savedFile != null) {
-//                configManager.saveUserAvatarPath(savedFile.toUri().toString())
-
                 userAvatarPath = savedFile.toUri().toString()
             }
         }

@@ -429,7 +429,7 @@ private fun GroupChatScreen(
                                     DisplayChatMessageItem(
                                         message = message,
                                         viewModel = viewModel,
-                                        chatWindowHazeState = chatWindowHazeState,
+                                        chatWindowHazeState = chatWindowHazeState
                                     )
                                 }
                             }

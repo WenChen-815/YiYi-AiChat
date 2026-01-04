@@ -21,7 +21,6 @@ import com.wenchen.yiyi.Application
 import com.wenchen.yiyi.core.base.viewmodel.BaseViewModel
 import com.wenchen.yiyi.core.common.entity.AICharacter
 import com.wenchen.yiyi.feature.aiChat.common.AIChatManager
-import com.wenchen.yiyi.feature.config.common.ConfigManager
 import com.wenchen.yiyi.core.common.ApiService
 import com.wenchen.yiyi.feature.aiChat.common.ImageManager
 import com.wenchen.yiyi.feature.aiChat.entity.Conversation
@@ -29,6 +28,7 @@ import com.wenchen.yiyi.feature.aiChat.entity.ConversationType
 import com.wenchen.yiyi.core.common.entity.Model
 import com.wenchen.yiyi.core.common.utils.LimitMutableList
 import com.wenchen.yiyi.core.common.utils.limitMutableListOf
+import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.core.state.UserState
 import com.wenchen.yiyi.core.util.toast.ToastUtils
 import com.wenchen.yiyi.navigation.AppNavigator
@@ -37,6 +37,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.io.File
@@ -45,6 +47,7 @@ import kotlin.collections.toMutableList
 abstract class BaseChatViewModel(
     navigator: AppNavigator,
     userState: UserState,
+    val userConfigState: UserConfigState,
     savedStateHandle: SavedStateHandle
 ): BaseViewModel(
     navigator = navigator,
@@ -52,8 +55,6 @@ abstract class BaseChatViewModel(
 ) {
     val _uiState = MutableStateFlow(ChatUiState())
     val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()
-
-    val configManager = ConfigManager()
 
     var currentAICharacter: AICharacter? = null
 
@@ -94,15 +95,22 @@ abstract class BaseChatViewModel(
     ))
     val conversation: StateFlow<Conversation> = _conversation.asStateFlow()
 
-fun init() {
-    initApiService()
-    setupChatListener()
-}
+    init {
+        userConfigState.userConfig.onEach { 
+            initApiService()
+        }.launchIn(viewModelScope)
+    }
+
+    fun init() {
+        initApiService()
+        setupChatListener()
+    }
 
     private fun initApiService() {
-        val apiKey = configManager.getApiKey() ?: ""
-        val baseUrl = configManager.getBaseUrl() ?: ""
-        selectedModel = configManager.getSelectedModel() ?: ""
+        val userConfig = userConfigState.userConfig.value
+        val apiKey = userConfig?.baseApiKey ?: ""
+        val baseUrl = userConfig?.baseUrl ?: ""
+        selectedModel = userConfig?.selectedModel ?: ""
         apiService = ApiService(baseUrl, apiKey)
         loadSupportedModels()
     }
@@ -222,9 +230,7 @@ fun init() {
     fun saveImage(bitmap: Bitmap): File? =
         try {
             val imageManager = ImageManager()
-            val conversationId = "${
-                configManager.getUserId()
-            }_${getCurrentCharacter()?.aiCharacterId}"
+            val conversationId = "${userConfigState.userConfig.value?.userId}_${getCurrentCharacter()?.aiCharacterId}"
             imageManager.saveChatImage(conversationId, bitmap)
         } catch (e: Exception) {
             e.printStackTrace()
@@ -288,7 +294,7 @@ fun init() {
             isInitialLoading = false
 
             tempChatMessageDao.getByConversationId(conversation.value.id)
-                .takeLast(configManager.getMaxContextMessageSize())
+                .takeLast(userConfigState.userConfig.value?.maxContextMessageSize ?: 15)
                 .let {
                     chatContext.clear()
                     chatContext.addAll(it)
@@ -470,7 +476,11 @@ fun init() {
 
     fun selectModel(modelId: String) {
         selectedModel = modelId
-        configManager.saveSelectedModel(selectedModel)
+        viewModelScope.launch {
+            userConfigState.userConfig.value?.let {
+                userConfigState.updateUserConfig(it.copy(selectedModel = modelId))
+            }
+        }
         _uiState.value = _uiState.value.copy(
             currentModelName = selectedModel
         )

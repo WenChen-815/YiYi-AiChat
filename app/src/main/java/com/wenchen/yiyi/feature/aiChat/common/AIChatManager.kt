@@ -19,7 +19,6 @@ import com.wenchen.yiyi.core.common.entity.Message
 import com.wenchen.yiyi.core.common.utils.BitMapUtil
 import com.wenchen.yiyi.core.common.utils.ChatUtil
 import com.wenchen.yiyi.core.common.utils.FilesUtil
-import com.wenchen.yiyi.feature.config.common.ConfigManager
 import com.wenchen.yiyi.feature.worldBook.entity.WorldBook
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -39,19 +38,7 @@ import java.util.concurrent.ConcurrentHashMap
 object AIChatManager {
     // 基础配置
     private const val TAG = "AIChatManager"
-    private lateinit var configManager: ConfigManager
-    private lateinit var apiKey: String
-    private lateinit var baseUrl: String
     private lateinit var apiService: ApiService
-
-    // 图片识别配置
-    private var imgApiKey: String? = null
-    private var imgBaseUrl: String? = null
-    private var selectedImgModel: String? = null
-
-    // 聊天参数配置
-    private var maxContextMessageSize: Int = 10
-    private var summarizeTriggerCount: Int = 20
 
     // 数据访问对象
     private val chatMessageDao = Application.appDatabase.chatMessageDao()
@@ -64,29 +51,13 @@ object AIChatManager {
     private val isProcessing = ConcurrentHashMap<String, Boolean>()
     private val listeners = Collections.synchronizedSet(mutableSetOf<AIChatMessageListener>())
 
-    // 用户信息
-    private var USER_ID = "21107"
-    private var USER_NAME = "用户20815"
-
     fun init() {
-        // 基础配置初始化
-        configManager = ConfigManager()
-        apiKey = configManager.getApiKey() ?: ""
-        baseUrl = configManager.getBaseUrl() ?: ""
-
-        // 图片识别配置初始化
-        imgApiKey = configManager.getImgApiKey()
-        imgBaseUrl = configManager.getImgBaseUrl()
-        selectedImgModel = configManager.getSelectedImgModel()
+        val userConfig = Application.globalUserConfigState.userConfig.value
+        val apiKey = userConfig?.baseApiKey ?: ""
+        val baseUrl = userConfig?.baseUrl ?: ""
+        val imgApiKey = userConfig?.imgApiKey
+        val imgBaseUrl = userConfig?.imgBaseUrl
         apiService = ApiService(baseUrl, apiKey, imgBaseUrl, imgApiKey)
-
-        // 用户信息初始化
-        USER_ID = configManager.getUserId().toString()
-        USER_NAME = configManager.getUserName().toString()
-
-        // 聊天参数配置初始化
-        maxContextMessageSize = configManager.getMaxContextMessageSize()
-        summarizeTriggerCount = configManager.getSummarizeTriggerCount()
     }
 
 
@@ -126,7 +97,7 @@ object AIChatManager {
         val count = tempChatMessageDao.getCountByConversationId(conversation.id)
         Log.d(TAG, "sendGroupMessage: $count")
         val summaryMessages = getSummaryMessages(conversation)
-        if (count >= summarizeTriggerCount) aiCharacters.forEach { aiCharacter ->
+        if (count >= (Application.globalUserConfigState.userConfig.value?.summarizeTriggerCount ?: 20)) aiCharacters.forEach { aiCharacter ->
             summarize(conversation, aiCharacter, summaryMessages)
         }
         // 初始化队列和状态
@@ -253,7 +224,7 @@ object AIChatManager {
         send(conversation, aiCharacter, messages)
 
         val count = tempChatMessageDao.getCountByConversationId(conversation.id)
-        if (count >= summarizeTriggerCount) {
+        if (count >= (Application.globalUserConfigState.userConfig.value?.summarizeTriggerCount ?: 20)) {
             val summaryMessages = getSummaryMessages(conversation)
             Log.d(TAG, "开始总结 count=$count")
             summarize(conversation, aiCharacter, summaryMessages)
@@ -413,11 +384,12 @@ object AIChatManager {
         isSendSystemMessage: Boolean,
         showInChat: Boolean
     ): MutableList<Message> {
+        val userConfig = Application.globalUserConfigState.userConfig.value
         val userMessages = mutableListOf<Message>()
         val currentDate =
             SimpleDateFormat("yyyy-MM-dd EEEE HH:mm:ss", Locale.getDefault()).format(Date())
         // 根据配置决定是否添加时间戳
-        val prefix = if (configManager.isTimePrefixEnabled()) "$currentDate|" else ""
+        val prefix = if (userConfig?.enableTimePrefix == true) "$currentDate|" else ""
         val currentUserName = "[${conversation.playerName}]"
         for (newMessageText in newMessageTexts) {
             val newContent = if (isSendSystemMessage) {
@@ -430,7 +402,7 @@ object AIChatManager {
                 content = newContent,
                 type = if (isSendSystemMessage) MessageType.SYSTEM else MessageType.USER,
                 characterId = "user",
-                chatUserId = USER_ID,
+                chatUserId = userConfig?.userId ?: "",
                 isShow = showInChat,
                 conversationId = conversation.id
             )
@@ -459,6 +431,7 @@ object AIChatManager {
         messages: MutableList<Message>,
         afterSend:(Boolean) -> Unit = {}
     ) {
+        val userConfig = Application.globalUserConfigState.userConfig.value
         if (aiCharacter == null) {
             Log.e(TAG, "未选择AI角色")
             return
@@ -466,14 +439,14 @@ object AIChatManager {
         Log.d(TAG, "send to ${aiCharacter.name}\n" + messages.joinToString("\n"))
         apiService.sendMessage(
             messages = messages,
-            model = configManager.getSelectedModel() ?: "",
+            model = userConfig?.selectedModel ?: "",
             temperature = 1.1f,
             onSuccess = { aiResponse ->
                 // 创建时间戳和格式化日期
                 // val timestamp = System.currentTimeMillis()
                 val currentDate =
                     SimpleDateFormat("yyyy-MM-dd EEEE HH:mm:ss", Locale.getDefault()).format(Date())
-                val prefix = if (configManager.isTimePrefixEnabled()) "$currentDate|" else ""
+                val prefix = if (userConfig?.enableTimePrefix == true) "$currentDate|" else ""
                 val currentCharacterName = "[${aiCharacter.name}]"
                 val messageContent = "$prefix${currentCharacterName} $aiResponse"
 
@@ -482,7 +455,7 @@ object AIChatManager {
                     content = messageContent,
                     type = MessageType.ASSISTANT,
                     characterId = aiCharacter.aiCharacterId,
-                    chatUserId = USER_ID,
+                    chatUserId = userConfig?.userId ?: "",
                     conversationId = conversation.id
                 )
                 // 保存AI消息到数据库 创建一个新的协程来执行挂起函数
@@ -519,6 +492,7 @@ object AIChatManager {
         summaryMessages: List<TempChatMessage>,
         callback: (() -> Unit)? = null
     ) {
+        val userConfig = Application.globalUserConfigState.userConfig.value
         // 添加用户消息到列表
         if (aiCharacter == null) {
             Log.e(TAG, "summarize: 未选择AI角色")
@@ -535,7 +509,7 @@ object AIChatManager {
                 conversation.id
             )
             aiMemory?.count?.let {
-                if (it >= configManager.getMaxSummarizeCount()) {
+                if (it >= (userConfig?.maxSummarizeCount ?: 20)) {
                     Log.d(TAG, "已达到最大总结次数")
                     CoroutineScope(Dispatchers.Main).launch {
                         listeners.forEach { listener ->
@@ -583,7 +557,7 @@ object AIChatManager {
             val apiCompleted = CompletableDeferred<Boolean>()
             apiService.sendMessage(
                 messages = messages,
-                model = configManager.getSelectedModel() ?: "",
+                model = userConfig?.selectedModel ?: "",
                 temperature = 0.3f,
                 onSuccess = { aiResponse ->
                     // 收到回复
@@ -635,6 +609,7 @@ object AIChatManager {
 
     suspend fun getSummaryMessages(conversation: Conversation): List<TempChatMessage> {
         val allHistory = tempChatMessageDao.getByConversationId(conversation.id)
+        val maxContextMessageSize = Application.globalUserConfigState.userConfig.value?.maxContextMessageSize ?: 10
         return allHistory.subList(0, (allHistory.size - maxContextMessageSize).coerceAtLeast(0))
     }
 
@@ -654,8 +629,9 @@ object AIChatManager {
         imgUri: Uri,
         oldMessages: List<TempChatMessage>
     ) {
+        val userConfig = Application.globalUserConfigState.userConfig.value
         // 检查图片识别是否启用
-        if (!configManager.isImgRecognitionEnabled()) {
+        if (userConfig?.imgRecognitionEnabled != true) {
             Log.e(TAG, "图片识别功能未启用")
             CoroutineScope(Dispatchers.Main).launch {
                 listeners.forEach { it.onError("图片识别功能未启用") }
@@ -664,7 +640,7 @@ object AIChatManager {
         }
 
         // 检查配置是否完整
-        if (imgApiKey.isNullOrEmpty() || imgBaseUrl.isNullOrEmpty() || selectedImgModel.isNullOrEmpty()) {
+        if (userConfig.imgApiKey.isNullOrEmpty() || userConfig.imgBaseUrl.isNullOrEmpty() || userConfig.selectedImgModel.isNullOrEmpty()) {
             Log.e(TAG, "图片识别配置不完整")
             CoroutineScope(Dispatchers.Main).launch {
                 listeners.forEach { it.onError("图片识别配置不完整") }
@@ -677,7 +653,7 @@ object AIChatManager {
             content = "发送了图片:[$imgUri]",
             type = MessageType.USER,
             characterId = character.aiCharacterId,
-            chatUserId = USER_ID,
+            chatUserId = userConfig.userId ?: "",
             contentType = MessageContentType.IMAGE,
             imgUrl = imgUri.toString(),
             conversationId = conversation.id
@@ -699,7 +675,7 @@ object AIChatManager {
         apiService.sendMultimodalMessage(
             prompt = prompt,
             imageBase64 = imageBase64,
-            model = selectedImgModel!!,
+            model = userConfig.selectedImgModel!!,
             onSuccess = { imgDescription ->
                 Log.d(TAG, "图片识别成功，回复：$imgDescription")
                 CoroutineScope(Dispatchers.IO).launch {

@@ -14,7 +14,6 @@ import com.wenchen.yiyi.feature.aiChat.common.AIChatManager
 import com.wenchen.yiyi.core.common.theme.AIChatTheme
 import com.wenchen.yiyi.core.common.utils.PermissionUtils
 import com.wenchen.yiyi.core.common.utils.StatusBarUtil
-import com.wenchen.yiyi.feature.config.common.ConfigManager
 import com.wenchen.yiyi.navigation.AppNavigator
 import com.wenchen.yiyi.navigation.AppNavHost
 import dagger.hilt.android.AndroidEntryPoint
@@ -25,7 +24,6 @@ import javax.inject.Inject
 class MainActivity : ComponentActivity() {
     @Inject
     lateinit var navigator: AppNavigator
-    private lateinit var configManager: ConfigManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

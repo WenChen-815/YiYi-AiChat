@@ -5,7 +5,7 @@ import com.chuckerteam.chucker.api.ChuckerInterceptor
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import com.wenchen.yiyi.BuildConfig
 import com.wenchen.yiyi.core.network.interceptor.ApiKeyInterceptor
-import com.wenchen.yiyi.feature.config.common.ConfigManager
+import com.wenchen.yiyi.core.state.UserConfigState
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -28,8 +28,7 @@ import javax.inject.Qualifier
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    private const val BASE_URL = "https://vg.v1api.cc"
-    private val BASE_AI_URL = ConfigManager().getBaseUrl() ?: BASE_URL
+    private const val BASE_URL = ""
     private const val IMG_AI_URL = "https://api.yiyi.ai/ai/img/"
     private const val TTS_AI_URL = "https://api.yiyi.ai/ai/tts/"
 
@@ -156,11 +155,12 @@ object NetworkModule {
     @AiRetrofit
     fun provideAiRetrofit(
         @AiOkHttpClient okHttpClient: OkHttpClient,
-        json: Json
+        json: Json,
+        userConfigState: UserConfigState
     ): Retrofit {
         val contentType = "application/json".toMediaType()
         return Retrofit.Builder()
-            .baseUrl(BASE_AI_URL)
+            .baseUrl(userConfigState.userConfig.value?.baseUrl ?: BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(json.asConverterFactory(contentType))
             .build()

@@ -74,7 +74,6 @@ import com.wenchen.yiyi.core.common.theme.WhiteText
 import com.wenchen.yiyi.core.common.utils.ChatUtil
 import com.wenchen.yiyi.core.util.toast.ToastUtils
 import com.wenchen.yiyi.feature.aiChat.vm.BaseChatViewModel
-import com.wenchen.yiyi.feature.config.common.ConfigManager
 import kotlinx.coroutines.launch
 
 @Composable
@@ -87,6 +86,8 @@ fun DisplayChatMessageItem(
     val parseMessage = ChatUtil.parseMessage(message)
     val uiState by viewModel.uiState.collectAsState()
     val conversation by viewModel.conversation.collectAsState()
+    val userConfig by viewModel.userConfigState.userConfig.collectAsState()
+
     when (message.type) {
         MessageType.USER, MessageType.SYSTEM -> ChatMessageItem(
             viewModel = viewModel,
@@ -97,7 +98,7 @@ fun DisplayChatMessageItem(
                 MessageContentType.VOICE -> ""
             },
             parsedMessage = parseMessage,
-            avatarUrl = ConfigManager().getUserAvatarPath()
+            avatarUrl = userConfig?.userAvatarPath
                 ?: "android.resource://${LocalContext.current.packageName}/${R.mipmap.ai_closed}",
             messageType = message.type,
             contentType = message.contentType,
@@ -113,7 +114,7 @@ fun DisplayChatMessageItem(
                     ?: "android.resource://${LocalContext.current.packageName}/${R.mipmap.ai_closed}"
             }
             if (message.contentType == MessageContentType.TEXT) {
-                val parts = if (ConfigManager().isSeparatorEnabled()) {
+                val parts = if (userConfig?.enableSeparator == true) {
                     parseMessage.cleanedContent.split('\\').filter { it.isNotBlank() }.reversed()
                 } else {
                     listOf(parseMessage.cleanedContent)

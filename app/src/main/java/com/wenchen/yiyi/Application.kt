@@ -24,11 +24,13 @@ class Application : Application() {
     companion object {
         lateinit var instance: Application
         lateinit var appDatabase: AppDatabase
+        lateinit var globalUserConfigState: UserConfigState
     }
 
     override fun onCreate() {
         super.onCreate()
         instance = this
+        globalUserConfigState = userConfigState
         initToast()
         initLog()
         initMMKV()

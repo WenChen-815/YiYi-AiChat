@@ -18,13 +18,13 @@ import androidx.navigation.toRoute
 import com.wenchen.yiyi.Application
 import com.wenchen.yiyi.core.base.viewmodel.BaseViewModel
 import com.wenchen.yiyi.core.common.entity.AICharacter
+import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.core.state.UserState
 import com.wenchen.yiyi.core.util.toast.ToastUtils
 import com.wenchen.yiyi.feature.aiChat.common.ImageManager
 import com.wenchen.yiyi.feature.aiChat.entity.AIChatMemory
 import com.wenchen.yiyi.feature.aiChat.entity.Conversation
 import com.wenchen.yiyi.feature.aiChat.entity.ConversationType
-import com.wenchen.yiyi.feature.config.common.ConfigManager
 import com.wenchen.yiyi.navigation.AppNavigator
 import com.wenchen.yiyi.navigation.routes.AiChatRoutes
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -42,6 +42,7 @@ import javax.inject.Inject
 class CharacterEditViewModel @Inject constructor(
     navigator: AppNavigator,
     userState: UserState,
+    private val userConfigState: UserConfigState,
     savedStateHandle: SavedStateHandle
 ) : BaseViewModel(
     navigator = navigator,
@@ -75,7 +76,7 @@ class CharacterEditViewModel @Inject constructor(
         } else {
             _characterId.value = route.characterId
         }
-        _conversationId.value = "${ConfigManager().getUserId()}_${characterId.value}"
+        _conversationId.value = "${userConfigState.userConfig.value?.userId}_${characterId.value}"
     }
 
     fun loadCharacterData(
@@ -225,7 +226,7 @@ class CharacterEditViewModel @Inject constructor(
                         characterIds = mapOf(character.aiCharacterId to 1.0f),
                         characterKeywords = mapOf(character.aiCharacterId to emptyList()),
                         playerName = playerName.ifEmpty {
-                            ConfigManager().getUserName().toString()
+                            userConfigState.userConfig.value?.userName ?: ""
                         },
                         playGender = playGender,
                         playerDescription = playerDescription,

@@ -5,6 +5,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.wenchen.yiyi.Application
+import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.core.state.UserState
 import com.wenchen.yiyi.feature.aiChat.entity.Conversation
 import com.wenchen.yiyi.feature.aiChat.entity.ConversationType
@@ -20,10 +21,12 @@ import javax.inject.Inject
 class SingleChatViewModel @Inject constructor(
     navigator: AppNavigator,
     userState: UserState,
+    userConfigState: UserConfigState,
     savedStateHandle: SavedStateHandle
 ): BaseChatViewModel(
     navigator = navigator,
     userState = userState,
+    userConfigState = userConfigState,
     savedStateHandle = savedStateHandle
 ){
 
@@ -34,7 +37,7 @@ class SingleChatViewModel @Inject constructor(
             initChat(conversationId)
         }
         // 更新最大上下文消息数
-        chatContext.setLimit(configManager.getMaxContextMessageSize())
+        chatContext.setLimit(userConfigState.userConfig.value?.maxContextMessageSize ?: 15)
         init()
     }
 
@@ -45,9 +48,7 @@ class SingleChatViewModel @Inject constructor(
                     ?.let { character ->
                         currentAICharacter = character
                         // 初始化会话ID
-                        val conversationId = "${
-                            configManager.getUserId().toString()
-                        }_${currentAICharacter?.aiCharacterId}"
+                        val conversationId = "${userConfigState.userConfig.value?.userId}_${currentAICharacter?.aiCharacterId}"
                         val conversation = conversationDao.getById(conversationId)
                             ?: Conversation(
                                 id = conversationId,
