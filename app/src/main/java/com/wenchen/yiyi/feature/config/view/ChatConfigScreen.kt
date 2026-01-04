@@ -102,7 +102,6 @@ fun ChatConfigScreenContent(
         StatusBarUtil.setStatusBarTextColor(activity as ComponentActivity, true)
     }
     val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
 
     var userId by remember { mutableStateOf(viewModel.userConfig?.userId ?: "123123") }
     var userName by remember { mutableStateOf(viewModel.userConfig?.userName ?: "温辰") }
@@ -111,14 +110,12 @@ fun ChatConfigScreenContent(
     var apiKey by remember { mutableStateOf(viewModel.userConfig?.baseApiKey ?: "") }
     var baseUrl by remember { mutableStateOf(viewModel.userConfig?.baseUrl ?: "") }
     var selectedModel by remember { mutableStateOf(viewModel.userConfig?.selectedModel ?: "") }
-    var models by remember { mutableStateOf<List<Model>>(emptyList()) }
     var isLoadingModels by remember { mutableStateOf(false) }
 
     // 图片识别配置
     var imgRecognitionEnabled by remember { mutableStateOf(viewModel.userConfig?.imgRecognitionEnabled ?: false) }
     var imgApiKey by remember { mutableStateOf(viewModel.userConfig?.imgApiKey ?: "") }
     var imgBaseUrl by remember { mutableStateOf(viewModel.userConfig?.imgBaseUrl ?: "") }
-    var imgModels by remember { mutableStateOf<List<Model>>(emptyList()) }
     var selectedImgModel by remember { mutableStateOf(viewModel.userConfig?.selectedImgModel ?: "") }
     var isLoadingImgModels by remember { mutableStateOf(false) }
 
@@ -202,39 +199,23 @@ fun ChatConfigScreenContent(
     LaunchedEffect(Unit) {
         // 自动加载对话模型
         if (apiKey.isNotEmpty() && baseUrl.isNotEmpty()) {
-            viewModel.loadModels(
+            viewModel.executeGetModels(
                 apiKey = apiKey,
                 baseUrl = baseUrl,
                 type = 0,
-                coroutineScope = coroutineScope,
                 setLoading = { isLoadingModels = it },
-                setModels = { models = it },
-                setSelectedModel = { selectedModel = it },
-                showSuccessToast = { message ->
-                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-                },
-                showErrorToast = { message ->
-                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-                }
+                setSelectedModel = { selectedModel = it }
             )
         }
 
         // 如果图片识别功能已启用，则自动加载图片识别模型
         if (imgRecognitionEnabled && imgApiKey.isNotEmpty() && imgBaseUrl.isNotEmpty()) {
-            viewModel.loadModels(
+            viewModel.executeGetModels(
                 apiKey = imgApiKey,
                 baseUrl = imgBaseUrl,
                 type = 1,
-                coroutineScope = coroutineScope,
                 setLoading = { isLoadingImgModels = it },
-                setModels = { imgModels = it },
-                setSelectedModel = { selectedImgModel = it },
-                showSuccessToast = { message ->
-                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-                },
-                showErrorToast = { message ->
-                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-                }
+                setSelectedModel = { selectedImgModel = it }
             )
         }
     }
@@ -284,7 +265,7 @@ fun ChatConfigScreenContent(
                             return@TextButton
                         }
 
-                        if (models.isEmpty() || selectedModel.isEmpty()) {
+                        if (viewModel.models.value.isEmpty() || selectedModel.isEmpty()) {
                             Toast.makeText(context, "请先加载并选择模型", Toast.LENGTH_SHORT).show()
                             return@TextButton
                         }
@@ -299,7 +280,7 @@ fun ChatConfigScreenContent(
                                 return@TextButton
                             }
 
-                            if (imgModels.isEmpty() || selectedImgModel.isEmpty()) {
+                            if (viewModel.imgModels.value.isEmpty() || selectedImgModel.isEmpty()) {
                                 Toast.makeText(
                                     context,
                                     "请先加载并选择图片识别模型",
@@ -467,7 +448,7 @@ fun ChatConfigScreenContent(
                 labelPadding = PaddingValues(bottom = 6.dp),
                 value = baseUrl,
                 onValueChange = { baseUrl = it },
-                placeholder = { Text("例如: https://vg.xxxx.cc") }
+                placeholder = { Text("例如: https://xx.xxxx.cc") }
             )
 
             Text(
@@ -487,7 +468,7 @@ fun ChatConfigScreenContent(
                     modifier = Modifier
                         .weight(1f)
                         .clickable {
-                            sheetModels.value = models
+                            sheetModels.value = viewModel.models.value
                             onModelSelectedCallback.value = { selectedModel = it }
                             setChatModelSheetVisible(true)
                         }
@@ -517,20 +498,12 @@ fun ChatConfigScreenContent(
                                     return@clickable
                                 }
 
-                                viewModel.loadModels(
+                                viewModel.executeGetModels(
                                     apiKey = apiKey,
                                     baseUrl = baseUrl,
                                     type = 0,
-                                    coroutineScope = coroutineScope,
                                     setLoading = { isLoadingModels = it },
-                                    setModels = { models = it },
-                                    setSelectedModel = { selectedModel = it },
-                                    showSuccessToast = { message ->
-                                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-                                    },
-                                    showErrorToast = { message ->
-                                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-                                    }
+                                    setSelectedModel = { selectedModel = it }
                                 )
                             },
                             color = WhiteText
@@ -576,7 +549,7 @@ fun ChatConfigScreenContent(
                     labelPadding = PaddingValues(bottom = 6.dp),
                     value = imgBaseUrl,
                     onValueChange = { imgBaseUrl = it },
-                    placeholder = { Text("例如: https://vg.xxxx.cc") }
+                    placeholder = { Text("例如: https://xx.xxxx.cc") }
                 )
 
                 Text(
@@ -596,13 +569,13 @@ fun ChatConfigScreenContent(
                         modifier = Modifier
                             .weight(1f)
                             .clickable {
-                                sheetModels.value = imgModels
+                                sheetModels.value = viewModel.imgModels.value
                                 onModelSelectedCallback.value = { selectedImgModel = it }
                                 setImgModelSheetVisible(true)
                             }
                             .padding(16.dp)) {
                         Text(
-                            text = if (selectedImgModel.isNotEmpty()) selectedImgModel else "请选择图片识别模型",
+                            text = selectedImgModel.ifEmpty { "请选择图片识别模型" },
                             modifier = Modifier.fillMaxWidth(),
                             color = WhiteText
                         )
@@ -635,20 +608,12 @@ fun ChatConfigScreenContent(
                                         return@clickable
                                     }
 
-                                    viewModel.loadModels(
+                                    viewModel.executeGetModels(
                                         apiKey = imgApiKey,
                                         baseUrl = imgBaseUrl,
                                         type = 1,
-                                        coroutineScope = coroutineScope,
                                         setLoading = { isLoadingImgModels = it },
-                                        setModels = { imgModels = it },
-                                        setSelectedModel = { selectedImgModel = it },
-                                        showSuccessToast = { message ->
-                                            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-                                        },
-                                        showErrorToast = { message ->
-                                            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-                                        }
+                                        setSelectedModel = { selectedImgModel = it }
                                     )
                                 },
                                 color = WhiteText

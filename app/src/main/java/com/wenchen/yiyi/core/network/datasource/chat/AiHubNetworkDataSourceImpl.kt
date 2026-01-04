@@ -14,8 +14,8 @@ class AiHubNetworkDataSourceImpl @Inject constructor(
     private val aiModelsApiService: AiHubService
 ) : AiHubNetworkDataSource, BaseNetworkDataSource() {
 
-    override suspend fun getModels(): NetworkResponse<ModelsResponse> {
-        val response = aiModelsApiService.getModels()
+    override suspend fun getModels(baseUrl: String?, apiKey: String?): NetworkResponse<ModelsResponse> {
+        val response = aiModelsApiService.getModels(baseUrl, apiKey)
         return NetworkResponse(
             data = response,
             code = 1000,

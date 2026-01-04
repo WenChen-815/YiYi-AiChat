@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
 data class ModelsResponse(
     val `object`: String,
     val data: List<Model>,
-    val success: Boolean
+    val success: Boolean = true
 )
 
 // 单个模型的详细信息

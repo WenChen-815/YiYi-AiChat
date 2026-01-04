@@ -5,7 +5,6 @@ import com.chuckerteam.chucker.api.ChuckerInterceptor
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import com.wenchen.yiyi.BuildConfig
 import com.wenchen.yiyi.core.network.interceptor.ApiKeyInterceptor
-import com.wenchen.yiyi.core.state.UserConfigState
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -155,12 +154,13 @@ object NetworkModule {
     @AiRetrofit
     fun provideAiRetrofit(
         @AiOkHttpClient okHttpClient: OkHttpClient,
-        json: Json,
-        userConfigState: UserConfigState
+        json: Json
     ): Retrofit {
         val contentType = "application/json".toMediaType()
         return Retrofit.Builder()
-            .baseUrl(userConfigState.userConfig.value?.baseUrl ?: BASE_URL)
+            // Base URL is now dynamic and set in ApiKeyInterceptor.
+            // A placeholder is required here.
+            .baseUrl("http://localhost/")
             .client(okHttpClient)
             .addConverterFactory(json.asConverterFactory(contentType))
             .build()

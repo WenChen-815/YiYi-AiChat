@@ -13,5 +13,5 @@ interface AiHubNetworkDataSource {
      *
      * @return 模型列表响应
      */
-    suspend fun getModels(): NetworkResponse<ModelsResponse>
+    suspend fun getModels(baseUrl: String? =  null, apiKey: String? =  null): NetworkResponse<ModelsResponse>
 }

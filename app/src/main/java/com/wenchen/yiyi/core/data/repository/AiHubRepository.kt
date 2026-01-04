@@ -19,7 +19,7 @@ class AiHubRepository @Inject constructor(
      *
      * @return 包含AI模型信息的响应对象
      */
-    fun getModels() : Flow<NetworkResponse<ModelsResponse>> = flow {
-        emit(aiHubNetworkDataSource.getModels())
+    fun getModels(baseUrl: String? =  null, apiKey: String? =  null) : Flow<NetworkResponse<ModelsResponse>> = flow {
+        emit(aiHubNetworkDataSource.getModels(baseUrl, apiKey))
     }.flowOn(Dispatchers.IO)
 }
