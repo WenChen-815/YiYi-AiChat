@@ -359,13 +359,7 @@ private fun SingleChatScreenContent(
                     onConfirm = {
                         Timber.tag("SingleChatActivity")
                             .d("删除角色: ${uiState.currentCharacter?.name}")
-                        // 使用协程调用挂起函数
-                        viewModel.viewModelScope.launch {
-                            if (viewModel.deleteCharacter(uiState.currentCharacter!!)) {
-                                ToastUtils.showToast("角色删除成功")
-                            } else {
-                                ToastUtils.showToast("角色删除失败")
-                            }
+                        viewModel.deleteCharacter(uiState.currentCharacter!!) {
                             showDeleteDialog = false
                         }
                     },

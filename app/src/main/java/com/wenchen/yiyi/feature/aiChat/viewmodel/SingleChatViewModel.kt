@@ -9,12 +9,12 @@ import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.core.state.UserState
 import com.wenchen.yiyi.core.database.entity.Conversation
 import com.wenchen.yiyi.core.database.entity.ConversationType
+import com.wenchen.yiyi.core.util.toast.ToastUtils
 import com.wenchen.yiyi.navigation.AppNavigator
 import com.wenchen.yiyi.navigation.routes.AiChatRoutes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import javax.inject.Inject
@@ -88,9 +88,9 @@ class SingleChatViewModel @Inject constructor(
         }
     }
 
-    fun deleteCharacter(character: AICharacter): Boolean {
-        return try {
-            runBlocking(Dispatchers.IO) {
+    fun deleteCharacter(character: AICharacter, callback: (Boolean) -> Unit) {
+        try {
+            viewModelScope.launch(Dispatchers.IO) {
                 // 先删除角色的所有消息
                 chatMessageDao.deleteMessagesByConversationId(conversation.value.id)
                 tempChatMessageDao.deleteByConversationId(conversation.value.id)
@@ -107,19 +107,26 @@ class SingleChatViewModel @Inject constructor(
                 // 最后删除角色
                 val tag5 = aiCharacterDao.deleteAICharacter(character) > 0
 
+                val result = tag1 && tag2 && tag3 && tag4 && tag5
                 // 更新UI状态
                 withContext(Dispatchers.Main) {
                     _uiState.value = _uiState.value.copy(
                         currentCharacter = null
                     )
+                    if (result) {
+                        ToastUtils.showToast("角色删除成功")
+                    } else {
+                        ToastUtils.showToast("角色删除失败")
+                    }
                 }
 
                 Timber.tag("SingleChatViewModel").e("删除角色: $tag1 $tag2 $tag3 $tag4 $tag5")
-                tag1 && tag2 && tag3 && tag4 && tag5
+                callback(result)
+                navigateBack()
             }
         } catch (e: Exception) {
             Timber.tag("SingleChatViewModel").e(e, "删除角色失败: ${e.message}")
-            false
+            callback(false)
         }
     }
 

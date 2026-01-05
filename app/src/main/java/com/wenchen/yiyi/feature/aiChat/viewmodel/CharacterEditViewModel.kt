@@ -219,7 +219,7 @@ class CharacterEditViewModel @Inject constructor(
 
                     // 创建初始Conversation
                     val initialConversation = Conversation(
-                        id = conversationId.toString(),
+                        id = conversationId.value,
                         name = character.name,
                         type = ConversationType.SINGLE,
                         characterIds = mapOf(character.aiCharacterId to 1.0f),
