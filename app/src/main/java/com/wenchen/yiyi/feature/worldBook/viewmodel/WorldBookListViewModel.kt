@@ -4,7 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.squareup.moshi.JsonAdapter
 import com.wenchen.yiyi.core.base.viewmodel.BaseViewModel
-import com.wenchen.yiyi.core.util.FilesUtil
+import com.wenchen.yiyi.core.util.storage.FilesUtil
 import com.wenchen.yiyi.core.state.UserState
 import com.wenchen.yiyi.feature.worldBook.model.WorldBook
 import com.wenchen.yiyi.navigation.AppNavigator

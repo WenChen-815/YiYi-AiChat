@@ -1,10 +1,10 @@
 package com.wenchen.yiyi.feature.aiChat.viewmodel
 
-import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.wenchen.yiyi.Application
+import com.wenchen.yiyi.core.database.entity.AICharacter
 import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.core.state.UserState
 import com.wenchen.yiyi.core.database.entity.Conversation
@@ -14,7 +14,9 @@ import com.wenchen.yiyi.navigation.routes.AiChatRoutes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
@@ -75,7 +77,7 @@ class SingleChatViewModel @Inject constructor(
                     }
             }
         } catch (e: Exception) {
-            Log.e("ChatViewModel", "解析角色JSON失败", e)
+            Timber.tag("SingleChatViewModel").e(e, "解析角色JSON失败")
         }
     }
     private fun updateCharacterDisplay() {
@@ -83,6 +85,41 @@ class SingleChatViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(
                 currentCharacter = character,
             )
+        }
+    }
+
+    fun deleteCharacter(character: AICharacter): Boolean {
+        return try {
+            runBlocking(Dispatchers.IO) {
+                // 先删除角色的所有消息
+                chatMessageDao.deleteMessagesByConversationId(conversation.value.id)
+                tempChatMessageDao.deleteByConversationId(conversation.value.id)
+
+                // 删除角色所有相关图片
+                val tag1 = imageManager.deleteAllCharacterImages(character)
+                val conversationId = conversation.value.id
+                val tag2 = imageManager.deleteAllChatImages(conversationId)
+                val tag3 = aiChatMemoryDao.deleteByCharacterIdAndConversationId(
+                    character.aiCharacterId,
+                    conversation.value.id
+                ) > 0
+                val tag4 = conversationDao.deleteById(conversationId) > 0
+                // 最后删除角色
+                val tag5 = aiCharacterDao.deleteAICharacter(character) > 0
+
+                // 更新UI状态
+                withContext(Dispatchers.Main) {
+                    _uiState.value = _uiState.value.copy(
+                        currentCharacter = null
+                    )
+                }
+
+                Timber.tag("SingleChatViewModel").e("删除角色: $tag1 $tag2 $tag3 $tag4 $tag5")
+                tag1 && tag2 && tag3 && tag4 && tag5
+            }
+        } catch (e: Exception) {
+            Timber.tag("SingleChatViewModel").e(e, "删除角色失败: ${e.message}")
+            false
         }
     }
 

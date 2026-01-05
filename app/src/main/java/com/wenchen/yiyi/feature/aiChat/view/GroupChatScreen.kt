@@ -127,23 +127,21 @@ private fun GroupChatScreen(
                             MediaStore.Images.Media.getBitmap(activity.contentResolver, uri)
                         }
                     } else {
-                        Log.e(
-                            "GroupChatActivity",
-                            "背景图片文件不存在: ${conversation.backgroundPath}",
-                        )
+                        Timber.tag("GroupChatActivity")
+                            .e("背景图片文件不存在: ${conversation.backgroundPath}")
                         null
                     }
                 } else {
                     null
                 }
             } catch (e: Exception) {
-                Log.e("GroupChatActivity", "加载背景图片失败: ${e.message}", e)
+                Timber.tag("GroupChatActivity").e(e, "加载背景图片失败: ${e.message}")
                 null
             }
 
         val colors: List<Color> =
             if (bgBitmap != null) {
-                ThemeColorExtractor().extract(bgBitmap, maxValue = 1f)
+                ThemeColorExtractor.extract(bgBitmap, maxValue = 1f)
             } else {
                 listOf(BlackBg)
             }
@@ -299,10 +297,7 @@ private fun GroupChatScreen(
                     DeleteCharacterDialog(
                         onDismiss = { showDeleteDialog = false },
                         onConfirm = {
-                            Log.d(
-                                "GroupChatActivity",
-                                "删除对话: ${conversation.name}",
-                            )
+                            Timber.tag("GroupChatActivity").d("删除对话: ${conversation.name}")
                             // 使用协程调用挂起函数
                             viewModel.viewModelScope.launch {
                                 if (viewModel.deleteConversation(conversation)) {
@@ -341,7 +336,6 @@ private fun GroupChatScreen(
         val scrollEndState = remember { mutableStateOf(true) } // 滚动是否结束
         // 监听滚动状态
         LaunchedEffect(listState) {
-            Log.i("GroupChatContent", "listState: $listState")
             snapshotFlow { listState.isScrollInProgress }
                 .collect { isScrolling ->
                     scrollState.value = isScrolling
@@ -377,7 +371,6 @@ private fun GroupChatScreen(
         }
         // 监听滚动位置以加载更多消息
         LaunchedEffect(listState, initFinish.value) {
-            Log.i("ChatScreen", "initFinish: ${initFinish.value}")
             if (!initFinish.value) return@LaunchedEffect
             snapshotFlow { listState.firstVisibleItemIndex }
                 .collect { firstVisibleIndex ->

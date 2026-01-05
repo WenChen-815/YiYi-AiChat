@@ -25,7 +25,7 @@ import com.squareup.moshi.Moshi
 import com.wenchen.yiyi.core.designSystem.component.SettingTextFieldItem
 import com.wenchen.yiyi.core.common.theme.AIChatTheme
 import com.wenchen.yiyi.core.common.theme.WhiteText
-import com.wenchen.yiyi.core.util.FilesUtil
+import com.wenchen.yiyi.core.util.storage.FilesUtil
 import com.wenchen.yiyi.core.util.StatusBarUtil
 import com.wenchen.yiyi.feature.worldBook.model.WorldBook
 import com.wenchen.yiyi.feature.worldBook.model.WorldBookItem

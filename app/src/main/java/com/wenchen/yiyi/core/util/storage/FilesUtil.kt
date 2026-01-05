@@ -1,11 +1,11 @@
-package com.wenchen.yiyi.core.util
+package com.wenchen.yiyi.core.util.storage
 
 import com.wenchen.yiyi.Application
 import java.io.File
 import java.io.FileWriter
 
 object FilesUtil {
-    private val app = Application.instance
+    private val app = Application.Companion.instance
 
     fun deleteFile(fileName: String): Boolean {
         return try {

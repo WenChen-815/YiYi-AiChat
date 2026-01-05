@@ -46,6 +46,7 @@ import com.wenchen.yiyi.core.common.theme.BlackBg
 import com.wenchen.yiyi.core.common.theme.HalfTransparentBlack
 import com.wenchen.yiyi.core.common.theme.WhiteBg
 import com.wenchen.yiyi.core.util.ThemeColorExtractor
+import com.wenchen.yiyi.core.util.toast.ToastUtils
 import com.wenchen.yiyi.feature.aiChat.viewmodel.SingleChatViewModel
 import com.wenchen.yiyi.navigation.routes.AiChatRoutes
 import dev.chrisbanes.haze.HazeProgressive
@@ -62,18 +63,13 @@ import timber.log.Timber
 import kotlin.collections.map
 
 @Composable
-internal fun SingleChatRoute (
+internal fun SingleChatRoute(
     viewModel: SingleChatViewModel = hiltViewModel(),
     navController: NavController
-){
-        // 获取角色信息
-//        val characterJson = intent.getStringExtra("SELECTED_CHARACTER")
-//        val characterId = intent.getStringExtra("SELECTED_CHARACTER_ID")
-//        viewModel.initChat(characterJson, characterId)
-
-            AIChatTheme{
-                SingleChatScreen(viewModel, navController)
-            }
+) {
+    AIChatTheme {
+        SingleChatScreen(viewModel, navController)
+    }
 }
 
 
@@ -81,17 +77,18 @@ internal fun SingleChatRoute (
 private fun SingleChatScreen(
     viewModel: SingleChatViewModel = hiltViewModel(),
     navController: NavController
-){
+) {
     SingleChatScreenContent(
         viewModel = viewModel,
         navController = navController
     )
 }
+
 @Composable
 private fun SingleChatScreenContent(
     viewModel: SingleChatViewModel,
     navController: NavController
-){
+) {
     val activity = LocalActivity.current as ComponentActivity
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -177,7 +174,7 @@ private fun SingleChatScreenContent(
     }
     val colors: List<Color> =
         if (bgBitmap != null) {
-            ThemeColorExtractor().extract(bgBitmap!!, maxValue = 1f)
+            ThemeColorExtractor.extract(bgBitmap!!, maxValue = 1f)
         } else {
             listOf(BlackBg)
         }
@@ -209,9 +206,11 @@ private fun SingleChatScreenContent(
                     },
                     onDeleteClick = { showDeleteDialog = true },
                     onGotoConversationEdit = {
-                        viewModel.navigate(AiChatRoutes.ConversationEdit(
-                            viewModel.conversation.value.id
-                        ))
+                        viewModel.navigate(
+                            AiChatRoutes.ConversationEdit(
+                                viewModel.conversation.value.id
+                            )
+                        )
                     },
                     onNavAboutClick = {
 //                                scope.launch {
@@ -338,12 +337,7 @@ private fun SingleChatScreenContent(
                             .value.currentModelName,
                     onModelSelected = { modelId ->
                         viewModel.selectModel(modelId)
-//                        Toast
-//                            .makeText(
-//                                this@ChatActivity,
-//                                "已选择模型：$modelId",
-//                                Toast.LENGTH_SHORT,
-//                            ).show()
+                        ToastUtils.showToast("已选择模型：$modelId")
                     },
                     onDismiss = { showModelsDialog = false },
                 )
@@ -353,12 +347,7 @@ private fun SingleChatScreenContent(
                 ClearChatDialog(
                     onConfirm = {
                         viewModel.clearChatHistory()
-//                        Toast
-//                            .makeText(
-//                                this@ChatActivity,
-//                                "聊天记录已清空",
-//                                Toast.LENGTH_SHORT,
-//                            ).show()
+                        ToastUtils.showToast("聊天记录已清空")
                     },
                     onDismiss = { showClearChatDialog = false },
                 )
@@ -368,27 +357,14 @@ private fun SingleChatScreenContent(
                 DeleteCharacterDialog(
                     onDismiss = { showDeleteDialog = false },
                     onConfirm = {
-                        Log.d(
-                            "ChatActivity",
-                            "删除角色: ${uiState.currentCharacter?.name}",
-                        )
+                        Timber.tag("SingleChatActivity")
+                            .d("删除角色: ${uiState.currentCharacter?.name}")
                         // 使用协程调用挂起函数
                         viewModel.viewModelScope.launch {
                             if (viewModel.deleteCharacter(uiState.currentCharacter!!)) {
-//                                Toast
-//                                    .makeText(
-//                                        this@ChatActivity,
-//                                        "角色删除成功",
-//                                        Toast.LENGTH_SHORT,
-//                                    ).show()
-//                                this@ChatActivity.finish()
+                                ToastUtils.showToast("角色删除成功")
                             } else {
-//                                Toast
-//                                    .makeText(
-//                                        this@ChatActivity,
-//                                        "角色删除失败",
-//                                        Toast.LENGTH_SHORT,
-//                                    ).show()
+                                ToastUtils.showToast("角色删除失败")
                             }
                             showDeleteDialog = false
                         }

@@ -6,7 +6,7 @@ import androidx.navigation.toRoute
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import com.wenchen.yiyi.core.base.viewmodel.BaseViewModel
-import com.wenchen.yiyi.core.util.FilesUtil
+import com.wenchen.yiyi.core.util.storage.FilesUtil
 import com.wenchen.yiyi.core.state.UserState
 import com.wenchen.yiyi.core.util.toast.ToastUtils
 import com.wenchen.yiyi.feature.worldBook.model.WorldBook

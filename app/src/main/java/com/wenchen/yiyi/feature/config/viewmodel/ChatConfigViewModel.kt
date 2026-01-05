@@ -54,7 +54,6 @@ class ChatConfigViewModel @Inject constructor(
         baseUrl: String,
         type: Int,
         setLoading: (Boolean) -> Unit,
-//        setModels: (List<Model>) -> Unit,
         setSelectedModel: (String) -> Unit
     ) {
         ResultHandler.handleResultWithData(
@@ -68,12 +67,12 @@ class ChatConfigViewModel @Inject constructor(
 
                 when(type) {
                     0 -> {
-                        _models.value = modelsResponse.data
+                        _models.value = modelsResponse.data.sortedBy { it.id }
                         val position = models.value.indexOfFirst { it.id == userConfig?.selectedModel }
                         setSelectedModel(models.value.getOrNull(position)?.id ?: defaultModel)
                     }
                     1 -> {
-                        _imgModels.value = modelsResponse.data
+                        _imgModels.value = modelsResponse.data.sortedBy { it.id }
                         val position = imgModels.value.indexOfFirst { it.id == userConfig?.selectedImgModel }
                         setSelectedModel(imgModels.value.getOrNull(position)?.id ?: defaultModel)
                     }

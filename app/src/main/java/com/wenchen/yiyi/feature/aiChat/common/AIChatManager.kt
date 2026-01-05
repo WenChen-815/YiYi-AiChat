@@ -18,7 +18,7 @@ import com.wenchen.yiyi.core.common.ApiService
 import com.wenchen.yiyi.core.database.entity.Message
 import com.wenchen.yiyi.core.util.BitMapUtil
 import com.wenchen.yiyi.core.util.ChatUtil
-import com.wenchen.yiyi.core.util.FilesUtil
+import com.wenchen.yiyi.core.util.storage.FilesUtil
 import com.wenchen.yiyi.feature.worldBook.model.WorldBook
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope

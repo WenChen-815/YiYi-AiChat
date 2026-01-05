@@ -54,7 +54,7 @@ import com.wenchen.yiyi.core.common.theme.DarkGray
 import com.wenchen.yiyi.core.common.theme.Gold
 import com.wenchen.yiyi.core.common.theme.LightGray
 import com.wenchen.yiyi.core.common.theme.WhiteText
-import com.wenchen.yiyi.core.util.FilesUtil
+import com.wenchen.yiyi.core.util.storage.FilesUtil
 import com.wenchen.yiyi.core.util.StatusBarUtil
 import com.wenchen.yiyi.core.designSystem.component.SwitchWithText
 import com.wenchen.yiyi.feature.worldBook.model.WorldBook

@@ -9,7 +9,6 @@ import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResult
@@ -58,17 +57,17 @@ abstract class BaseChatViewModel(
 
     var currentAICharacter: AICharacter? = null
 
-    private val imageManager = ImageManager()
+    val imageManager = ImageManager()
     private var apiService: ApiService? = null
     private var selectedModel: String = ""
     private var supportedModels: List<Model> = emptyList()
 
     private var isInitialLoading = false
 
-    private val chatMessageDao = Application.appDatabase.chatMessageDao()
-    private val tempChatMessageDao = Application.appDatabase.tempChatMessageDao()
+    val chatMessageDao = Application.appDatabase.chatMessageDao()
+    val tempChatMessageDao = Application.appDatabase.tempChatMessageDao()
     val aiCharacterDao = Application.appDatabase.aiCharacterDao()
-    private val aiChatMemoryDao = Application.appDatabase.aiChatMemoryDao()
+    val aiChatMemoryDao = Application.appDatabase.aiChatMemoryDao()
     val conversationDao = Application.appDatabase.conversationDao()
 
     private val PAGE_SIZE = 15
@@ -245,7 +244,7 @@ abstract class BaseChatViewModel(
                     _conversation.value = updatedConversation
                 }
             } catch (e: Exception) {
-                Timber.tag("ChatViewModel").e(e, "刷新对话信息失败")
+                Timber.tag("BaseChatViewModel").e(e, "刷新对话信息失败")
             }
         }
     }
@@ -273,7 +272,7 @@ abstract class BaseChatViewModel(
         if (isInitialLoading) return
         isInitialLoading = true
 
-        Timber.tag("ChatViewModel").d("loadInitialData: ${conversation.value.id}")
+        Timber.tag("BaseChatViewModel").d("loadInitialData: ${conversation.value.id}")
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
             val initialMessages = chatMessageDao.getMessagesByPage(
@@ -305,7 +304,7 @@ abstract class BaseChatViewModel(
     // 加载更多消息的方法
     fun loadMoreMessages() {
         if (_uiState.value.isLoading || !_uiState.value.hasMoreData || isInitialLoading) return
-        Timber.tag("ChatViewModel").d("loadMoreMessages: $currentPage")
+        Timber.tag("BaseChatViewModel").d("loadMoreMessages: $currentPage")
 
         viewModelScope.launch(Dispatchers.IO) {
             _uiState.value = _uiState.value.copy(isLoading = true)
@@ -492,40 +491,6 @@ abstract class BaseChatViewModel(
     fun hideProgress() {
         _uiState.value = _uiState.value.copy(isAiReplying = false)
     }
-
-    suspend fun deleteCharacter(character: AICharacter): Boolean {
-        return try {
-            withContext(Dispatchers.IO) {
-                // 先删除角色的所有消息
-                chatMessageDao.deleteMessagesByConversationId(conversation.value.id)
-                tempChatMessageDao.deleteByConversationId(conversation.value.id)
-
-                // 删除角色所有相关图片
-                val tag1 = imageManager.deleteAllCharacterImages(character)
-                val conversationId = conversation.value.id
-                val tag2 = imageManager.deleteAllChatImages(conversationId)
-                val tag3 = aiChatMemoryDao.deleteByCharacterIdAndConversationId(
-                    character.aiCharacterId,
-                    conversation.value.id
-                ) > 0
-                val tag4 = conversationDao.deleteById(conversationId) > 0
-                // 最后删除角色
-                val tag5 = aiCharacterDao.deleteAICharacter(character) > 0
-
-                // 更新UI状态也在IO线程中执行，避免切换到主线程
-                _uiState.value = _uiState.value.copy(
-                    currentCharacter = null
-                )
-
-                Log.e("ChatViewModel", "删除角色: $tag1 $tag2 $tag3 $tag4 $tag5")
-                tag1 && tag2 && tag3 && tag4 && tag5
-            }
-        } catch (e: Exception) {
-            Log.e("ChatViewModel", "删除角色失败: ${e.message}")
-            false
-        }
-    }
-
     suspend fun deleteConversation(conversation: Conversation): Boolean {
         return try {
             withContext(Dispatchers.IO) {
@@ -539,11 +504,11 @@ abstract class BaseChatViewModel(
                 // 最后删除对话
                 val tag3 = conversationDao.deleteById(conversation.id) > 0
 
-                Log.e("ChatViewModel", "删除对话: $tag1 $tag2 $tag3")
+                Timber.tag("BaseChatViewModel").e("删除对话: $tag1 $tag2 $tag3")
                 tag1 && tag2 && tag3
             }
         } catch (e: Exception) {
-            Log.e("ChatViewModel", "删除对话失败: ${e.message}")
+             Timber.tag("BaseChatViewModel").e(e, "删除对话失败: ${e.message}")
             false
         }
     }
@@ -574,7 +539,7 @@ abstract class BaseChatViewModel(
 
                 onComplete?.invoke(true)
             } catch (e: Exception) {
-                Log.e("ChatViewModel", "修改消息内容失败: ${e.message}", e)
+                Timber.tag("BaseChatViewModel").e(e, "修改消息内容失败: ${e.message}")
                 onComplete?.invoke(false)
             }
         }
@@ -594,30 +559,15 @@ abstract class BaseChatViewModel(
                 }
                 chatContext.removeIf { it.id == messageId }
 
-                Log.e("ChatViewModel", "删除消息: $messageId")
+                Timber.tag("BaseChatViewModel").e("删除消息: $messageId")
             } catch (e: Exception) {
-                Log.e("ChatViewModel", "删除消息失败: ${e.message}", e)
+                Timber.tag("BaseChatViewModel").e(e, "删除消息失败: ${e.message}")
             }
         }
     }
 }
 
 data class ChatUiState(
-//    val conversation: Conversation = Conversation(
-//        id = "",
-//        name = "",
-//        type = ConversationType.SINGLE,
-//        characterIds = emptyMap(),
-//        characterKeywords = emptyMap(),
-//        playerName = "",
-//        playGender = "",
-//        playerDescription = "",
-//        chatWorldId = "",
-//        chatSceneDescription = "",
-//        additionalSummaryRequirement = "",
-//        avatarPath = "",
-//        backgroundPath = ""
-//    ),
     val messages: List<ChatMessage> = emptyList(),
     val currentCharacter: AICharacter? = null,
     val currentCharacters: List<AICharacter> = emptyList(),

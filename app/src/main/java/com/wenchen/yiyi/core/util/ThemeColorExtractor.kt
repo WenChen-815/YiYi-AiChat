@@ -7,7 +7,7 @@ import kotlin.math.*
 import androidx.core.graphics.scale
 import androidx.core.graphics.get
 
-class ThemeColorExtractor {
+object ThemeColorExtractor {
 
     /**
      * 提取图片的主题颜色，返回Compose Color对象列表
@@ -297,7 +297,7 @@ class ThemeColorExtractor {
     /**
      * HSV聚类数据类
      */
-    private inner class HsvCluster(
+    private class HsvCluster(
         var center: FloatArray,
         val pixels: MutableList<FloatArray> = mutableListOf()
     ) {

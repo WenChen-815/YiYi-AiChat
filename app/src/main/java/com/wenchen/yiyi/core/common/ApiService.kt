@@ -6,6 +6,7 @@ import com.wenchen.yiyi.core.database.entity.ChatResponse
 import com.wenchen.yiyi.core.database.entity.Message
 import com.wenchen.yiyi.core.database.entity.Model
 import com.wenchen.yiyi.core.database.entity.ModelsResponse
+import com.wenchen.yiyi.core.util.toast.ToastUtils
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -13,6 +14,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
+import timber.log.Timber
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
@@ -68,6 +70,7 @@ class ApiService(
         // 执行请求
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
+                ToastUtils.showError("网络请求失败：${e.message ?: "未知错误"}")
                 onError("网络请求失败：${e.message ?: "未知错误"}")
             }
 
@@ -78,7 +81,7 @@ class ApiService(
                         val chatResponse = gson.fromJson(responseBody, ChatResponse::class.java)
                         val aiMessage = chatResponse.choices?.firstOrNull()?.message?.content
                         if (aiMessage.isNullOrEmpty()) {
-                                Log.d(tag, "未获取到AI回复 responseBody：$responseBody")
+                            Timber.tag(tag).d("未获取到AI回复 responseBody：$responseBody")
                                 onError("未获取到AI回复")
                         } else {
                             // 去除回复内容中的换行符
@@ -87,11 +90,13 @@ class ApiService(
                             onSuccess(aiMessage)
                         }
                     } catch (e: Exception) {
+                        ToastUtils.showError("解析响应失败：${e.message}")
                         onError("解析响应失败：${e.message}")
                     }
                 } else {
+                    ToastUtils.showError("请求失败：$responseBody（状态码：${response.code}）")
                     onError("请求失败：$responseBody（状态码：${response.code}）")
-                    Log.d(tag, "请求失败：$responseBody（状态码：${response.code}）")
+                    Timber.tag(tag).d("请求失败：$responseBody（状态码：${response.code}）")
                 }
             }
         })
@@ -118,12 +123,13 @@ class ApiService(
         // 执行请求
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
+                ToastUtils.showError("网络请求失败：${e.message ?: "未知错误"}")
                 onError("网络请求失败：${e.message ?: "未知错误"}")
             }
 
             override fun onResponse(call: Call, response: Response) {
                 val responseBody = response.body.string()
-                Log.e(tag, responseBody)
+                Timber.tag(tag).e(responseBody)
                 if (response.isSuccessful) {
                     try {
                         val modelsResponse = gson.fromJson(responseBody, ModelsResponse::class.java)
@@ -199,6 +205,7 @@ class ApiService(
         // 执行请求
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
+                ToastUtils.showError("网络请求失败：${e.message ?: "未知错误"}")
                 onError("网络请求失败：${e.message ?: "未知错误"}")
             }
 
@@ -210,20 +217,19 @@ class ApiService(
                             val chatResponse = gson.fromJson(responseBody, ChatResponse::class.java)
                             val aiMessage = chatResponse.choices?.firstOrNull()?.message?.content
                             if (aiMessage.isNullOrEmpty()) {
-                                Log.d(tag, "未获取到AI回复 responseBody：$responseBody")
+                                Timber.tag(tag).d("未获取到AI回复 responseBody：$responseBody")
                                 onError("未获取到AI回复")
                             } else {
                                 onSuccess(aiMessage)
                             }
                         } catch (e: Exception) {
+                            ToastUtils.showError("解析响应失败：${e.message}")
                             onError("解析响应失败：${e.message}")
                         }
                     } else {
+                        ToastUtils.showError("请求失败：$responseBody（状态码：${response.code}）")
                         onError("请求失败：$responseBody（状态码：${response.code}）")
-                        Log.d(
-                            tag,
-                            "Multimodal request failed: $responseBody (code: ${response.code})"
-                        )
+                        Timber.tag(tag).d("Multimodal request failed: $responseBody (code: ${response.code})")
                     }
                 } catch (e: IOException) {
                     onError("读取响应失败：${e.message}")
