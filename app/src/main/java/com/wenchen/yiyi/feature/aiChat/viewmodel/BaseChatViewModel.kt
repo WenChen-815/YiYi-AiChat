@@ -18,6 +18,7 @@ import com.wenchen.yiyi.core.database.entity.ChatMessage
 import com.wenchen.yiyi.core.database.entity.TempChatMessage
 import com.wenchen.yiyi.Application
 import com.wenchen.yiyi.core.base.viewmodel.BaseViewModel
+import com.wenchen.yiyi.core.data.repository.*
 import com.wenchen.yiyi.core.database.entity.AICharacter
 import com.wenchen.yiyi.feature.aiChat.common.AIChatManager
 import com.wenchen.yiyi.core.common.ApiService
@@ -44,6 +45,11 @@ import java.io.File
 import kotlin.collections.toMutableList
 
 abstract class BaseChatViewModel(
+    protected val conversationRepository: ConversationRepository,
+    protected val chatMessageRepository: ChatMessageRepository,
+    protected val tempChatMessageRepository: TempChatMessageRepository,
+    protected val aiCharacterRepository: AICharacterRepository,
+    protected val aiChatMemoryRepository: AIChatMemoryRepository,
     navigator: AppNavigator,
     userState: UserState,
     val userConfigState: UserConfigState,
@@ -63,12 +69,6 @@ abstract class BaseChatViewModel(
     private var supportedModels: List<Model> = emptyList()
 
     private var isInitialLoading = false
-
-    val chatMessageDao = Application.appDatabase.chatMessageDao()
-    val tempChatMessageDao = Application.appDatabase.tempChatMessageDao()
-    val aiCharacterDao = Application.appDatabase.aiCharacterDao()
-    val aiChatMemoryDao = Application.appDatabase.aiChatMemoryDao()
-    val conversationDao = Application.appDatabase.conversationDao()
 
     private val PAGE_SIZE = 15
     private var currentPage = 0
@@ -239,7 +239,7 @@ abstract class BaseChatViewModel(
     fun refreshConversationInfo() {
         viewModelScope.launch {
             try {
-                val updatedConversation = conversationDao.getById(conversation.value.id)
+                val updatedConversation = conversationRepository.getById(conversation.value.id)
                 if (updatedConversation != null) {
                     _conversation.value = updatedConversation
                 }
@@ -275,7 +275,7 @@ abstract class BaseChatViewModel(
         Timber.tag("BaseChatViewModel").d("loadInitialData: ${conversation.value.id}")
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-            val initialMessages = chatMessageDao.getMessagesByPage(
+            val initialMessages = chatMessageRepository.getMessagesByPage(
                 conversation.value.id,
                 PAGE_SIZE,
                 0
@@ -287,12 +287,12 @@ abstract class BaseChatViewModel(
             )
 
             currentPage = 1
-            val totalCount = chatMessageDao.getTotalMessageCount()
+            val totalCount = chatMessageRepository.getTotalMessageCount(conversation.value.id)
             _uiState.value = _uiState.value.copy(hasMoreData = totalCount > PAGE_SIZE)
 
             isInitialLoading = false
 
-            tempChatMessageDao.getByConversationId(conversation.value.id)
+            tempChatMessageRepository.getByConversationId(conversation.value.id)
                 .takeLast(userConfigState.userConfig.value?.maxContextMessageSize ?: 15)
                 .let {
                     chatContext.clear()
@@ -309,7 +309,7 @@ abstract class BaseChatViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             _uiState.value = _uiState.value.copy(isLoading = true)
             val offset = currentPage * PAGE_SIZE
-            val moreMessages = chatMessageDao.getMessagesByPage(
+            val moreMessages = chatMessageRepository.getMessagesByPage(
                 conversation.value.id,
                 PAGE_SIZE,
                 offset
@@ -325,7 +325,7 @@ abstract class BaseChatViewModel(
                     currentPage++
 
                     // 检查是否还有更多数据
-                    val totalCount = chatMessageDao.getTotalMessageCount()
+                    val totalCount = chatMessageRepository.getTotalMessageCount(conversation.value.id)
                     _uiState.value =
                         _uiState.value.copy(hasMoreData = (currentPage * PAGE_SIZE) < totalCount)
                 } else {
@@ -364,8 +364,8 @@ abstract class BaseChatViewModel(
         // 移除数据库中的消息
         if (removeMessageIds.isNotEmpty()) {
             viewModelScope.launch {
-                chatMessageDao.deleteMessagesByIds(removeMessageIds)
-                tempChatMessageDao.deleteMessagesByIds(removeMessageIds)
+                chatMessageRepository.deleteMessagesByIds(removeMessageIds)
+                tempChatMessageRepository.deleteMessagesByIds(removeMessageIds)
             }
         }
     }
@@ -461,8 +461,8 @@ abstract class BaseChatViewModel(
 
     fun clearChatHistory() {
         viewModelScope.launch(Dispatchers.IO) {
-            chatMessageDao.deleteMessagesByConversationId(conversation.value.id)
-            tempChatMessageDao.deleteByConversationId(conversation.value.id)
+            chatMessageRepository.deleteMessagesByConversationId(conversation.value.id)
+            tempChatMessageRepository.deleteByConversationId(conversation.value.id)
 
             withContext(Dispatchers.Main) {
                 _uiState.value = _uiState.value.copy(
@@ -495,14 +495,14 @@ abstract class BaseChatViewModel(
         return try {
             withContext(Dispatchers.IO) {
                 // 先删除对话的所有消息
-                chatMessageDao.deleteMessagesByConversationId(conversation.id)
-                tempChatMessageDao.deleteByConversationId(conversation.id)
+                chatMessageRepository.deleteMessagesByConversationId(conversation.id)
+                tempChatMessageRepository.deleteByConversationId(conversation.id)
 
                 // 删除对话所有相关图片
                 val tag1 = imageManager.deleteAllChatImages(conversation.id)
-                val tag2 = aiChatMemoryDao.deleteByConversationId(conversation.id) >= 0
+                val tag2 = aiChatMemoryRepository.deleteByConversationId(conversation.id) >= 0
                 // 最后删除对话
-                val tag3 = conversationDao.deleteById(conversation.id) > 0
+                val tag3 = conversationRepository.deleteById(conversation.id) > 0
 
                 Timber.tag("BaseChatViewModel").e("删除对话: $tag1 $tag2 $tag3")
                 tag1 && tag2 && tag3
@@ -521,8 +521,8 @@ abstract class BaseChatViewModel(
         viewModelScope.launch {
             try {
                 // 更新数据库
-                chatMessageDao.updateMessageContent(messageId, content)
-                tempChatMessageDao.updateMessageContent(messageId, content)
+                chatMessageRepository.updateMessageContent(messageId, content)
+                tempChatMessageRepository.updateMessageContent(messageId, content)
 
                 // 更新UI状态中的消息列表
                 _uiState.update { currentState ->
@@ -549,8 +549,8 @@ abstract class BaseChatViewModel(
         viewModelScope.launch {
             try {
                 // 删除数据库中的消息
-                chatMessageDao.deleteMessageById(messageId)
-                tempChatMessageDao.deleteMessageById(messageId)
+                chatMessageRepository.deleteMessageById(messageId)
+                tempChatMessageRepository.deleteMessageById(messageId)
 
                 // 更新UI状态中的消息列表
                 _uiState.update { currentState ->

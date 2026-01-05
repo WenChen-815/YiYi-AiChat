@@ -14,8 +14,10 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
-import com.wenchen.yiyi.Application
 import com.wenchen.yiyi.core.base.viewmodel.BaseViewModel
+import com.wenchen.yiyi.core.data.repository.AICharacterRepository
+import com.wenchen.yiyi.core.data.repository.AIChatMemoryRepository
+import com.wenchen.yiyi.core.data.repository.ConversationRepository
 import com.wenchen.yiyi.core.database.entity.AICharacter
 import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.core.state.UserState
@@ -39,6 +41,9 @@ import javax.inject.Inject
 
 @HiltViewModel
 class CharacterEditViewModel @Inject constructor(
+    private val aiCharacterRepository: AICharacterRepository,
+    private val aiChatMemoryRepository: AIChatMemoryRepository,
+    private val conversationRepository: ConversationRepository,
     navigator: AppNavigator,
     userState: UserState,
     private val userConfigState: UserConfigState,
@@ -55,10 +60,7 @@ class CharacterEditViewModel @Inject constructor(
 
     val _isNewCharacter = MutableStateFlow(false)
     val isNewCharacter: StateFlow<Boolean> = _isNewCharacter.asStateFlow()
-    private val aiCharacterDao = Application.appDatabase.aiCharacterDao()
-    private val aiChatMemoryDao = Application.appDatabase.aiChatMemoryDao()
-    private val conversationDao = Application.appDatabase.conversationDao()
-
+    
     private val imageManager = ImageManager()
 
     // 用于存储选择的图片
@@ -90,9 +92,9 @@ class CharacterEditViewModel @Inject constructor(
         */
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val character = aiCharacterDao.getCharacterById(characterId)
+                val character = aiCharacterRepository.getCharacterById(characterId)
                 val memory =
-                    aiChatMemoryDao.getByCharacterIdAndConversationId(characterId, conversationId)
+                    aiChatMemoryRepository.getByCharacterIdAndConversationId(characterId, conversationId)
                 Timber.tag("CharacterEditViewModel")
                     .i("加载角色记忆: $memory characterId:$characterId conversationId:$conversationId")
                 onLoadComplete(character, memory)
@@ -193,7 +195,7 @@ class CharacterEditViewModel @Inject constructor(
                 backgroundPath = imageManager.getBackgroundImagePath(characterId.value)
             )
 
-            var memoryEntity = aiChatMemoryDao.getByCharacterIdAndConversationId(
+            var memoryEntity = aiChatMemoryRepository.getByCharacterIdAndConversationId(
                 character.aiCharacterId,
                 conversationId.value
             )
@@ -214,8 +216,8 @@ class CharacterEditViewModel @Inject constructor(
             try {
                 if (isNewCharacter.value) {
                     // 新增角色
-                    val result = aiCharacterDao.insertAICharacter(character)
-                    val result2 = aiChatMemoryDao.insert(memoryEntity)
+                    val result = aiCharacterRepository.insertAICharacter(character)
+                    val result2 = aiChatMemoryRepository.insert(memoryEntity)
 
                     // 创建初始Conversation
                     val initialConversation = Conversation(
@@ -235,7 +237,7 @@ class CharacterEditViewModel @Inject constructor(
                         avatarPath = character.avatarPath,
                         backgroundPath = character.backgroundPath,
                     )
-                    conversationDao.insert(initialConversation) // 保存初始对话
+                    conversationRepository.insert(initialConversation) // 保存初始对话
 
                     withContext(Dispatchers.Main) {
                         if (result > 0 && result2 > 0) {
@@ -247,8 +249,8 @@ class CharacterEditViewModel @Inject constructor(
                     }
                 } else {
                     // 更新角色
-                    val result = aiCharacterDao.updateAICharacter(character)
-                    val result2 = aiChatMemoryDao.update(memoryEntity)
+                    val result = aiCharacterRepository.updateAICharacter(character)
+                    val result2 = aiChatMemoryRepository.update(memoryEntity)
                     withContext(Dispatchers.Main) {
                         if (result > 0 && result2 > 0) {
                             ToastUtils.show("更新成功")

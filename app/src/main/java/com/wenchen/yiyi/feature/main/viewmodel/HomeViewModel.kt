@@ -1,8 +1,8 @@
 package com.wenchen.yiyi.feature.main.viewmodel
 
 import androidx.lifecycle.viewModelScope
-import com.wenchen.yiyi.Application
 import com.wenchen.yiyi.core.base.viewmodel.BaseViewModel
+import com.wenchen.yiyi.core.data.repository.AICharacterRepository
 import com.wenchen.yiyi.core.database.entity.AICharacter
 import com.wenchen.yiyi.core.state.UserState
 import com.wenchen.yiyi.navigation.AppNavigator
@@ -17,6 +17,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
+    private val aiCharacterRepository: AICharacterRepository,
     navigator: AppNavigator,
     userState: UserState
 ) : BaseViewModel(
@@ -29,8 +30,6 @@ class HomeViewModel @Inject constructor(
     private val _query = MutableStateFlow<String>("")
     val query: StateFlow<String> = _query
 
-    private val aiCharacterDao = Application.appDatabase.aiCharacterDao()
-
     init {
         loadCharacters()
     }
@@ -39,7 +38,7 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 // 获取所有角色
-                val allCharacters = aiCharacterDao.getAllCharacters()
+                val allCharacters = aiCharacterRepository.getAllCharacters()
                 _characters.value = allCharacters
             } catch (e: Exception) {
                 // 错误处理
@@ -59,11 +58,11 @@ class HomeViewModel @Inject constructor(
             try {
                 if (newQuery.isEmpty()) {
                     // 如果查询为空，加载所有角色
-                    val allCharacters = aiCharacterDao.getAllCharacters()
+                    val allCharacters = aiCharacterRepository.getAllCharacters()
                     _characters.value = allCharacters
                 } else {
                     // 根据查询过滤角色
-                    val filteredCharacters = aiCharacterDao.getCharacterByName(newQuery)
+                    val filteredCharacters = aiCharacterRepository.getCharacterByName(newQuery)
                     _characters.value = filteredCharacters
                 }
             } catch (e: Exception) {
@@ -79,7 +78,7 @@ class HomeViewModel @Inject constructor(
                 // 从数据库删除角色
                 Timber.tag("HomeViewModel").d("onLaunch删除角色: ${character.name}")
                 val result = withContext(Dispatchers.IO) {
-                    aiCharacterDao.deleteAICharacter(character)
+                    aiCharacterRepository.deleteAICharacter(character)
                 }
                 if (result > 0) {
                     // 删除成功，重新加载列表

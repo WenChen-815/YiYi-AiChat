@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.wenchen.yiyi.core.data.repository.*
 import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.core.state.UserState
 import com.wenchen.yiyi.core.database.entity.Conversation
@@ -20,11 +21,21 @@ import kotlin.collections.component2
 
 @HiltViewModel
 class GroupChatViewModel @Inject constructor(
+    conversationRepository: ConversationRepository,
+    chatMessageRepository: ChatMessageRepository,
+    tempChatMessageRepository: TempChatMessageRepository,
+    aiCharacterRepository: AICharacterRepository,
+    aiChatMemoryRepository: AIChatMemoryRepository,
     navigator: AppNavigator,
     userState: UserState,
     userConfigState: UserConfigState,
     savedStateHandle: SavedStateHandle
 ): BaseChatViewModel(
+    conversationRepository = conversationRepository,
+    chatMessageRepository = chatMessageRepository,
+    tempChatMessageRepository = tempChatMessageRepository,
+    aiCharacterRepository = aiCharacterRepository,
+    aiChatMemoryRepository = aiChatMemoryRepository,
     navigator = navigator,
     userState = userState,
     userConfigState = userConfigState,
@@ -45,7 +56,7 @@ class GroupChatViewModel @Inject constructor(
 
         try {
             viewModelScope.launch(Dispatchers.IO) {
-                val conversation = conversationDao.getById(conversationId)
+                val conversation = conversationRepository.getById(conversationId)
                     ?: Conversation(
                         id = conversationId,
                         name = currentAICharacter?.name ?: "未获取到对话信息",
@@ -64,7 +75,7 @@ class GroupChatViewModel @Inject constructor(
                         backgroundPath = currentAICharacter?.backgroundPath,
                     )
                 val currentCharacters = conversation.characterIds.mapNotNull { (characterId, _) ->
-                    aiCharacterDao.getCharacterById(characterId)
+                    aiCharacterRepository.getCharacterById(characterId)
                 }
                 withContext(Dispatchers.Main) {
                     _uiState.value = _uiState.value.copy(

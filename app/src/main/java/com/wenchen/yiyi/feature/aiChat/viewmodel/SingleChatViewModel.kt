@@ -3,7 +3,7 @@ package com.wenchen.yiyi.feature.aiChat.viewmodel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
-import com.wenchen.yiyi.Application
+import com.wenchen.yiyi.core.data.repository.*
 import com.wenchen.yiyi.core.database.entity.AICharacter
 import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.core.state.UserState
@@ -21,11 +21,21 @@ import javax.inject.Inject
 
 @HiltViewModel
 class SingleChatViewModel @Inject constructor(
+    conversationRepository: ConversationRepository,
+    chatMessageRepository: ChatMessageRepository,
+    tempChatMessageRepository: TempChatMessageRepository,
+    aiCharacterRepository: AICharacterRepository,
+    aiChatMemoryRepository: AIChatMemoryRepository,
     navigator: AppNavigator,
     userState: UserState,
     userConfigState: UserConfigState,
     savedStateHandle: SavedStateHandle
 ): BaseChatViewModel(
+    conversationRepository = conversationRepository,
+    chatMessageRepository = chatMessageRepository,
+    tempChatMessageRepository = tempChatMessageRepository,
+    aiCharacterRepository = aiCharacterRepository,
+    aiChatMemoryRepository = aiChatMemoryRepository,
     navigator = navigator,
     userState = userState,
     userConfigState = userConfigState,
@@ -46,12 +56,12 @@ class SingleChatViewModel @Inject constructor(
     suspend fun initChat(characterId: String) {
         try {
             if (characterId.isNotEmpty()) {
-                aiCharacterDao.getCharacterById(characterId)
+                aiCharacterRepository.getCharacterById(characterId)
                     ?.let { character ->
                         currentAICharacter = character
                         // 初始化会话ID
                         val conversationId = "${userConfigState.userConfig.value?.userId}_${currentAICharacter?.aiCharacterId}"
-                        val conversation = conversationDao.getById(conversationId)
+                        val conversation = conversationRepository.getById(conversationId)
                             ?: Conversation(
                                 id = conversationId,
                                 name = currentAICharacter?.name ?: "未获取到对话信息",
@@ -92,20 +102,20 @@ class SingleChatViewModel @Inject constructor(
         try {
             viewModelScope.launch(Dispatchers.IO) {
                 // 先删除角色的所有消息
-                chatMessageDao.deleteMessagesByConversationId(conversation.value.id)
-                tempChatMessageDao.deleteByConversationId(conversation.value.id)
+                chatMessageRepository.deleteMessagesByConversationId(conversation.value.id)
+                tempChatMessageRepository.deleteByConversationId(conversation.value.id)
 
                 // 删除角色所有相关图片
                 val tag1 = imageManager.deleteAllCharacterImages(character)
                 val conversationId = conversation.value.id
                 val tag2 = imageManager.deleteAllChatImages(conversationId)
-                val tag3 = aiChatMemoryDao.deleteByCharacterIdAndConversationId(
+                val tag3 = aiChatMemoryRepository.deleteByCharacterIdAndConversationId(
                     character.aiCharacterId,
                     conversation.value.id
                 ) > 0
-                val tag4 = conversationDao.deleteById(conversationId) > 0
+                val tag4 = conversationRepository.deleteById(conversationId) > 0
                 // 最后删除角色
-                val tag5 = aiCharacterDao.deleteAICharacter(character) > 0
+                val tag5 = aiCharacterRepository.deleteAICharacter(character) > 0
 
                 val result = tag1 && tag2 && tag3 && tag4 && tag5
                 // 更新UI状态
@@ -133,7 +143,7 @@ class SingleChatViewModel @Inject constructor(
     fun refreshCharacterInfo() {
         currentAICharacter?.let { character ->
             viewModelScope.launch(Dispatchers.IO) {
-                Application.appDatabase.aiCharacterDao().getCharacterById(character.aiCharacterId)
+                aiCharacterRepository.getCharacterById(character.aiCharacterId)
                     ?.let { updatedCharacter ->
                         currentAICharacter = updatedCharacter
                         withContext(Dispatchers.Main) {

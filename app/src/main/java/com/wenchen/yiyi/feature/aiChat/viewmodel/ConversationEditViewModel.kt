@@ -15,8 +15,12 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.squareup.moshi.JsonAdapter
-import com.wenchen.yiyi.Application
 import com.wenchen.yiyi.core.base.viewmodel.BaseViewModel
+import com.wenchen.yiyi.core.data.repository.AICharacterRepository
+import com.wenchen.yiyi.core.data.repository.AIChatMemoryRepository
+import com.wenchen.yiyi.core.data.repository.ConversationRepository
+import com.wenchen.yiyi.core.database.entity.AICharacter
+import com.wenchen.yiyi.core.database.entity.AIChatMemory
 import com.wenchen.yiyi.core.util.storage.FilesUtil
 import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.core.state.UserState
@@ -39,6 +43,9 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ConversationEditViewModel @Inject constructor(
+    private val conversationRepository: ConversationRepository,
+    private val aiCharacterRepository: AICharacterRepository,
+    private val aiChatMemoryRepository: AIChatMemoryRepository,
     navigator: AppNavigator,
     userState: UserState,
     val userConfigState: UserConfigState,
@@ -47,13 +54,15 @@ class ConversationEditViewModel @Inject constructor(
     navigator = navigator,
     userState = userState
 ) {
+    private val _uiState = MutableStateFlow(ConversationEditUiState())
+    val uiState: StateFlow<ConversationEditUiState> = _uiState.asStateFlow()
+
     val _conversationId = MutableStateFlow("")
     var conversationId: StateFlow<String> = _conversationId.asStateFlow()
 
     val _isNewConversation = MutableStateFlow(false)
     val isNewConversation: StateFlow<Boolean> = _isNewConversation.asStateFlow()
 
-    private val conversationDao = Application.appDatabase.conversationDao()
     private val imageManager = ImageManager()
 
     var avatarBitmap by mutableStateOf<Bitmap?>(null)
@@ -64,11 +73,28 @@ class ConversationEditViewModel @Inject constructor(
     init {
         val route = savedStateHandle.toRoute<AiChatRoutes.ConversationEdit>()
         _isNewConversation.value = route.isNewConversation
-        if (isNewConversation.value) {
-            _conversationId.value = UUID.randomUUID().toString()
-        } else {
-            _conversationId.value = route.conversationId
+        _conversationId.value = if (route.isNewConversation) UUID.randomUUID().toString() else route.conversationId
+        loadInitialData()
+    }
+
+    private fun loadInitialData() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val allCharacters = aiCharacterRepository.getAllCharacters()
+            val conversation = if (!isNewConversation.value) conversationRepository.getById(conversationId.value) else null
+            _uiState.value = _uiState.value.copy(allCharacters = allCharacters, conversation = conversation)
         }
+    }
+
+    suspend fun getChatMemoryByCharacterIdAndConversationId(characterId: String, conversationId: String): AIChatMemory? {
+        return aiChatMemoryRepository.getByCharacterIdAndConversationId(characterId, conversationId)
+    }
+
+    suspend fun updateChatMemory(memory: AIChatMemory) {
+        aiChatMemoryRepository.update(memory)
+    }
+
+    suspend fun insertChatMemory(memory: AIChatMemory) {
+        aiChatMemoryRepository.insert(memory)
     }
 
     /**
@@ -142,7 +168,7 @@ class ConversationEditViewModel @Inject constructor(
                     imageManager.saveBackgroundImage(conversationId.value, backgroundBitmap!!)
                 }
 
-                val existingConversation = conversationDao.getById(conversationId.value)
+                val existingConversation = conversationRepository.getById(conversationId.value)
                 if (existingConversation != null) {
                     if (hasNewAvatar) {
                         imageManager.deleteAvatarImage(conversationId.value)
@@ -181,7 +207,7 @@ class ConversationEditViewModel @Inject constructor(
                                 },
                         )
 
-                    val result = conversationDao.update(updatedConversation)
+                    val result = conversationRepository.update(updatedConversation)
 
                     if (result > 0) {
                         ToastUtils.showToast("更新成功")
@@ -222,7 +248,7 @@ class ConversationEditViewModel @Inject constructor(
                                 },
                         )
 
-                    conversationDao.insert(newConversation)
+                    conversationRepository.insert(newConversation)
 
                     ToastUtils.showToast("创建成功")
                     navigateBack()
@@ -255,3 +281,8 @@ class ConversationEditViewModel @Inject constructor(
         onLoaded(worldBooks)
     }
 }
+
+data class ConversationEditUiState(
+    val allCharacters: List<AICharacter> = emptyList(),
+    val conversation: Conversation? = null
+)

@@ -13,19 +13,19 @@ import kotlinx.coroutines.flow.Flow
 interface AICharacterDao {
     // 插入新角色
     @Insert
-    fun insertAICharacter(character: AICharacter): Long
+    suspend fun insertAICharacter(character: AICharacter): Long
 
     // 更新角色信息
     @Update
-    fun updateAICharacter(character: AICharacter): Int
+    suspend fun updateAICharacter(character: AICharacter): Int
 
     // 删除角色
     @Delete
-    fun deleteAICharacter(character: AICharacter): Int
+    suspend fun deleteAICharacter(character: AICharacter): Int
 
     // 根据ID查询角色
     @Query("SELECT * FROM ai_characters WHERE aiCharacterId = :id")
-    fun getCharacterById(id: String): AICharacter?
+    suspend fun getCharacterById(id: String): AICharacter?
 
     // 根据ID列表查询角色
     @Query("SELECT * FROM ai_characters WHERE aiCharacterId IN (:ids)")

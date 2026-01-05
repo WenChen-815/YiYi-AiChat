@@ -64,6 +64,8 @@ import com.wenchen.yiyi.core.common.theme.GrayText
 import com.wenchen.yiyi.core.common.theme.LightGold
 import com.wenchen.yiyi.core.common.theme.LightGray
 import com.wenchen.yiyi.core.common.theme.WhiteText
+import com.wenchen.yiyi.core.data.repository.AIChatMemoryRepository
+import com.wenchen.yiyi.core.data.repository.ConversationRepository
 import com.wenchen.yiyi.core.util.StatusBarUtil
 import com.wenchen.yiyi.feature.aiChat.viewmodel.ConversationEditViewModel
 import com.wenchen.yiyi.feature.worldBook.model.WorldBook
@@ -72,6 +74,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.UUID
 import androidx.compose.runtime.collectAsState
+import com.wenchen.yiyi.core.util.toast.ToastUtils
+import com.wenchen.yiyi.feature.aiChat.viewmodel.ConversationEditUiState
+import javax.inject.Inject
 
 @Composable
 internal fun ConversationEditRoute(
@@ -120,9 +125,12 @@ private fun ConversationEditScreen(
         )
     }
 
+    val uiState by viewModel.uiState.collectAsState()
+
     ConversationEditScreenContent(
         viewModel = viewModel,
         activity = activity,
+        uiState = uiState,
         isCreateNew = viewModel.isNewConversation.collectAsState().value,
         conversationId = viewModel.conversationId.collectAsState().value,
         onSaveClick = {
@@ -175,6 +183,7 @@ private fun ConversationEditScreen(
 fun ConversationEditScreenContent(
     viewModel: ConversationEditViewModel,
     activity: Activity,
+    uiState: ConversationEditUiState,
     isCreateNew: Boolean,
     conversationId: String,
     onSaveClick: (String, String, String, String, String, String, String, Map<String, Float>, Map<String, List<String>>) -> Unit,
@@ -203,51 +212,37 @@ fun ConversationEditScreenContent(
     var additionalSummaryRequirement by remember { mutableStateOf("") }
     var chooseCharacterMap by remember { mutableStateOf<Map<String, Float>>(emptyMap()) }
     var characterKeywordsMap by remember { mutableStateOf<Map<String, List<String>>>(emptyMap()) }
-    var allCharacter by remember { mutableStateOf<List<AICharacter>>(emptyList()) }
     var allWorldBook by remember { mutableStateOf<List<WorldBook>>(emptyList()) }
     val moshi: Moshi = Moshi.Builder().build()
     val worldBookAdapter: JsonAdapter<WorldBook> = moshi.adapter(WorldBook::class.java)
 
     val scrollState = rememberScrollState()
-    val context = LocalContext.current
-    val conversationDao = Application.appDatabase.conversationDao()
-    val aiCharacterDao = Application.appDatabase.aiCharacterDao()
     var avatarPath by remember { mutableStateOf("") }
     var backgroundPath by remember { mutableStateOf("") }
-    var conversation by remember { mutableStateOf<Conversation?>(null) }
 
     val (isCharacterSheetVisible, setCharacterSheetVisible) = remember { mutableStateOf(false) }
     val (isWorldSheetVisible, setWorldSheetVisible) = remember { mutableStateOf(false) }
     val onCharacterSelectedCallback = remember { mutableStateOf<((String) -> Unit)?>(null) }
 
+    val allCharacter = uiState.allCharacters
+    val conversation = uiState.conversation
+
     BackHandler(enabled = isCharacterSheetVisible) {
         setCharacterSheetVisible(false)
     }
-    LaunchedEffect(conversationId) {
-        launch(Dispatchers.IO) {
-            try {
-                allCharacter = aiCharacterDao.getAllCharacters()
-                conversation = conversationDao.getById(conversationId)
-                if (conversation != null) {
-                    name = conversation!!.name
-                    playerName = conversation!!.playerName
-                    playGender = conversation!!.playGender
-                    playerDescription = conversation!!.playerDescription
-                    chatWorldId = conversation!!.chatWorldId
-                    chatSceneDescription = conversation!!.chatSceneDescription
-                    additionalSummaryRequirement = conversation!!.additionalSummaryRequirement ?: ""
-                    avatarPath = conversation!!.avatarPath.toString()
-                    backgroundPath = conversation!!.backgroundPath.toString()
-                    chooseCharacterMap = conversation!!.characterIds
-                    characterKeywordsMap = conversation?.characterKeywords ?: emptyMap()
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    Toast
-                        .makeText(context, "加载对话数据失败: ${e.message}", Toast.LENGTH_SHORT)
-                        .show()
-                }
-            }
+    LaunchedEffect(conversation) {
+        if (conversation != null) {
+            name = conversation.name
+            playerName = conversation.playerName
+            playGender = conversation.playGender
+            playerDescription = conversation.playerDescription
+            chatWorldId = conversation.chatWorldId
+            chatSceneDescription = conversation.chatSceneDescription
+            additionalSummaryRequirement = conversation.additionalSummaryRequirement ?: ""
+            avatarPath = conversation.avatarPath.toString()
+            backgroundPath = conversation.backgroundPath.toString()
+            chooseCharacterMap = conversation.characterIds
+            characterKeywordsMap = conversation.characterKeywords ?: emptyMap()
         }
     }
     DisposableEffect(lifecycleOwner) {
@@ -584,17 +579,14 @@ fun ConversationEditScreenContent(
                             )
                         }
                         if (isMemoryDialogVisible) {
-                            val coroutineScope = rememberCoroutineScope()
                             ShowMemoryDialog(
+                                viewModel = viewModel,
                                 onConfirm = { newMemoryContent, memoryCount ->
                                     // 启动新线程保存角色记忆
                                     coroutineScope.launch(Dispatchers.IO) {
                                         try {
-                                            val memoryDao =
-                                                Application.appDatabase.aiChatMemoryDao()
-                                            // 检查是否已存在该角色的记忆
                                             val existingMemory =
-                                                memoryDao.getByCharacterIdAndConversationId(
+                                                viewModel.getChatMemoryByCharacterIdAndConversationId(
                                                     selectCharacterId,
                                                     conversationId
                                                 )
@@ -605,7 +597,7 @@ fun ConversationEditScreenContent(
                                                     content = newMemoryContent,
                                                     count = memoryCount
                                                 )
-                                                memoryDao.update(updatedMemory)
+                                                viewModel.updateChatMemory(updatedMemory)
                                             } else {
                                                 // 创建新的记忆记录
                                                 val newMemory = AIChatMemory(
@@ -616,25 +608,17 @@ fun ConversationEditScreenContent(
                                                     createdAt = System.currentTimeMillis(),
                                                     count = memoryCount
                                                 )
-                                                memoryDao.insert(newMemory)
+                                                viewModel.insertChatMemory(newMemory)
                                             }
 
                                             // 更新本地状态
                                             withContext(Dispatchers.Main) {
                                                 isMemoryDialogVisible = false
-                                                Toast.makeText(
-                                                    context,
-                                                    "角色记忆保存成功",
-                                                    Toast.LENGTH_SHORT
-                                                ).show()
+                                                ToastUtils.showToast("角色记忆保存成功")
                                             }
                                         } catch (e: Exception) {
                                             withContext(Dispatchers.Main) {
-                                                Toast.makeText(
-                                                    context,
-                                                    "保存失败: ${e.message}",
-                                                    Toast.LENGTH_SHORT
-                                                ).show()
+                                                ToastUtils.showToast("角色记忆保存失败")
                                             }
                                         }
                                     }
@@ -955,4 +939,69 @@ fun ConversationEditScreenContent(
             }
         }
     }
+}
+
+@Composable
+fun ShowMemoryDialog(
+    viewModel: ConversationEditViewModel,
+    onConfirm: (String, Int) -> Unit,
+    onDismiss: () -> Unit,
+    characterId: String,
+    conversationId: String,
+) {
+    var memoryContent by remember { mutableStateOf("") }
+    var memoryCount by remember { mutableStateOf(0) }
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(key1 = characterId, key2 = conversationId) {
+        // 在这里从数据库加载记忆
+        coroutineScope.launch(Dispatchers.IO) {
+            try {
+                val memory = viewModel.getChatMemoryByCharacterIdAndConversationId(characterId, conversationId)
+                if (memory != null) {
+                    withContext(Dispatchers.Main) {
+                        memoryContent = memory.content
+                        memoryCount = memory.count
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "加载记忆失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("编辑角色记忆") },
+        text = {
+            Column {
+                TextField(
+                    value = memoryContent,
+                    onValueChange = { memoryContent = it },
+                    label = { Text("记忆内容") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("记忆次数：")
+                    Button(onClick = { if (memoryCount > 0) memoryCount-- }) { Text("-") }
+                    Text(memoryCount.toString(), modifier = Modifier.padding(horizontal = 8.dp))
+                    Button(onClick = { memoryCount++ }) { Text("+") }
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = { onConfirm(memoryContent, memoryCount) }) {
+                Text("保存")
+            }
+        },
+        dismissButton = {
+            Button(onClick = onDismiss) {
+                Text("取消")
+            }
+        }
+    )
 }
