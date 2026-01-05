@@ -15,7 +15,7 @@ import com.wenchen.yiyi.core.database.entity.AICharacter
 import com.wenchen.yiyi.core.database.entity.AIChatMemory
 import com.wenchen.yiyi.core.database.entity.ConversationType
 import com.wenchen.yiyi.core.common.ApiService
-import com.wenchen.yiyi.core.database.entity.Message
+import com.wenchen.yiyi.core.model.network.Message
 import com.wenchen.yiyi.core.util.BitMapUtil
 import com.wenchen.yiyi.core.util.ChatUtil
 import com.wenchen.yiyi.core.util.storage.FilesUtil

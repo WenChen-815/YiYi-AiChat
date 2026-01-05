@@ -24,7 +24,7 @@ import com.wenchen.yiyi.core.common.ApiService
 import com.wenchen.yiyi.core.datastore.storage.ImageManager
 import com.wenchen.yiyi.core.database.entity.Conversation
 import com.wenchen.yiyi.core.database.entity.ConversationType
-import com.wenchen.yiyi.core.database.entity.Model
+import com.wenchen.yiyi.core.model.network.Model
 import com.wenchen.yiyi.core.util.LimitMutableList
 import com.wenchen.yiyi.core.util.limitMutableListOf
 import com.wenchen.yiyi.core.state.UserConfigState

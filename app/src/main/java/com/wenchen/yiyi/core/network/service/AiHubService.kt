@@ -1,8 +1,8 @@
 package com.wenchen.yiyi.core.network.service
 
-import com.wenchen.yiyi.core.database.entity.ChatResponse
-import com.wenchen.yiyi.core.database.entity.Message
-import com.wenchen.yiyi.core.database.entity.ModelsResponse
+import com.wenchen.yiyi.core.model.network.ChatResponse
+import com.wenchen.yiyi.core.model.network.Message
+import com.wenchen.yiyi.core.model.network.ModelsResponse
 import com.wenchen.yiyi.core.network.interceptor.ApiKeyInterceptor
 import retrofit2.http.Body
 import retrofit2.http.GET

@@ -24,7 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.wenchen.yiyi.Application
 import com.wenchen.yiyi.core.designSystem.component.SettingTextFieldItem
-import com.wenchen.yiyi.core.database.entity.Model
+import com.wenchen.yiyi.core.model.network.Model
 
 @Composable
 fun ModelsDialog(

@@ -45,7 +45,7 @@ import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.wenchen.yiyi.core.datastore.storage.ImageManager
-import com.wenchen.yiyi.core.database.entity.Model
+import com.wenchen.yiyi.core.model.network.Model
 import com.wenchen.yiyi.core.common.theme.BlackBg
 import com.wenchen.yiyi.core.common.theme.Gold
 import com.wenchen.yiyi.core.common.theme.Pink

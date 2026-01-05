@@ -5,8 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.wenchen.yiyi.core.base.state.BaseNetWorkUiState
 import com.wenchen.yiyi.core.base.viewmodel.BaseNetWorkViewModel
 import com.wenchen.yiyi.core.common.ApiService
-import com.wenchen.yiyi.core.database.entity.Model
-import com.wenchen.yiyi.core.database.entity.ModelsResponse
+import com.wenchen.yiyi.core.model.network.Model
+import com.wenchen.yiyi.core.model.network.ModelsResponse
 import com.wenchen.yiyi.core.data.repository.AiHubRepository
 import com.wenchen.yiyi.core.model.config.UserConfig
 import com.wenchen.yiyi.core.model.network.NetworkResponse

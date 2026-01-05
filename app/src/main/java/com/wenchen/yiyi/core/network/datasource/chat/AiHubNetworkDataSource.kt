@@ -1,6 +1,6 @@
 package com.wenchen.yiyi.core.network.datasource.chat
 
-import com.wenchen.yiyi.core.database.entity.ModelsResponse
+import com.wenchen.yiyi.core.model.network.ModelsResponse
 import com.wenchen.yiyi.core.model.network.NetworkResponse
 
 /**

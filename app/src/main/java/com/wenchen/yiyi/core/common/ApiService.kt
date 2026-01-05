@@ -1,11 +1,11 @@
 package com.wenchen.yiyi.core.common
 
-import android.util.Log
+import androidx.annotation.Keep
 import com.google.gson.Gson
-import com.wenchen.yiyi.core.database.entity.ChatResponse
-import com.wenchen.yiyi.core.database.entity.Message
-import com.wenchen.yiyi.core.database.entity.Model
-import com.wenchen.yiyi.core.database.entity.ModelsResponse
+import com.wenchen.yiyi.core.model.network.ChatResponse
+import com.wenchen.yiyi.core.model.network.Message
+import com.wenchen.yiyi.core.model.network.Model
+import com.wenchen.yiyi.core.model.network.ModelsResponse
 import com.wenchen.yiyi.core.util.toast.ToastUtils
 import okhttp3.Call
 import okhttp3.Callback
@@ -29,7 +29,7 @@ class ApiService(
     private val tag = "ApiService"
     private val client = OkHttpClient.Builder()
         .connectTimeout(10, TimeUnit.SECONDS)
-        .readTimeout(60, TimeUnit.SECONDS)
+        .readTimeout(600, TimeUnit.SECONDS)
         .writeTimeout(10, TimeUnit.SECONDS)
         .build()
     private val gson = Gson()
@@ -239,6 +239,7 @@ class ApiService(
     }
 
     // 定义聊天请求体的数据类
+    @Keep
     data class ChatRequest(
         val model: String,
         val messages: List<Message>,
@@ -246,17 +247,20 @@ class ApiService(
     )
 
     // 定义多模态聊天请求体的数据类
+    @Keep
     data class MultimodalChatRequest(
         val model: String,
         val messages: List<MultimodalMessage>,
         val temperature: Float? = null
     )
-
+    // 定义多模态消息的数据类
+    @Keep
     data class MultimodalMessage(
         val role: String,
         val content: List<ContentItem>
     )
-
+    // 定义多模态消息内容项的数据类
+    @Keep
     data class ContentItem(
         val type: String,
         val text: String? = null,
