@@ -1,7 +1,11 @@
 package com.wenchen.yiyi.core.network.datasource.chat
 
+import com.wenchen.yiyi.core.model.network.ChatResponse
 import com.wenchen.yiyi.core.model.network.ModelsResponse
 import com.wenchen.yiyi.core.model.network.NetworkResponse
+import com.wenchen.yiyi.core.network.service.ChatRequest
+import com.wenchen.yiyi.core.network.service.MultimodalChatRequest
+import com.wenchen.yiyi.core.network.service.MultimodalMessage
 
 /**
  * AI模型网络数据源接口
@@ -14,4 +18,16 @@ interface AiHubNetworkDataSource {
      * @return 模型列表响应
      */
     suspend fun getModels(baseUrl: String? =  null, apiKey: String? =  null): NetworkResponse<ModelsResponse>
+
+    suspend fun sendMessage(
+        baseUrl: String? =  null,
+        apiKey: String? =  null,
+        request: ChatRequest
+    ): NetworkResponse<ChatResponse>
+
+    suspend fun sendMultimodalMessage(
+        baseUrl: String? =  null,
+        apiKey: String? =  null,
+        request: MultimodalChatRequest
+    ): NetworkResponse<ChatResponse>
 }

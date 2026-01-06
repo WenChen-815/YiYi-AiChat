@@ -52,7 +52,7 @@ fun NavigationDrawerContent(
     val density = LocalDensity.current.density
     val windowInfo = LocalWindowInfo.current
     val screenWidthDp = windowInfo.containerSize.width / density
-    val uiState by viewModel.uiState.collectAsState()
+    val chatUiState by viewModel.chatUiState.collectAsState()
     val conversation by viewModel.conversation.collectAsState()
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
         ModalDrawerSheet(
@@ -137,7 +137,7 @@ fun NavigationDrawerContent(
                 )
                 YiYiChatDrawerItem(
                     label = "切换模型",
-                    description = uiState.currentModelName,
+                    description = chatUiState.currentModelName,
                     onClick = onNavSwitchModelClick,
                 )
             }
@@ -158,11 +158,11 @@ fun NavigationDrawerContent(
                 if (conversation.type == ConversationType.SINGLE) {
                     YiYiChatDrawerItem(
                         label = "编辑角色",
-                        onClick = { onEditClick(uiState.currentCharacter!!) },
+                        onClick = { onEditClick(chatUiState.currentCharacter!!) },
                     )
                     YiYiChatDrawerItem(
                         label = "删除角色",
-                        onClick = { onDeleteClick(uiState.currentCharacter!!) },
+                        onClick = { onDeleteClick(chatUiState.currentCharacter!!) },
                     )
                 }
                 if (conversation.type == ConversationType.GROUP) {

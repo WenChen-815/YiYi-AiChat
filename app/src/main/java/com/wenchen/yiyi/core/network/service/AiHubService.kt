@@ -4,6 +4,7 @@ import com.wenchen.yiyi.core.model.network.ChatResponse
 import com.wenchen.yiyi.core.model.network.Message
 import com.wenchen.yiyi.core.model.network.ModelsResponse
 import com.wenchen.yiyi.core.network.interceptor.ApiKeyInterceptor
+import kotlinx.serialization.Serializable
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
@@ -57,23 +58,27 @@ interface AiHubService {
 
 // --- Data Classes for Requests ---
 
+@Serializable
 data class ChatRequest(
     val model: String,
     val messages: List<Message>,
     val temperature: Float? = null
 )
 
+@Serializable
 data class MultimodalChatRequest(
     val model: String,
     val messages: List<MultimodalMessage>,
     val temperature: Float? = null
 )
 
+@Serializable
 data class MultimodalMessage(
     val role: String,
     val content: List<ContentItem>
 )
 
+@Serializable
 data class ContentItem(
     val type: String,
     val text: String? = null,

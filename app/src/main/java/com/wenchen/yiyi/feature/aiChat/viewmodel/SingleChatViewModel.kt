@@ -10,6 +10,7 @@ import com.wenchen.yiyi.core.state.UserState
 import com.wenchen.yiyi.core.database.entity.Conversation
 import com.wenchen.yiyi.core.database.entity.ConversationType
 import com.wenchen.yiyi.core.util.toast.ToastUtils
+import com.wenchen.yiyi.feature.aiChat.common.AIChatManager
 import com.wenchen.yiyi.navigation.AppNavigator
 import com.wenchen.yiyi.navigation.routes.AiChatRoutes
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -26,6 +27,8 @@ class SingleChatViewModel @Inject constructor(
     tempChatMessageRepository: TempChatMessageRepository,
     aiCharacterRepository: AICharacterRepository,
     aiChatMemoryRepository: AIChatMemoryRepository,
+    aiHubRepository: AiHubRepository,
+    aiChatManager: AIChatManager,
     navigator: AppNavigator,
     userState: UserState,
     userConfigState: UserConfigState,
@@ -36,6 +39,8 @@ class SingleChatViewModel @Inject constructor(
     tempChatMessageRepository = tempChatMessageRepository,
     aiCharacterRepository = aiCharacterRepository,
     aiChatMemoryRepository = aiChatMemoryRepository,
+    aiHubRepository = aiHubRepository,
+    aiChatManager = aiChatManager,
     navigator = navigator,
     userState = userState,
     userConfigState = userConfigState,
@@ -92,7 +97,7 @@ class SingleChatViewModel @Inject constructor(
     }
     private fun updateCharacterDisplay() {
         currentAICharacter?.let { character ->
-            _uiState.value = _uiState.value.copy(
+            _chatUiState.value = _chatUiState.value.copy(
                 currentCharacter = character,
             )
         }
@@ -120,7 +125,7 @@ class SingleChatViewModel @Inject constructor(
                 val result = tag1 && tag2 && tag3 && tag4 && tag5
                 // 更新UI状态
                 withContext(Dispatchers.Main) {
-                    _uiState.value = _uiState.value.copy(
+                    _chatUiState.value = _chatUiState.value.copy(
                         currentCharacter = null
                     )
                     if (result) {

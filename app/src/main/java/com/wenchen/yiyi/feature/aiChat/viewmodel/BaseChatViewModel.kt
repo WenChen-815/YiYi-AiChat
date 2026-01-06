@@ -14,18 +14,21 @@ import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResult
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
+import com.wenchen.yiyi.core.base.state.BaseNetWorkUiState
 import com.wenchen.yiyi.core.database.entity.ChatMessage
 import com.wenchen.yiyi.core.database.entity.TempChatMessage
-import com.wenchen.yiyi.Application
-import com.wenchen.yiyi.core.base.viewmodel.BaseViewModel
+import com.wenchen.yiyi.core.base.viewmodel.BaseNetWorkViewModel
 import com.wenchen.yiyi.core.data.repository.*
 import com.wenchen.yiyi.core.database.entity.AICharacter
 import com.wenchen.yiyi.feature.aiChat.common.AIChatManager
-import com.wenchen.yiyi.core.common.ApiService
 import com.wenchen.yiyi.core.datastore.storage.ImageManager
 import com.wenchen.yiyi.core.database.entity.Conversation
 import com.wenchen.yiyi.core.database.entity.ConversationType
 import com.wenchen.yiyi.core.model.network.Model
+import com.wenchen.yiyi.core.model.network.ModelsResponse
+import com.wenchen.yiyi.core.model.network.NetworkResponse
+import com.wenchen.yiyi.core.result.ResultHandler
+import com.wenchen.yiyi.core.result.asResult
 import com.wenchen.yiyi.core.util.LimitMutableList
 import com.wenchen.yiyi.core.util.limitMutableListOf
 import com.wenchen.yiyi.core.state.UserConfigState
@@ -33,6 +36,7 @@ import com.wenchen.yiyi.core.state.UserState
 import com.wenchen.yiyi.core.util.toast.ToastUtils
 import com.wenchen.yiyi.navigation.AppNavigator
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -50,21 +54,22 @@ abstract class BaseChatViewModel(
     protected val tempChatMessageRepository: TempChatMessageRepository,
     protected val aiCharacterRepository: AICharacterRepository,
     protected val aiChatMemoryRepository: AIChatMemoryRepository,
+    private val aiHubRepository: AiHubRepository,
+    private val aiChatManager: AIChatManager,
     navigator: AppNavigator,
     userState: UserState,
     val userConfigState: UserConfigState,
     savedStateHandle: SavedStateHandle
-): BaseViewModel(
+): BaseNetWorkViewModel<ModelsResponse>(
     navigator = navigator,
     userState = userState
 ) {
-    val _uiState = MutableStateFlow(ChatUiState())
-    val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()
+    val _chatUiState = MutableStateFlow(ChatUiState())
+    val chatUiState: StateFlow<ChatUiState> = _chatUiState.asStateFlow()
 
     var currentAICharacter: AICharacter? = null
 
     val imageManager = ImageManager()
-    private var apiService: ApiService? = null
     private var selectedModel: String = ""
     private var supportedModels: List<Model> = emptyList()
 
@@ -94,6 +99,10 @@ abstract class BaseChatViewModel(
     ))
     val conversation: StateFlow<Conversation> = _conversation.asStateFlow()
 
+    override fun requestApiFlow(): Flow<NetworkResponse<ModelsResponse>> {
+        return aiHubRepository.getModels()
+    }
+
     init {
         userConfigState.userConfig.onEach { 
             initApiService()
@@ -110,8 +119,7 @@ abstract class BaseChatViewModel(
         val apiKey = userConfig?.baseApiKey ?: ""
         val baseUrl = userConfig?.baseUrl ?: ""
         selectedModel = userConfig?.selectedModel ?: ""
-        apiService = ApiService(baseUrl, apiKey)
-        loadSupportedModels()
+        loadSupportedModels(baseUrl, apiKey)
     }
     /**
      * 在后台线程加载背景图片的辅助函数
@@ -184,7 +192,7 @@ abstract class BaseChatViewModel(
                     ToastUtils.showToast(message)
                 }
             }
-        AIChatManager.registerListener(listener)
+        aiChatManager.registerListener(listener)
     }
 
     fun handleImageResult(
@@ -260,22 +268,28 @@ abstract class BaseChatViewModel(
     }
 
 
-    private fun loadSupportedModels() {
-        apiService?.let { service ->
-            viewModelScope.launch(Dispatchers.IO) {
-                service.getSupportedModels(
-                    onSuccess = { models ->
-                        supportedModels = models
-                        _uiState.value = _uiState.value.copy(
-                            currentModelName = selectedModel
-                        )
-                    },
-                    onError = { errorMsg ->
-                        // 错误处理
-                    }
+    private fun loadSupportedModels(baseUrl: String, apiKey: String) {
+        ResultHandler.handleResultWithData(
+            scope = viewModelScope,
+            flow = aiHubRepository.getModels(baseUrl, apiKey).asResult(),
+            onData = { modelsResponse ->
+                _uiState.value = BaseNetWorkUiState.Success(modelsResponse)
+                supportedModels = modelsResponse.data
+                _chatUiState.value = _chatUiState.value.copy(
+                    currentModelName = selectedModel
                 )
+            },
+            onError = { message, exception ->
+                Timber.tag("ChatConfigViewModel").d("Error: $message Exception: $exception")
+                // 更新 uiState 为错误状态
+                _uiState.value = BaseNetWorkUiState.Error(message, exception)
+                ToastUtils.showError("$message,$exception" )
+            },
+            onLoading = {
+                // 更新 uiState 为加载状态
+                _uiState.value = BaseNetWorkUiState.Loading
             }
-        }
+        )
     }
 
     fun loadInitialData() {
@@ -284,21 +298,21 @@ abstract class BaseChatViewModel(
 
         Timber.tag("BaseChatViewModel").d("loadInitialData: ${conversation.value.id}")
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
+            _chatUiState.value = _chatUiState.value.copy(isLoading = true)
             val initialMessages = chatMessageRepository.getMessagesByPage(
                 conversation.value.id,
                 PAGE_SIZE,
                 0
             )
 
-            _uiState.value = _uiState.value.copy(
+            _chatUiState.value = _chatUiState.value.copy(
                 messages = initialMessages,
                 isLoading = false
             )
 
             currentPage = 1
             val totalCount = chatMessageRepository.getTotalMessageCount(conversation.value.id)
-            _uiState.value = _uiState.value.copy(hasMoreData = totalCount > PAGE_SIZE)
+            _chatUiState.value = _chatUiState.value.copy(hasMoreData = totalCount > PAGE_SIZE)
 
             isInitialLoading = false
 
@@ -313,11 +327,11 @@ abstract class BaseChatViewModel(
 
     // 加载更多消息的方法
     fun loadMoreMessages() {
-        if (_uiState.value.isLoading || !_uiState.value.hasMoreData || isInitialLoading) return
+        if (_chatUiState.value.isLoading || !_chatUiState.value.hasMoreData || isInitialLoading) return
         Timber.tag("BaseChatViewModel").d("loadMoreMessages: $currentPage")
 
         viewModelScope.launch(Dispatchers.IO) {
-            _uiState.value = _uiState.value.copy(isLoading = true)
+            _chatUiState.value = _chatUiState.value.copy(isLoading = true)
             val offset = currentPage * PAGE_SIZE
             val moreMessages = chatMessageRepository.getMessagesByPage(
                 conversation.value.id,
@@ -327,30 +341,30 @@ abstract class BaseChatViewModel(
 
             withContext(Dispatchers.Main) {
                 if (moreMessages.isNotEmpty()) {
-                    val currentMessages = _uiState.value.messages.toMutableList()
+                    val currentMessages = _chatUiState.value.messages.toMutableList()
                     currentMessages.addAll(moreMessages)
-                    _uiState.value = _uiState.value.copy(
+                    _chatUiState.value = _chatUiState.value.copy(
                         messages = currentMessages
                     )
                     currentPage++
 
                     // 检查是否还有更多数据
                     val totalCount = chatMessageRepository.getTotalMessageCount(conversation.value.id)
-                    _uiState.value =
-                        _uiState.value.copy(hasMoreData = (currentPage * PAGE_SIZE) < totalCount)
+                    _chatUiState.value =
+                        _chatUiState.value.copy(hasMoreData = (currentPage * PAGE_SIZE) < totalCount)
                 } else {
-                    _uiState.value = _uiState.value.copy(hasMoreData = false)
+                    _chatUiState.value = _chatUiState.value.copy(hasMoreData = false)
                 }
-                _uiState.value = _uiState.value.copy(isLoading = false)
+                _chatUiState.value = _chatUiState.value.copy(isLoading = false)
             }
         }
     }
 
     // 添加检查是否可以加载更多消息的方法
-    fun canLoadMore(): Boolean = _uiState.value.hasMoreData && !_uiState.value.isLoading
+    fun canLoadMore(): Boolean = _chatUiState.value.hasMoreData && !_chatUiState.value.isLoading
 
     // 添加获取加载状态的方法
-    fun isLoading(): Boolean = _uiState.value.isLoading
+    fun isLoading(): Boolean = _chatUiState.value.isLoading
 
     fun continueGenerate(isGroupChat: Boolean) = if (isGroupChat) sendGroupMessage() else sendMessage()
 
@@ -368,8 +382,8 @@ abstract class BaseChatViewModel(
             sendMessage()
         }
         // 移除ui_state中对应的消息
-        _uiState.value = _uiState.value.copy(
-            messages = _uiState.value.messages.filter { !removeMessageIds.contains(it.id) }
+        _chatUiState.value = _chatUiState.value.copy(
+            messages = _chatUiState.value.messages.filter { !removeMessageIds.contains(it.id) }
         )
         // 移除数据库中的消息
         if (removeMessageIds.isNotEmpty()) {
@@ -385,10 +399,10 @@ abstract class BaseChatViewModel(
         character: AICharacter? = currentAICharacter
     ) {
 //        if (messageText.isEmpty()) return
-        _uiState.value = _uiState.value.copy(isAiReplying = true)
+        _chatUiState.value = _chatUiState.value.copy(isAiReplying = true)
         character?.let { character ->
             viewModelScope.launch {
-                AIChatManager.sendMessage(
+                aiChatManager.sendMessage(
                     conversation = conversation.value,
                     aiCharacter = character,
                     newMessageTexts = listOf(messageText),
@@ -402,11 +416,11 @@ abstract class BaseChatViewModel(
 
     fun sendGroupMessage(messageText: String = "", isSendSystemMessage: Boolean = false) {
         if (conversation.value.characterIds.isEmpty()) return
-        _uiState.value = _uiState.value.copy(isAiReplying = true)
+        _chatUiState.value = _chatUiState.value.copy(isAiReplying = true)
         viewModelScope.launch {
-            lastGroupChatReply = AIChatManager.sendGroupMessage(
+            lastGroupChatReply = aiChatManager.sendGroupMessage(
                 conversation = conversation.value,
-                aiCharacters = _uiState.value.currentCharacters,
+                aiCharacters = _chatUiState.value.currentCharacters,
                 newMessageTexts = listOf(messageText),
                 isHandleUserMessage = messageText.isNotEmpty(),
                 /**
@@ -429,11 +443,11 @@ abstract class BaseChatViewModel(
     }
 
     fun sendImage(bitmap: Bitmap, savedUri: Uri, character: AICharacter? = currentAICharacter) {
-        _uiState.value = _uiState.value.copy(isAiReplying = true)
+        _chatUiState.value = _chatUiState.value.copy(isAiReplying = true)
         character?.let { character ->
             val tempChatContext = chatContext
             viewModelScope.launch {
-                AIChatManager.sendImage(
+                aiChatManager.sendImage(
                     conversation = conversation.value,
                     character,
                     bitmap,
@@ -446,9 +460,9 @@ abstract class BaseChatViewModel(
 
     fun addMessage(message: ChatMessage) {
         if (message.conversationId != conversation.value.id) return
-        val currentMessages = _uiState.value.messages.toMutableList()
+        val currentMessages = _chatUiState.value.messages.toMutableList()
         currentMessages.add(0, message)
-        _uiState.value = _uiState.value.copy(
+        _chatUiState.value = _chatUiState.value.copy(
             messages = currentMessages
         )
 
@@ -467,8 +481,8 @@ abstract class BaseChatViewModel(
             )
             chatContext.add(tempMessage)
         }
-        if (!_uiState.value.receiveNewMessage) {
-            _uiState.value = _uiState.value.copy(receiveNewMessage = true)
+        if (!_chatUiState.value.receiveNewMessage) {
+            _chatUiState.value = _chatUiState.value.copy(receiveNewMessage = true)
         }
     }
 
@@ -478,7 +492,7 @@ abstract class BaseChatViewModel(
             tempChatMessageRepository.deleteByConversationId(conversation.value.id)
 
             withContext(Dispatchers.Main) {
-                _uiState.value = _uiState.value.copy(
+                _chatUiState.value = _chatUiState.value.copy(
                     messages = emptyList()
                 )
                 chatContext.clear()
@@ -493,7 +507,7 @@ abstract class BaseChatViewModel(
                 userConfigState.updateUserConfig(it.copy(selectedModel = modelId))
             }
         }
-        _uiState.value = _uiState.value.copy(
+        _chatUiState.value = _chatUiState.value.copy(
             currentModelName = selectedModel
         )
     }
@@ -502,7 +516,7 @@ abstract class BaseChatViewModel(
 
     fun getCurrentCharacter(): AICharacter? = currentAICharacter
     fun hideProgress() {
-        _uiState.value = _uiState.value.copy(isAiReplying = false)
+        _chatUiState.value = _chatUiState.value.copy(isAiReplying = false)
     }
     suspend fun deleteConversation(conversation: Conversation): Boolean {
         return try {
@@ -527,7 +541,7 @@ abstract class BaseChatViewModel(
     }
 
     fun setReceiveNewMessage(receiveNewMessage: Boolean) {
-        _uiState.value = _uiState.value.copy(receiveNewMessage = receiveNewMessage)
+        _chatUiState.value = _chatUiState.value.copy(receiveNewMessage = receiveNewMessage)
     }
 
     fun updateMessageContent(messageId: String, content: String, onComplete: ((Boolean) -> Unit)? = null) {
@@ -538,7 +552,7 @@ abstract class BaseChatViewModel(
                 tempChatMessageRepository.updateMessageContent(messageId, content)
 
                 // 更新UI状态中的消息列表
-                _uiState.update { currentState ->
+                _chatUiState.update { currentState ->
                     val updatedMessages = currentState.messages.map { message ->
                         if (message.id == messageId) message.copy(content = content) else message
                     }
@@ -566,7 +580,7 @@ abstract class BaseChatViewModel(
                 tempChatMessageRepository.deleteMessageById(messageId)
 
                 // 更新UI状态中的消息列表
-                _uiState.update { currentState ->
+                _chatUiState.update { currentState ->
                     val updatedMessages = currentState.messages.filter { it.id != messageId }
                     currentState.copy(messages = updatedMessages)
                 }

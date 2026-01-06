@@ -2,7 +2,6 @@ package com.wenchen.yiyi.feature.aiChat.common
 
 import android.graphics.Bitmap
 import android.net.Uri
-import android.util.Log
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import com.wenchen.yiyi.core.database.entity.ChatMessage
@@ -14,8 +13,19 @@ import com.wenchen.yiyi.Application
 import com.wenchen.yiyi.core.database.entity.AICharacter
 import com.wenchen.yiyi.core.database.entity.AIChatMemory
 import com.wenchen.yiyi.core.database.entity.ConversationType
-import com.wenchen.yiyi.core.common.ApiService
+import com.wenchen.yiyi.core.data.repository.AIChatMemoryRepository
+import com.wenchen.yiyi.core.data.repository.AiHubRepository
+import com.wenchen.yiyi.core.data.repository.ChatMessageRepository
+import com.wenchen.yiyi.core.data.repository.TempChatMessageRepository
+import com.wenchen.yiyi.core.model.network.ChatResponse
 import com.wenchen.yiyi.core.model.network.Message
+import com.wenchen.yiyi.core.network.service.ChatRequest
+import com.wenchen.yiyi.core.network.service.ContentItem
+import com.wenchen.yiyi.core.network.service.MultimodalChatRequest
+import com.wenchen.yiyi.core.network.service.MultimodalMessage
+import com.wenchen.yiyi.core.result.ResultHandler
+import com.wenchen.yiyi.core.result.asResult
+import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.core.util.BitMapUtil
 import com.wenchen.yiyi.core.util.ChatUtil
 import com.wenchen.yiyi.core.util.storage.FilesUtil
@@ -25,41 +35,41 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import timber.log.Timber
 import java.text.SimpleDateFormat
 import java.util.Collections
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import javax.inject.Inject
+import javax.inject.Singleton
 
-object AIChatManager {
+@Singleton
+class AIChatManager @Inject constructor(
+    val userConfigState: UserConfigState,
+    val chatMessageRepository: ChatMessageRepository,
+    val tempChatMessageRepository: TempChatMessageRepository,
+    val aiChatMemoryRepository: AIChatMemoryRepository,
+    val aiHubRepository: AiHubRepository
+) {
     // 基础配置
-    private const val TAG = "AIChatManager"
-    private lateinit var apiService: ApiService
+    private val TAG = "AIChatManager"
 
     // 数据访问对象
-    private val chatMessageDao = Application.appDatabase.chatMessageDao()
-    private val tempChatMessageDao = Application.appDatabase.tempChatMessageDao()
-    private val aiChatMemoryDao = Application.appDatabase.aiChatMemoryDao()
+//    private val chatMessageDao = Application.appDatabase.chatMessageDao()
+//    private val tempChatMessageDao = Application.appDatabase.tempChatMessageDao()
+//    private val aiChatMemoryDao = Application.appDatabase.aiChatMemoryDao()
 
     // 并发控制
     private val characterLocks = ConcurrentHashMap<String, Mutex>()
     private val sendCharacterQueue = ConcurrentHashMap<String, MutableList<AICharacter>>()
     private val isProcessing = ConcurrentHashMap<String, Boolean>()
     private val listeners = Collections.synchronizedSet(mutableSetOf<AIChatMessageListener>())
-
-    fun init() {
-        val userConfig = Application.globalUserConfigState.userConfig.value
-        val apiKey = userConfig?.baseApiKey ?: ""
-        val baseUrl = userConfig?.baseUrl ?: ""
-        val imgApiKey = userConfig?.imgApiKey
-        val imgBaseUrl = userConfig?.imgBaseUrl
-        apiService = ApiService(baseUrl, apiKey, imgBaseUrl, imgApiKey)
-    }
-
 
     // 注册监听器
     fun registerListener(listener: AIChatMessageListener) {
@@ -82,7 +92,7 @@ object AIChatManager {
     ) : Int {
         // 参数校验
         if (conversation.characterIds.isEmpty() || aiCharacters.isEmpty()) {
-            Log.e(TAG, "未选择AI角色")
+            Timber.tag(TAG).e("未选择AI角色")
             return 0
         }
         /*
@@ -94,8 +104,8 @@ object AIChatManager {
         if (isHandleUserMessage){
             userMessages = handleUserMessage(conversation, newMessageTexts, isSendSystemMessage, showInChat)
         }
-        val count = tempChatMessageDao.getCountByConversationId(conversation.id)
-        Log.d(TAG, "sendGroupMessage: $count")
+        val count = tempChatMessageRepository.getCountByConversationId(conversation.id)
+//        Timber.tag(TAG).d("sendGroupMessage: $count")
         val summaryMessages = getSummaryMessages(conversation)
         if (count >= (Application.globalUserConfigState.userConfig.value?.summarizeTriggerCount ?: 20)) aiCharacters.forEach { aiCharacter ->
             summarize(conversation, aiCharacter, summaryMessages)
@@ -110,13 +120,13 @@ object AIChatManager {
         conversation.characterIds.forEach { (id, chance) ->
             val aiCharacter = aiCharacters.find { it.aiCharacterId == id }
             if (aiCharacter == null) {
-                Log.e(TAG, "未找到AI角色: $id")
+                Timber.tag(TAG).e("未找到AI角色: $id")
                 return@forEach
             }
 
             // 检查是否有关键词配置
             val keywordsList = conversation.characterKeywords?.get(id) ?: emptyList()
-            Log.d(TAG, "keywordsList: $keywordsList")
+//            Timber.tag(TAG).d("keywordsList: $keywordsList")
             // 如果没有关键词配置或关键词列表为空，则使用概率判断
             if (conversation.characterKeywords == null || keywordsList.isEmpty()) {
                 val random = Math.random()
@@ -126,7 +136,7 @@ object AIChatManager {
             } else {
                 // 有关键词配置，检查是否匹配
                 val keywords = keywordsList.joinToString("|").toRegex()
-                Log.d(TAG, "keywords: $keywords")
+//                Timber.tag(TAG).d("keywords: $keywords")
                 if (keywords.containsMatchIn(newMessageTexts[0])) {
                     // 匹配到关键词，直接加入队列
                     sendCharacterQueue[queueKey]?.add(aiCharacter)
@@ -171,7 +181,7 @@ object AIChatManager {
                     delay((1000).toLong()) // 1s延迟
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "处理消息队列时出错", e)
+                Timber.tag(TAG).e(e, "处理消息队列时出错")
             } finally {
                 clearMessageQueue(queueKey)
                 listeners.forEach { it.onAllReplyCompleted() }
@@ -209,7 +219,7 @@ object AIChatManager {
     ) {
         // 参数校验
         if (aiCharacter == null) {
-            Log.e(TAG, "未选择AI角色")
+            Timber.tag(TAG).e("未选择AI角色")
             return
         }
         // 处理新消息
@@ -223,10 +233,10 @@ object AIChatManager {
 //        messages.addAll(userMessages)
         send(conversation, aiCharacter, messages)
 
-        val count = tempChatMessageDao.getCountByConversationId(conversation.id)
+        val count = tempChatMessageRepository.getCountByConversationId(conversation.id)
         if (count >= (Application.globalUserConfigState.userConfig.value?.summarizeTriggerCount ?: 20)) {
             val summaryMessages = getSummaryMessages(conversation)
-            Log.d(TAG, "开始总结 count=$count")
+            Timber.tag(TAG).d("开始总结 count=$count")
             summarize(conversation, aiCharacter, summaryMessages)
         }
     }
@@ -237,7 +247,7 @@ object AIChatManager {
         oldMessages: List<TempChatMessage>
     ): MutableList<Message> {
         val messages = mutableListOf<Message>()
-        val history = aiChatMemoryDao.getByCharacterIdAndConversationId(
+        val history = aiChatMemoryRepository.getByCharacterIdAndConversationId(
             aiCharacter.aiCharacterId,
             conversation.id
         )?.content
@@ -362,9 +372,9 @@ object AIChatManager {
     }
 
     private suspend fun savaMessage(message: ChatMessage, saveToTemp: Boolean) {
-        chatMessageDao.insertMessage(message)
+        chatMessageRepository.insertMessage(message)
         if (saveToTemp) {
-            tempChatMessageDao.insert(
+            tempChatMessageRepository.insert(
                 TempChatMessage(
                     id = message.id,
                     content = message.content,
@@ -433,23 +443,26 @@ object AIChatManager {
     ) {
         val userConfig = Application.globalUserConfigState.userConfig.value
         if (aiCharacter == null) {
-            Log.e(TAG, "未选择AI角色")
+            Timber.tag(TAG).e("未选择AI角色")
             return
         }
-        Log.d(TAG, "send to ${aiCharacter.name}\n" + messages.joinToString("\n"))
-        apiService.sendMessage(
-            messages = messages,
-            model = userConfig?.selectedModel ?: "",
-            temperature = 1.1f,
-            onSuccess = { aiResponse ->
-                // 创建时间戳和格式化日期
-                // val timestamp = System.currentTimeMillis()
+        Timber.tag(TAG).d("send to ${aiCharacter.name}\n%s", messages.joinToString("\n"))
+        val chatRequest = ChatRequest(userConfig?.selectedModel ?: "", messages, 1.0f)
+        ResultHandler.handleResultWithData<ChatResponse>(
+            scope = CoroutineScope(Dispatchers.IO),
+            flow = aiHubRepository.sendMessage(
+                baseUrl = userConfig?.baseUrl,
+                apiKey = userConfig?.baseApiKey,
+                request = chatRequest
+            ).asResult(),
+            onLoading = {},
+            onData = { chatResponse ->
                 val currentDate =
                     SimpleDateFormat("yyyy-MM-dd EEEE HH:mm:ss", Locale.getDefault()).format(Date())
                 val prefix = if (userConfig?.enableTimePrefix == true) "$currentDate|" else ""
                 val currentCharacterName = "[${aiCharacter.name}]"
-                val messageContent = "$prefix${currentCharacterName} $aiResponse"
-
+                val responseText = chatResponse.choices?.firstOrNull()?.message?.content
+                val messageContent = "$prefix${currentCharacterName} $responseText"
                 val aiMessage = ChatMessage(
                     id = UUID.randomUUID().toString(),
                     content = messageContent,
@@ -464,18 +477,20 @@ object AIChatManager {
 //                    val summaryMessages = getSummaryMessages(conversation)
 //                    summarize(conversation, aiCharacter, summaryMessages)
                     afterSend.invoke(true)
-                }
-                Log.d(TAG, "AI回复:${aiMessage.content}")
-                CoroutineScope(Dispatchers.Main).launch {
                     listeners.forEach { it.onMessageReceived(aiMessage) }
                 }
+                Timber.tag(TAG).d("AI回复:${aiMessage.content}")
+//                CoroutineScope(Dispatchers.Main).launch {
+//                    listeners.forEach { it.onMessageReceived(aiMessage) }
+//                }
             },
-            onError = { errorMessage ->
+            onError = { messages, exception ->
                 CoroutineScope(Dispatchers.Main).launch {
-                    listeners.forEach { it.onError(errorMessage) }
+                    listeners.forEach { it.onError("$messages \n $exception") }
                 }
                 afterSend.invoke(false)
-            }
+            },
+            onFinally = {}
         )
     }
 
@@ -495,7 +510,7 @@ object AIChatManager {
         val userConfig = Application.globalUserConfigState.userConfig.value
         // 添加用户消息到列表
         if (aiCharacter == null) {
-            Log.e(TAG, "summarize: 未选择AI角色")
+            Timber.tag(TAG).e("summarize: 未选择AI角色")
             return
         }
 
@@ -504,13 +519,13 @@ object AIChatManager {
         val characterLock = characterLocks.computeIfAbsent(characterId) { Mutex() }
         // 尝试获取角色锁，如果已被锁定则等待
         characterLock.withLock {
-            var aiMemory = aiChatMemoryDao.getByCharacterIdAndConversationId(
+            var aiMemory = aiChatMemoryRepository.getByCharacterIdAndConversationId(
                 aiCharacter.aiCharacterId,
                 conversation.id
             )
             aiMemory?.count?.let {
                 if (it >= (userConfig?.maxSummarizeCount ?: 20)) {
-                    Log.d(TAG, "已达到最大总结次数")
+                    Timber.tag(TAG).d("已达到最大总结次数")
                     CoroutineScope(Dispatchers.Main).launch {
                         listeners.forEach { listener ->
                             listener.onShowToast("已达到最大总结次数")
@@ -555,25 +570,25 @@ object AIChatManager {
             messages.add(Message("system", summaryRequest))
             // 使用CompletableDeferred来等待API调用完成
             val apiCompleted = CompletableDeferred<Boolean>()
-            apiService.sendMessage(
-                messages = messages,
-                model = userConfig?.selectedModel ?: "",
-                temperature = 0.3f,
-                onSuccess = { aiResponse ->
-                    // 收到回复
+            val chatRequest = ChatRequest(userConfig?.selectedModel ?: "", messages, 0.3f)
+            ResultHandler.handleResultWithData<ChatResponse>(
+                scope = CoroutineScope(Dispatchers.IO),
+                flow = aiHubRepository.sendMessage(
+                    baseUrl = userConfig?.baseUrl,
+                    apiKey = userConfig?.baseApiKey,
+                    request = chatRequest).asResult(),
+                onData = { chatResponse ->
+                    val aiResponse = chatResponse.choices?.firstOrNull()?.message?.content ?: ""
                     val newMemoryContent =
                         """
                         ## 记忆片段 [${currentDate}]
                         **摘要**:$aiResponse
                     """.trimIndent()
                     CoroutineScope(Dispatchers.IO).launch {
-                        Log.d(TAG, "总结成功 delete :${summaryMessages.map { it.content }}")
+                        Timber.tag(TAG).d("总结成功 delete :${summaryMessages.map { it.content }}")
                         // 删除已总结的临时消息
-                        tempChatMessageDao.deleteAll(summaryMessages)
-                        Log.d(
-                            TAG,
-                            "aiMemory :$aiMemory"
-                        )
+                        tempChatMessageRepository.deleteMessagesByIds(summaryMessages.map { it.id })
+                        Timber.tag(TAG).d("aiMemory :$aiMemory")
                         if (aiMemory == null) {
                             aiMemory = AIChatMemory(
                                 id = UUID.randomUUID().toString(),
@@ -583,22 +598,21 @@ object AIChatManager {
                                 count = 1,
                                 createdAt = System.currentTimeMillis()
                             )
-                            val result = aiChatMemoryDao.insert(aiMemory)
-                            Log.d(TAG, "总结成功 insert :$result")
+                            val result = aiChatMemoryRepository.insert(aiMemory)
+                            Timber.tag(TAG).d("总结成功 insert :$result")
                         } else {
                             aiMemory.content =
                                 if (aiMemory.content.isNotEmpty()) "${aiMemory.content}\n\n$newMemoryContent" else newMemoryContent
                             aiMemory.count += 1
-                            val result = aiChatMemoryDao.update(aiMemory)
-                            Log.d(TAG, "总结成功 update :$result")
+                            val result = aiChatMemoryRepository.update(aiMemory)
+                            Timber.tag(TAG).d("总结成功 update :$result")
                         }
                         callback?.invoke()
                         apiCompleted.complete(true)
                     }
                 },
-                onError = {
-                    // 发生错误
-                    Log.e(TAG, "summarize: 总结失败")
+                onError = { messages, exception ->
+                    Timber.tag(TAG).e(exception, "总结失败：$messages")
                     apiCompleted.complete(false)
                 }
             )
@@ -608,7 +622,7 @@ object AIChatManager {
     }
 
     suspend fun getSummaryMessages(conversation: Conversation): List<TempChatMessage> {
-        val allHistory = tempChatMessageDao.getByConversationId(conversation.id)
+        val allHistory = tempChatMessageRepository.getByConversationId(conversation.id)
         val maxContextMessageSize = Application.globalUserConfigState.userConfig.value?.maxContextMessageSize ?: 10
         return allHistory.subList(0, (allHistory.size - maxContextMessageSize).coerceAtLeast(0))
     }
@@ -632,7 +646,7 @@ object AIChatManager {
         val userConfig = Application.globalUserConfigState.userConfig.value
         // 检查图片识别是否启用
         if (userConfig?.imgRecognitionEnabled != true) {
-            Log.e(TAG, "图片识别功能未启用")
+            Timber.tag(TAG).e("图片识别功能未启用")
             CoroutineScope(Dispatchers.Main).launch {
                 listeners.forEach { it.onError("图片识别功能未启用") }
             }
@@ -641,7 +655,7 @@ object AIChatManager {
 
         // 检查配置是否完整
         if (userConfig.imgApiKey.isNullOrEmpty() || userConfig.imgBaseUrl.isNullOrEmpty() || userConfig.selectedImgModel.isNullOrEmpty()) {
-            Log.e(TAG, "图片识别配置不完整")
+            Timber.tag(TAG).e("图片识别配置不完整")
             CoroutineScope(Dispatchers.Main).launch {
                 listeners.forEach { it.onError("图片识别配置不完整") }
             }
@@ -663,7 +677,7 @@ object AIChatManager {
             // 通知所有监听器消息已接收
             listeners.forEach { it.onMessageSent(imgMessage) }
         }
-        chatMessageDao.insertMessage(imgMessage)
+        chatMessageRepository.insertMessage(imgMessage)
         // 验证图片的大小是否超过8MB，若超过则循环压缩图片至8MB以下
         val compressedBitmap = BitMapUtil.compressBitmapToLimit(bitmap, 8 * 1024 * 1024)
         // 将压缩后的Bitmap转换为Base64字符串
@@ -671,22 +685,35 @@ object AIChatManager {
         // 准备提示文本
         val prompt =
             "请用中文描述这张图片的主要内容或主题。不要使用'这是'、'这张'等开头，直接描述。如果有文字，请包含在描述中。"
+        // 创建请求体对象
+        val contentItems = mutableListOf<ContentItem>().apply {
+            add(ContentItem("text", prompt))
+            add(ContentItem(type = "image_url", image_url = mapOf("url" to "data:image/jpeg;base64,$imageBase64")))
+        }
+
+        val message = MultimodalMessage("user", contentItems)
+        val messages = listOf(message)
+
+        val chatRequest = MultimodalChatRequest(userConfig.selectedImgModel ?: "", messages, 0.8f)
         // 调用API发送图片识别请求
-        apiService.sendMultimodalMessage(
-            prompt = prompt,
-            imageBase64 = imageBase64,
-            model = userConfig.selectedImgModel!!,
-            onSuccess = { imgDescription ->
-                Log.d(TAG, "图片识别成功，回复：$imgDescription")
+        ResultHandler.handleResultWithData<ChatResponse>(
+            scope = CoroutineScope(Dispatchers.IO),
+            flow = aiHubRepository.sendMultimodalMessage(
+                baseUrl = userConfig.imgBaseUrl,
+                apiKey = userConfig.imgApiKey,
+                request = chatRequest
+            ).asResult(),
+            onData = { response ->
+                val imgDescription = response.choices?.firstOrNull()?.message?.content
                 CoroutineScope(Dispatchers.IO).launch {
                     val desc = "[${conversation.playerName}]向你发送了图片:[$imgDescription]"
                     sendMessage(conversation, character, listOf(desc), true, oldMessages, false)
                 }
             },
-            onError = { errorMessage ->
-                Log.e(TAG, "图片识别失败：$errorMessage")
+            onError = { messages, exception ->
+                Timber.tag(TAG).e(exception, "图片识别失败：$messages")
                 CoroutineScope(Dispatchers.Main).launch {
-                    listeners.forEach { it.onError("图片识别失败：$errorMessage") }
+                    listeners.forEach { it.onError("图片识别失败：$messages \n $exception") }
                 }
             }
         )

@@ -9,6 +9,7 @@ import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.core.state.UserState
 import com.wenchen.yiyi.core.database.entity.Conversation
 import com.wenchen.yiyi.core.database.entity.ConversationType
+import com.wenchen.yiyi.feature.aiChat.common.AIChatManager
 import com.wenchen.yiyi.navigation.AppNavigator
 import com.wenchen.yiyi.navigation.routes.AiChatRoutes
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -26,6 +27,8 @@ class GroupChatViewModel @Inject constructor(
     tempChatMessageRepository: TempChatMessageRepository,
     aiCharacterRepository: AICharacterRepository,
     aiChatMemoryRepository: AIChatMemoryRepository,
+    aiHubRepository: AiHubRepository,
+    aiChatManager: AIChatManager,
     navigator: AppNavigator,
     userState: UserState,
     userConfigState: UserConfigState,
@@ -36,6 +39,8 @@ class GroupChatViewModel @Inject constructor(
     tempChatMessageRepository = tempChatMessageRepository,
     aiCharacterRepository = aiCharacterRepository,
     aiChatMemoryRepository = aiChatMemoryRepository,
+    aiHubRepository = aiHubRepository,
+    aiChatManager = aiChatManager,
     navigator = navigator,
     userState = userState,
     userConfigState = userConfigState,
@@ -78,7 +83,7 @@ class GroupChatViewModel @Inject constructor(
                     aiCharacterRepository.getCharacterById(characterId)
                 }
                 withContext(Dispatchers.Main) {
-                    _uiState.value = _uiState.value.copy(
+                    _chatUiState.value = _chatUiState.value.copy(
                         currentCharacters = currentCharacters
                     )
                     _conversation.value = conversation

@@ -92,4 +92,14 @@ class TempChatMessageRepository @Inject constructor(
     suspend fun updateMessageContent(messageId: String, content: String): Int {
         return tempChatMessageDataSource.updateMessageContent(messageId, content)
     }
+
+    /**
+     * 根据对话 ID 查询临时聊天记录数量。
+     *
+     * @param conversationId 对话 ID
+     * @return 临时聊天记录数量
+     */
+    suspend fun getCountByConversationId(conversationId: String): Int {
+        return tempChatMessageDataSource.getCountByConversationId(conversationId)
+    }
 }

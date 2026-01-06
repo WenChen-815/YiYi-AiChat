@@ -7,35 +7,35 @@ import kotlinx.serialization.Serializable
 @Serializable
 @Keep
 data class ChatResponse(
-    val id: String?,
-    val `object`: String?,
-    val created: Long?,
-    val choices: List<Choice>?,
-    val usage: Usage?
+    val id: String? = null,
+    val `object`: String? = null,
+    val created: Long? = null,
+    val choices: List<Choice>? = null,
+    val usage: Usage? = null
 )
 
 // 聊天响应中的每个选择项
 @Serializable
 @Keep
 data class Choice(
-    val index: Int?,
-    val message: Message?,
-    val finishReason: String?
+    val index: Int? = null,
+    val message: Message? = null,
+    val finishReason: String? = null
 )
 
 // 聊天响应中的消息内容
 @Serializable
 @Keep
 data class Message(
-    val role: String?,
-    val content: String?
+    val role: String? = null,
+    val content: String? = null
 )
 
 // 聊天响应中的使用统计信息
 @Serializable
 @Keep
 data class Usage(
-    val promptTokens: Int?,
-    val completionTokens: Int?,
-    val totalTokens: Int?
+    val promptTokens: Int? = null,
+    val completionTokens: Int? = null,
+    val totalTokens: Int? = null
 )

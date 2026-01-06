@@ -124,7 +124,7 @@ object NetworkModule {
     ): OkHttpClient {
         return OkHttpClient.Builder()
             .connectTimeout(10, TimeUnit.SECONDS) // 连接超时时间
-            .writeTimeout(10, TimeUnit.SECONDS) // 写超时时间
+            .writeTimeout(90, TimeUnit.SECONDS) // 写超时时间
             .readTimeout(10, TimeUnit.SECONDS) // 读超时时间
             .addInterceptor(apiKeyInterceptor)
             .addInterceptor(loggingInterceptor)

@@ -59,7 +59,7 @@ fun ChatInputArea(
     isAiReplying: Boolean,
     themeBgColor: Color = if (isSystemInDarkTheme()) BlackBg else WhiteBg,
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val chatUiState by viewModel.chatUiState.collectAsState()
     val conversation by viewModel.conversation.collectAsState()
     Column(
         modifier = modifier
@@ -165,7 +165,7 @@ fun ChatInputArea(
                 modifier = Modifier.weight(1f),
                 placeholder = {
                     Text(
-                        if (conversation.type == ConversationType.SINGLE) "向${uiState.currentCharacter?.name ?: "[未选择角色]"}发送消息"
+                        if (conversation.type == ConversationType.SINGLE) "向${chatUiState.currentCharacter?.name ?: "[未选择角色]"}发送消息"
                         else "在群聊发送消息",
                         style = MaterialTheme.typography.bodyLarge.copy(color = WhiteText.copy(0.6f))
                     )

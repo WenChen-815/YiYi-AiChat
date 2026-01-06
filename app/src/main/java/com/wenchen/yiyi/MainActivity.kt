@@ -9,7 +9,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import com.wenchen.yiyi.feature.aiChat.common.AIChatManager
 import com.wenchen.yiyi.core.common.theme.AIChatTheme
 import com.wenchen.yiyi.core.util.PermissionUtils
 import com.wenchen.yiyi.core.util.StatusBarUtil
@@ -29,9 +28,6 @@ class MainActivity : ComponentActivity() {
 
         // 设置状态栏
         StatusBarUtil.transparentNavBar(this)
-
-        // 初始化AI聊天管理器
-        AIChatManager.init()
 
         // 请求权限
         PermissionUtils.checkAndRequestStoragePermission(this, requestPermissionLauncher)

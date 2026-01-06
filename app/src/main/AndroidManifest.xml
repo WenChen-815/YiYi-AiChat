@@ -33,12 +33,6 @@
             android:name="com.wenchen.yiyi.core.common.TestActivity"
             android:exported="false" />
         <activity
-            android:name="com.wenchen.yiyi.feature.worldBook.view.WorldBookListActivity"
-            android:exported="false" />
-        <activity
-            android:name="com.wenchen.yiyi.feature.worldBook.view.WorldBookEditActivity"
-            android:exported="false" />
-        <activity
             android:name=".MainActivity"
             android:exported="true"
             android:windowSoftInputMode="adjustResize">

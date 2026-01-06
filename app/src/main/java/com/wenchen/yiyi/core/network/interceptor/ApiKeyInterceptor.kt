@@ -56,12 +56,55 @@ class ApiKeyInterceptor @Inject constructor(
                     .port(newHttpUrl.port)
                     .build()
                 requestBuilder.url(newUrl)
-                Timber.tag("ApiKeyInterceptor").d("Redirected URL: $newUrl")
             } else {
                 Timber.tag("ApiKeyInterceptor").w("Invalid baseUrl: $baseUrl")
             }
         }
+        // 构建最终的请求
+        val finalRequest = requestBuilder.build()
+
+        // 输出请求头信息
+        printRequestHeaders(finalRequest)
 
         return chain.proceed(requestBuilder.build())
+    }
+
+    /**
+     * 打印请求头信息
+     *
+     * @param request OkHttp请求对象
+     */
+    private fun printRequestHeaders(request: okhttp3.Request) {
+        val headersInfo = buildString {
+            append("====== Request Headers ======\n")
+            append("- Method: ${request.method}\n")
+            append("- URL: ${request.url}\n")
+            for (i in 0 until request.headers.size) {
+                val name = request.headers.name(i)
+                val value = request.headers.value(i)
+                append("- Header: $name = $value\n")
+            }
+
+            // 获取并打印请求体
+            val body = request.body
+            if (body != null) {
+                // 尝试获取请求体内容
+                val buffer = okio.Buffer()
+                try {
+                    body.writeTo(buffer)
+                    val bodyContent = buffer.readUtf8()
+                    val regex = Regex("\"messages\":\\[[\\s\\S]*?\\],\"")
+                    val redactedBody = bodyContent.replace(regex, "\"message\":[MESSAGE],\"")
+                    append("- Body: $redactedBody\n")
+                } catch (e: Exception) {
+                    append("- Body: ${body.contentType()} (无法读取内容 - ${e.message})\n")
+                }
+            } else {
+                append("- Body: null\n")
+            }
+
+            append("=============================")
+        }
+        Timber.tag("ApiKeyInterceptor").d(headersInfo.trim())
     }
 }

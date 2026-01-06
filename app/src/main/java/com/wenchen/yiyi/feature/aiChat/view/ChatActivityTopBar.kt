@@ -73,7 +73,7 @@ fun ChatActivityTopBar(
         animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
         label = "iconAlpha",
     )
-    val uiState by viewModel.uiState.collectAsState()
+    val chatUiState by viewModel.chatUiState.collectAsState()
     val conversation by viewModel.conversation.collectAsState()
     val userConfig by viewModel.userConfigState.userConfig.collectAsState()
 
@@ -108,7 +108,7 @@ fun ChatActivityTopBar(
             Box {
                 if (conversation.type == ConversationType.SINGLE) {
                     AsyncImage(
-                        model = uiState.currentCharacter?.avatarPath,
+                        model = chatUiState.currentCharacter?.avatarPath,
                         contentScale = ContentScale.Crop,
                         contentDescription = "角色头像",
                         modifier =
@@ -117,7 +117,7 @@ fun ChatActivityTopBar(
                                 .clip(CircleShape),
                     )
                 } else if (conversation.type == ConversationType.GROUP) {
-                    uiState.currentCharacters.take(3).forEach {
+                    chatUiState.currentCharacters.take(3).forEach {
                         AsyncImage(
                             model = it.avatarPath,
                             contentScale = ContentScale.Crop,
@@ -147,7 +147,7 @@ fun ChatActivityTopBar(
             Column(modifier = Modifier.padding(horizontal = 12.dp + offsetX, vertical = 8.dp)) {
                 if (conversation.type == ConversationType.SINGLE) {
                     Text(
-                        text = uiState.currentCharacter?.name ?: "未选择角色",
+                        text = chatUiState.currentCharacter?.name ?: "未选择角色",
                         style = MaterialTheme.typography.titleMedium.copy(color = WhiteText),
                     )
                 } else if (conversation.type == ConversationType.GROUP) {

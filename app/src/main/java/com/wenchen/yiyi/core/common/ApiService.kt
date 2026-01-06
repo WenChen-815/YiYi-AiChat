@@ -1,11 +1,14 @@
 package com.wenchen.yiyi.core.common
 
-import androidx.annotation.Keep
 import com.google.gson.Gson
 import com.wenchen.yiyi.core.model.network.ChatResponse
 import com.wenchen.yiyi.core.model.network.Message
 import com.wenchen.yiyi.core.model.network.Model
 import com.wenchen.yiyi.core.model.network.ModelsResponse
+import com.wenchen.yiyi.core.network.service.ChatRequest
+import com.wenchen.yiyi.core.network.service.ContentItem
+import com.wenchen.yiyi.core.network.service.MultimodalChatRequest
+import com.wenchen.yiyi.core.network.service.MultimodalMessage
 import com.wenchen.yiyi.core.util.toast.ToastUtils
 import okhttp3.Call
 import okhttp3.Callback
@@ -67,6 +70,9 @@ class ApiService(
             .post(requestBody)
             .build()
 
+        // 输出请求头信息
+        printRequestHeaders(request)
+
         // 执行请求
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
@@ -81,8 +87,9 @@ class ApiService(
                         val chatResponse = gson.fromJson(responseBody, ChatResponse::class.java)
                         val aiMessage = chatResponse.choices?.firstOrNull()?.message?.content
                         if (aiMessage.isNullOrEmpty()) {
+                            ToastUtils.showError("未获取到AI回复: $responseBody")
                             Timber.tag(tag).d("未获取到AI回复 responseBody：$responseBody")
-                                onError("未获取到AI回复")
+                            onError("未获取到AI回复")
                         } else {
                             // 去除回复内容中的换行符
                             // val cleanedMessage = aiMessage.replace("\n", "")
@@ -100,6 +107,18 @@ class ApiService(
                 }
             }
         })
+    }
+
+    private fun printRequestHeaders(request: Request) {
+        Timber.tag(tag).d("=== Request Headers ===")
+        Timber.tag(tag).d("Method: ${request.method}")
+        Timber.tag(tag).d("URL: ${request.url}")
+        for (i in 0 until request.headers.size) {
+            val name = request.headers.name(i)
+            val value = request.headers.value(i)
+            Timber.tag(tag).d("Header: $name = $value")
+        }
+        Timber.tag(tag).d("========================")
     }
 
     /**
@@ -238,32 +257,32 @@ class ApiService(
         })
     }
 
-    // 定义聊天请求体的数据类
-    @Keep
-    data class ChatRequest(
-        val model: String,
-        val messages: List<Message>,
-        val temperature: Float? = null
-    )
-
-    // 定义多模态聊天请求体的数据类
-    @Keep
-    data class MultimodalChatRequest(
-        val model: String,
-        val messages: List<MultimodalMessage>,
-        val temperature: Float? = null
-    )
-    // 定义多模态消息的数据类
-    @Keep
-    data class MultimodalMessage(
-        val role: String,
-        val content: List<ContentItem>
-    )
-    // 定义多模态消息内容项的数据类
-    @Keep
-    data class ContentItem(
-        val type: String,
-        val text: String? = null,
-        val image_url: Map<String, String>? = null
-    )
+//    // 定义聊天请求体的数据类
+//    @Keep
+//    data class ChatRequest(
+//        val model: String,
+//        val messages: List<Message>,
+//        val temperature: Float? = null
+//    )
+//
+//    // 定义多模态聊天请求体的数据类
+//    @Keep
+//    data class MultimodalChatRequest(
+//        val model: String,
+//        val messages: List<MultimodalMessage>,
+//        val temperature: Float? = null
+//    )
+//    // 定义多模态消息的数据类
+//    @Keep
+//    data class MultimodalMessage(
+//        val role: String,
+//        val content: List<ContentItem>
+//    )
+//    // 定义多模态消息内容项的数据类
+//    @Keep
+//    data class ContentItem(
+//        val type: String,
+//        val text: String? = null,
+//        val image_url: Map<String, String>? = null
+//    )
 }

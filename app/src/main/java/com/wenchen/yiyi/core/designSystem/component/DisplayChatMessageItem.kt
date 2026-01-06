@@ -79,7 +79,7 @@ fun DisplayChatMessageItem(
 ) {
     // 解析AI回复中的日期和角色名称
     val parseMessage = ChatUtil.parseMessage(message)
-    val uiState by viewModel.uiState.collectAsState()
+    val chatUiState by viewModel.chatUiState.collectAsState()
     val conversation by viewModel.conversation.collectAsState()
     val userConfig by viewModel.userConfigState.userConfig.collectAsState()
 
@@ -102,10 +102,10 @@ fun DisplayChatMessageItem(
 
         MessageType.ASSISTANT -> {
             val avatarUrl = if (conversation.type == ConversationType.SINGLE) {
-                uiState.currentCharacter?.avatarPath
+                chatUiState.currentCharacter?.avatarPath
                     ?: "android.resource://${LocalContext.current.packageName}/${R.mipmap.ai_closed}"
             } else {
-                uiState.currentCharacters.find { it.aiCharacterId == message.characterId }?.avatarPath
+                chatUiState.currentCharacters.find { it.aiCharacterId == message.characterId }?.avatarPath
                     ?: "android.resource://${LocalContext.current.packageName}/${R.mipmap.ai_closed}"
             }
             if (message.contentType == MessageContentType.TEXT) {
@@ -131,8 +131,8 @@ fun DisplayChatMessageItem(
                     viewModel = viewModel,
                     messageId = message.id,
                     content = parseMessage.cleanedContent,
-                    avatarUrl = if (uiState.currentCharacter?.avatarPath?.isNotBlank() == true) {
-                        uiState.currentCharacter?.avatarPath
+                    avatarUrl = if (chatUiState.currentCharacter?.avatarPath?.isNotBlank() == true) {
+                        chatUiState.currentCharacter?.avatarPath
                     } else "android.resource://${LocalContext.current.packageName}/${R.mipmap.ai_closed}",
                     messageType = message.type,
                     contentType = message.contentType,

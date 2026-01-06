@@ -92,7 +92,7 @@ private fun SingleChatScreenContent(
     val activity = LocalActivity.current as ComponentActivity
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    val uiState by viewModel.uiState.collectAsState()
+    val chatUiState by viewModel.chatUiState.collectAsState()
     val bgImgHazeState = rememberHazeState()
     val chatWindowHazeState = rememberHazeState()
     val launcher = rememberLauncherForActivityResult(
@@ -112,8 +112,8 @@ private fun SingleChatScreenContent(
     var bgBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var colors by remember { mutableStateOf(listOf(BlackBg)) }
     // 异步加载背景图片
-    LaunchedEffect(uiState.currentCharacter?.backgroundPath) {
-        val backgroundPath = uiState.currentCharacter?.backgroundPath
+    LaunchedEffect(chatUiState.currentCharacter?.backgroundPath) {
+        val backgroundPath = chatUiState.currentCharacter?.backgroundPath
         if (backgroundPath?.isNotEmpty() == true) {
             try {
                 // 在后台线程执行图片加载
@@ -172,7 +172,7 @@ private fun SingleChatScreenContent(
 //                                    drawerState.close()
 //                                }
                         // 获取聊天消息列表
-                        val messages = viewModel.uiState.value.messages
+                        val messages = viewModel.chatUiState.value.messages
                         // 提取所有消息内容
                         val contents = messages.map { it.content }
                         // 记录到日志
@@ -268,7 +268,7 @@ private fun SingleChatScreenContent(
                 ModelsDialog(
                     supportedModels = viewModel.getSupportedModels(),
                     currentModel =
-                        viewModel.uiState
+                        viewModel.chatUiState
                             .collectAsState()
                             .value.currentModelName,
                     onModelSelected = { modelId ->
@@ -294,12 +294,12 @@ private fun SingleChatScreenContent(
                     onDismiss = { showDeleteDialog = false },
                     onConfirm = {
                         Timber.tag("SingleChatActivity")
-                            .d("删除角色: ${uiState.currentCharacter?.name}")
-                        viewModel.deleteCharacter(uiState.currentCharacter!!) {
+                            .d("删除角色: ${chatUiState.currentCharacter?.name}")
+                        viewModel.deleteCharacter(chatUiState.currentCharacter!!) {
                             showDeleteDialog = false
                         }
                     },
-                    name = uiState.currentCharacter?.name ?: "[角色名称]",
+                    name = chatUiState.currentCharacter?.name ?: "[角色名称]",
                 )
             }
         }
@@ -316,7 +316,7 @@ fun ChatScreen(
     themeBgColor: Color = if (isSystemInDarkTheme()) BlackBg else WhiteBg,
     chatWindowHazeState: HazeState,
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val chatUiState by viewModel.chatUiState.collectAsState()
     var messageText by remember { mutableStateOf("") }
     var isSendSystemMessage by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
@@ -358,7 +358,7 @@ fun ChatScreen(
         }
     // 监听键盘高度变化
     LaunchedEffect(imeHeight) {
-        if (uiState.messages.isNotEmpty()) {
+        if (chatUiState.messages.isNotEmpty()) {
 //            listState.scrollToItem(uiState.messages.size - 1)
             listState.scrollToItem(0)
         }
@@ -366,12 +366,12 @@ fun ChatScreen(
 
     val initFinish = remember { mutableStateOf(false) }
     // 滚动到底部（仅在新消息时）
-    LaunchedEffect(uiState.messages.size) {
-        if (uiState.messages.isNotEmpty() && (uiState.receiveNewMessage || !initFinish.value)) {
+    LaunchedEffect(chatUiState.messages.size) {
+        if (chatUiState.messages.isNotEmpty() && (chatUiState.receiveNewMessage || !initFinish.value)) {
 //            listState.scrollToItem(uiState.messages.size - 1)
             listState.scrollToItem(0)
             initFinish.value = true
-            if (uiState.receiveNewMessage) {
+            if (chatUiState.receiveNewMessage) {
                 viewModel.setReceiveNewMessage(false)
             }
         }
@@ -427,7 +427,7 @@ fun ChatScreen(
                         state = listState,
                         reverseLayout = true,
                     ) {
-                        items(uiState.messages, key = { it.id }) { message ->
+                        items(chatUiState.messages, key = { it.id }) { message ->
                             if (message.isShow) {
                                 DisplayChatMessageItem(
                                     message = message,
@@ -438,7 +438,7 @@ fun ChatScreen(
                         }
                     }
                     Spacer(Modifier.height(16.dp))
-                    if (uiState.isAiReplying) {
+                    if (chatUiState.isAiReplying) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -471,7 +471,7 @@ fun ChatScreen(
                     onPickImage = onPickImage,
                     onReGenerate = { viewModel.reGenerate(false) },
                     onContinue = { viewModel.continueGenerate(false) },
-                    isAiReplying = uiState.isAiReplying,
+                    isAiReplying = chatUiState.isAiReplying,
                     isSendSystemMessage = isSendSystemMessage,
                     onSendSysMsgClick = { isSendSystemMessage = !isSendSystemMessage },
                     themeBgColor = themeBgColor,

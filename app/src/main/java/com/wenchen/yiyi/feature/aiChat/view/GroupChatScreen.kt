@@ -154,7 +154,7 @@ private fun GroupChatScreen(
                         },
                         onNavAboutClick = {
                             // 获取聊天消息列表
-                            val messages = viewModel.uiState.value.messages
+                            val messages = viewModel.chatUiState.value.messages
                             // 提取所有消息内容
                             val contents = messages.map { it.content }
                             // 记录到日志
@@ -249,7 +249,7 @@ private fun GroupChatScreen(
                     ModelsDialog(
                         supportedModels = viewModel.getSupportedModels(),
                         currentModel =
-                            viewModel.uiState
+                            viewModel.chatUiState
                                 .collectAsState()
                                 .value.currentModelName,
                         onModelSelected = { modelId ->
@@ -302,7 +302,7 @@ private fun GroupChatScreen(
         themeBgColor: Color = if (isSystemInDarkTheme()) BlackBg else WhiteBg,
         chatWindowHazeState: HazeState
     ) {
-        val uiState by viewModel.uiState.collectAsState()
+        val chatUiState by viewModel.chatUiState.collectAsState()
         var messageText by remember { mutableStateOf("") }
         val listState = rememberLazyListState()
 
@@ -333,18 +333,18 @@ private fun GroupChatScreen(
             }
         // 监听键盘高度变化
         LaunchedEffect(imeHeight) {
-            if (uiState.messages.isNotEmpty()) {
+            if (chatUiState.messages.isNotEmpty()) {
                 listState.scrollToItem(0)
             }
         }
 
         val initFinish = remember { mutableStateOf(false) }
         // 滚动到底部（仅在新消息时）
-        LaunchedEffect(uiState.messages.size) {
-            if (uiState.messages.isNotEmpty() && (uiState.receiveNewMessage || !initFinish.value)) {
+        LaunchedEffect(chatUiState.messages.size) {
+            if (chatUiState.messages.isNotEmpty() && (chatUiState.receiveNewMessage || !initFinish.value)) {
                 listState.scrollToItem(0)
                 initFinish.value = true
-                if (uiState.receiveNewMessage) {
+                if (chatUiState.receiveNewMessage) {
                     viewModel.setReceiveNewMessage(false)
                 }
             }
@@ -397,7 +397,7 @@ private fun GroupChatScreen(
                             state = listState,
                             reverseLayout = true,
                         ) {
-                            items(uiState.messages) { message ->
+                            items(chatUiState.messages) { message ->
                                 if (message.isShow) {
                                     DisplayChatMessageItem(
                                         message = message,
@@ -408,7 +408,7 @@ private fun GroupChatScreen(
                             }
                         }
                         Spacer(Modifier.height(16.dp))
-                        if (uiState.isAiReplying) {
+                        if (chatUiState.isAiReplying) {
                             Row(
                                 modifier = Modifier.fillMaxWidth().align(Alignment.BottomCenter),
                                 horizontalArrangement = Arrangement.Center,
@@ -439,7 +439,7 @@ private fun GroupChatScreen(
                         onPickImage = onPickImage,
                         onReGenerate = { viewModel.reGenerate(true) },
                         onContinue = { viewModel.continueGenerate(true) },
-                        isAiReplying = uiState.isAiReplying,
+                        isAiReplying = chatUiState.isAiReplying,
                         isSendSystemMessage = isSendSystemMessage,
                         onSendSysMsgClick = { isSendSystemMessage = !isSendSystemMessage },
                         themeBgColor = themeBgColor,
