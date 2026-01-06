@@ -98,53 +98,30 @@ private fun GroupChatScreen(
             )
         }
 
-        val bgBitmap: Bitmap? =
-            try {
-                if (conversation.backgroundPath?.isNotEmpty() == true) {
-                    val file = File(conversation.backgroundPath)
-                    if (file.exists()) {
-                        val uri = Uri.fromFile(file)
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                            val bitmap =
-                                ImageDecoder.decodeBitmap(
-                                    ImageDecoder.createSource(activity.contentResolver, uri),
-                                ) { decoder, info, source ->
-                                    // 禁用硬件加速，确保可以访问像素
-                                    decoder.setTargetColorSpace(
-                                        ColorSpace.get(
-                                            ColorSpace.Named.SRGB,
-                                        ),
-                                    )
-                                }
-                            // 如果是硬件Bitmap，转换为可修改的Bitmap
-                            if (bitmap.config == Bitmap.Config.HARDWARE) {
-                                bitmap.copy(Bitmap.Config.ARGB_8888, false)
-                            } else {
-                                bitmap
-                            }
-                        } else {
-                            @Suppress("DEPRECATION")
-                            MediaStore.Images.Media.getBitmap(activity.contentResolver, uri)
+        var bgBitmap by remember { mutableStateOf<Bitmap?>(null) }
+        var colors by remember { mutableStateOf(listOf(BlackBg)) }
+        // 异步加载背景图片
+        LaunchedEffect(conversation.backgroundPath) {
+            val backgroundPath = conversation.backgroundPath
+            if (backgroundPath?.isNotEmpty() == true) {
+                try {
+                    // 在后台线程执行图片加载
+                    viewModel.loadBackgroundBitmap(
+                        activity = activity,
+                        backgroundPath = backgroundPath,
+                        onResult = { bitmap ->
+                            bgBitmap = bitmap
+                            colors = ThemeColorExtractor.extract(bgBitmap!!, maxValue = 1f)
                         }
-                    } else {
-                        Timber.tag("GroupChatActivity")
-                            .e("背景图片文件不存在: ${conversation.backgroundPath}")
-                        null
-                    }
-                } else {
-                    null
+                    )
+                } catch (e: Exception) {
+                    ToastUtils.showError("加载背景图片失败: ${e.message}")
+                    bgBitmap = null
                 }
-            } catch (e: Exception) {
-                Timber.tag("GroupChatActivity").e(e, "加载背景图片失败: ${e.message}")
-                null
-            }
-
-        val colors: List<Color> =
-            if (bgBitmap != null) {
-                ThemeColorExtractor.extract(bgBitmap, maxValue = 1f)
             } else {
-                listOf(BlackBg)
+                bgBitmap = null
             }
+        }
 
         var showModelsDialog by remember { mutableStateOf(false) }
         var showClearChatDialog by remember { mutableStateOf(false) }
@@ -192,7 +169,7 @@ private fun GroupChatScreen(
                 // 确保聊天界面使用LTR布局方向
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                     AsyncImage(
-                        model = conversation.backgroundPath,
+                        model = bgBitmap,
                         contentScale = ContentScale.Crop,
                         contentDescription = null,
                         modifier =
@@ -367,6 +344,9 @@ private fun GroupChatScreen(
             if (uiState.messages.isNotEmpty() && (uiState.receiveNewMessage || !initFinish.value)) {
                 listState.scrollToItem(0)
                 initFinish.value = true
+                if (uiState.receiveNewMessage) {
+                    viewModel.setReceiveNewMessage(false)
+                }
             }
         }
         // 监听滚动位置以加载更多消息

@@ -109,75 +109,30 @@ private fun SingleChatScreenContent(
             }
         )
     }
-//    val bgBitmap: Bitmap? =
-//        try {
-//            if (uiState.currentCharacter?.backgroundPath?.isNotEmpty() == true) {
-//                val file = File(uiState.currentCharacter?.backgroundPath!!)
-//                if (file.exists()) {
-//                    val uri = Uri.fromFile(file)
-//                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-//                        val bitmap =
-//                            ImageDecoder.decodeBitmap(
-//                                ImageDecoder.createSource(activity.contentResolver, uri),
-//                            ) { decoder, info, source ->
-//                                // 禁用硬件加速，确保可以访问像素
-//                                decoder.setTargetColorSpace(
-//                                    ColorSpace.get(
-//                                        ColorSpace.Named.SRGB,
-//                                    ),
-//                                )
-//                            }
-//                        // 如果是硬件Bitmap，转换为可修改的Bitmap
-//                        if (bitmap.config == Bitmap.Config.HARDWARE) {
-//                            bitmap.copy(Bitmap.Config.ARGB_8888, false)
-//                        } else {
-//                            bitmap
-//                        }
-//                    } else {
-//                        @Suppress("DEPRECATION")
-//                        MediaStore.Images.Media.getBitmap(activity.contentResolver, uri)
-//                    }
-//                } else {
-//                    Log.e(
-//                        "ChatActivity",
-//                        "背景图片文件不存在: ${uiState.currentCharacter?.backgroundPath}",
-//                    )
-//                    null
-//                }
-//            } else {
-//                null
-//            }
-//        } catch (e: Exception) {
-//            Log.e("ChatActivity", "加载背景图片失败: ${e.message}", e)
-//            null
-//        }
     var bgBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var colors by remember { mutableStateOf(listOf(BlackBg)) }
     // 异步加载背景图片
     LaunchedEffect(uiState.currentCharacter?.backgroundPath) {
         val backgroundPath = uiState.currentCharacter?.backgroundPath
         if (backgroundPath?.isNotEmpty() == true) {
             try {
-//                bgLoadingError = null
                 // 在后台线程执行图片加载
-                val bitmap = withContext(Dispatchers.IO) {
-                    viewModel.loadBackgroundBitmap(activity, backgroundPath)
-                }
-                bgBitmap = bitmap
+                viewModel.loadBackgroundBitmap(
+                    activity = activity,
+                    backgroundPath = backgroundPath,
+                    onResult = { bitmap ->
+                        bgBitmap = bitmap
+                        colors = ThemeColorExtractor.extract(bgBitmap!!, maxValue = 1f)
+                    }
+                )
             } catch (e: Exception) {
-//                bgLoadingError = "加载背景图片失败: ${e.message}"
-//                Log.e("ChatActivity", bgLoadingError, e)
+                ToastUtils.showError("加载背景图片失败: ${e.message}")
                 bgBitmap = null
             }
         } else {
             bgBitmap = null
         }
     }
-    val colors: List<Color> =
-        if (bgBitmap != null) {
-            ThemeColorExtractor.extract(bgBitmap!!, maxValue = 1f)
-        } else {
-            listOf(BlackBg)
-        }
 
     var showModelsDialog by remember { mutableStateOf(false) }
     var showClearChatDialog by remember { mutableStateOf(false) }
@@ -234,7 +189,7 @@ private fun SingleChatScreenContent(
             // 确保聊天界面使用LTR布局方向
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                 AsyncImage(
-                    model = uiState.currentCharacter?.backgroundPath,
+                    model = bgBitmap,
                     contentScale = ContentScale.Crop,
                     contentDescription = null,
                     modifier =
@@ -242,25 +197,6 @@ private fun SingleChatScreenContent(
                             .fillMaxSize()
                             .hazeSource(state = bgImgHazeState), // 标记需要被模糊的区域
                 )
-//                if (bgBitmap != null) {
-//                    // 使用 Compose 内置 Image 组件加载 Bitmap
-//                    Image(
-//                        bitmap = bgBitmap.asImageBitmap(), // 将 Bitmap 转换为 Compose 可用的 ImageBitmap
-//                        contentDescription = null,
-//                        contentScale = ContentScale.Crop,
-//                        modifier = Modifier
-//                            .fillMaxSize()
-//                            .hazeSource(state = bgImgHazeState) // 标记需要被模糊的区域
-//                    )
-//                } else {
-//                    // 当图片加载失败时显示默认背景
-//                    Box(
-//                        modifier = Modifier
-//                            .fillMaxSize()
-//                            .background(BlackBg) // 使用默认黑色背景
-//                            .hazeSource(state = bgImgHazeState)
-//                    )
-//                }
 
                 Box(
                     modifier =
@@ -435,6 +371,9 @@ fun ChatScreen(
 //            listState.scrollToItem(uiState.messages.size - 1)
             listState.scrollToItem(0)
             initFinish.value = true
+            if (uiState.receiveNewMessage) {
+                viewModel.setReceiveNewMessage(false)
+            }
         }
     }
     // 监听滚动位置以加载更多消息

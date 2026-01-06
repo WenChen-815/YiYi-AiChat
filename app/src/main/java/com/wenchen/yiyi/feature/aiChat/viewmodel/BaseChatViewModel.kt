@@ -116,14 +116,17 @@ abstract class BaseChatViewModel(
     /**
      * 在后台线程加载背景图片的辅助函数
      */
-    suspend fun loadBackgroundBitmap(activity: ComponentActivity, backgroundPath: String): Bitmap? {
-        return withContext(Dispatchers.IO) {
+    fun loadBackgroundBitmap(
+        activity: ComponentActivity,
+        backgroundPath: String,
+        onResult: (Bitmap?) -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
             try {
                 val file = File(backgroundPath)
-                if (file.exists()) {
+                val bitmap: Bitmap? = if (file.exists()) {
                     val uri = Uri.fromFile(file)
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                        val bitmap = ImageDecoder.decodeBitmap(
+                        val decodedBitmap = ImageDecoder.decodeBitmap(
                             ImageDecoder.createSource(activity.contentResolver, uri)
                         ) { decoder, info, source ->
                             // 禁用硬件加速，确保可以访问像素
@@ -132,10 +135,10 @@ abstract class BaseChatViewModel(
                             )
                         }
                         // 如果是硬件Bitmap，转换为可修改的Bitmap
-                        if (bitmap.config == Bitmap.Config.HARDWARE) {
-                            bitmap.copy(Bitmap.Config.ARGB_8888, false)
+                        if (decodedBitmap.config == Bitmap.Config.HARDWARE) {
+                            decodedBitmap.copy(Bitmap.Config.ARGB_8888, false)
                         } else {
-                            bitmap
+                            decodedBitmap
                         }
                     } else {
                         @Suppress("DEPRECATION")
@@ -145,9 +148,16 @@ abstract class BaseChatViewModel(
                     Timber.tag("ChatActivity").e("背景图片文件不存在: $backgroundPath")
                     null
                 }
+
+                // 在主线程中执行回调
+                withContext(Dispatchers.Main) {
+                    onResult(bitmap)
+                }
             } catch (e: Exception) {
                 Timber.tag("ChatActivity").e(e, "加载背景图片失败: ${e.message}")
-                null
+                withContext(Dispatchers.Main) {
+                    onResult(null)
+                }
             }
         }
     }
@@ -456,6 +466,9 @@ abstract class BaseChatViewModel(
                 conversationId = conversation.value.id
             )
             chatContext.add(tempMessage)
+        }
+        if (!_uiState.value.receiveNewMessage) {
+            _uiState.value = _uiState.value.copy(receiveNewMessage = true)
         }
     }
 
