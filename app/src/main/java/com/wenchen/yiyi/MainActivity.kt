@@ -7,10 +7,10 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import com.wenchen.yiyi.core.common.theme.AIChatTheme
 import com.wenchen.yiyi.core.log.FloatingLogcatView
+import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.core.util.PermissionUtils
 import com.wenchen.yiyi.core.util.StatusBarUtil
 import com.wenchen.yiyi.navigation.AppNavigator
@@ -23,6 +23,9 @@ import javax.inject.Inject
 class MainActivity : ComponentActivity() {
     @Inject
     lateinit var navigator: AppNavigator
+
+    @Inject
+    lateinit var userConfigState: UserConfigState
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,23 +40,15 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             AIChatTheme {
-//                MainScreen()
+                val userConfig by userConfigState.userConfig.collectAsState()
+                val showLogcatView by remember { mutableStateOf(userConfig?.showLogcatView ?: false) }
+
                 AppNavHost(navigator = navigator)
-                FloatingLogcatView()
+                if (showLogcatView) {
+                    FloatingLogcatView()
+                }
             }
         }
-
-        // 初始化配置管理器
-//        configManager = ConfigManager()
-        // 检查是否有配置，如果没有则跳转到配置页面
-//        if (!configManager.hasCompleteConfig()) {
-//            startActivity(Intent(this, ConfigActivity::class.java))
-//        }
-    }
-
-    @OptIn(ExperimentalMaterial3Api::class)
-    @Composable
-    fun MainScreen() {
     }
 
     private val requestPermissionLauncher =

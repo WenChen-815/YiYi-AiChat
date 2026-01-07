@@ -1,7 +1,6 @@
 package com.wenchen.yiyi.core.log
 
 import android.util.Log
-import android.widget.Toast
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -24,7 +23,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoDelete
 import androidx.compose.material.icons.filled.BugReport
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.UnfoldLess
 import androidx.compose.material3.Card
@@ -53,6 +51,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.wenchen.yiyi.core.util.toast.ToastUtils
 import kotlin.math.roundToInt
 
 
@@ -110,28 +109,28 @@ fun FloatingLogcatView() {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .background(MaterialTheme.colorScheme.primaryContainer)
+                                .background(MaterialTheme.colorScheme.primary)
                                 .padding(horizontal = 8.dp, vertical = 4.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("Logcat", style = MaterialTheme.typography.titleSmall)
+                            Text("Logcat", style = MaterialTheme.typography.titleSmall, color = Color.White)
                             Row {
                                 IconButton(onClick = {
                                     val logText = logs.joinToString("\n") { "[${it.tag ?: "NO_TAG"}] ${it.message}" }
                                     clipboardManager.setText(AnnotatedString(logText))
-                                    Toast.makeText(context, "Logs copied", Toast.LENGTH_SHORT).show()
+                                    ToastUtils.showToast("已复制日志")
                                 }) {
-                                    Icon(Icons.Default.ContentCopy, contentDescription = "Copy logs")
+                                    Icon(Icons.Default.ContentCopy, contentDescription = "Copy logs", tint = Color.White)
                                 }
                                 IconButton(onClick = { logViewModel.clearLogs() }) {
-                                    Icon(Icons.Default.AutoDelete, contentDescription = "Clear logs")
+                                    Icon(Icons.Default.AutoDelete, contentDescription = "Clear logs", tint = Color.White)
                                 }
                                 IconButton(onClick = { isExpanded = false }) {
-                                    Icon(Icons.Default.UnfoldLess, contentDescription = "Collapse logcat")
+                                    Icon(Icons.Default.UnfoldLess, contentDescription = "Collapse logcat", tint = Color.White)
                                 }
 //                                IconButton(onClick = { isVisible = false }) {
-//                                    Icon(Icons.Default.Close, contentDescription = "Close logcat")
+//                                    Icon(Icons.Default.Close, contentDescription = "Close logcat", tint = Color.White)
 //                                }
                             }
                         }

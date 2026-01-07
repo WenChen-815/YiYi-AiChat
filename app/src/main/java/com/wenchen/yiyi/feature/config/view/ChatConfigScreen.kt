@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material.icons.rounded.RemoveCircleOutline
 import androidx.compose.material3.*
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -125,6 +126,9 @@ fun ChatConfigScreenContent(
     var maxSummarizeCount by remember { mutableStateOf(viewModel.userConfig?.maxSummarizeCount?.toString() ?: "20") }
     var enableSeparator by remember { mutableStateOf(viewModel.userConfig?.enableSeparator ?: false) }
     var enableTimePrefix by remember { mutableStateOf(viewModel.userConfig?.enableTimePrefix ?: true) }
+
+    // 开发者设置
+    var showLogcatView by remember { mutableStateOf(viewModel.userConfig?.showLogcatView ?: false) }
 
     // 用户头像相关
     var userAvatarPath by remember { mutableStateOf(viewModel.userConfig?.userAvatarPath) }
@@ -294,21 +298,22 @@ fun ChatConfigScreenContent(
                         saveUserAvatar()
                         // 保存配置
                         val userConfig = UserConfig(
-                            userId,
-                            userName,
-                            userAvatarPath,
-                            apiKey,
-                            baseUrl,
-                            selectedModel,
-                            imgRecognitionEnabled,
-                            imgApiKey,
-                            imgBaseUrl,
-                            selectedImgModel,
-                            maxContextCount.toIntOrNull() ?: 15,
-                            summarizeCount.toIntOrNull() ?: 20,
-                            maxSummarizeCount.toIntOrNull() ?: 20,
-                            enableSeparator,
-                            enableTimePrefix
+                            userId = userId,
+                            userName = userName,
+                            userAvatarPath = userAvatarPath,
+                            baseApiKey = apiKey,
+                            baseUrl = baseUrl,
+                            selectedModel = selectedModel,
+                            imgRecognitionEnabled = imgRecognitionEnabled,
+                            imgApiKey = imgApiKey,
+                            imgBaseUrl = imgBaseUrl,
+                            selectedImgModel = selectedImgModel,
+                            maxContextMessageSize = maxContextCount.toIntOrNull() ?: 15,
+                            summarizeTriggerCount = summarizeCount.toIntOrNull() ?: 20,
+                            maxSummarizeCount = maxSummarizeCount.toIntOrNull() ?: 20,
+                            enableSeparator = enableSeparator,
+                            enableTimePrefix = enableTimePrefix,
+                            showLogcatView = showLogcatView
                         )
                         viewModel.updateUserConfig(userConfig)
                         Toast.makeText(context, "配置保存成功", Toast.LENGTH_SHORT).show()
@@ -682,6 +687,16 @@ fun ChatConfigScreenContent(
                 modifier = Modifier.padding(top = 16.dp)
             )
             Text(text = "此选项不会影响消息内容的显示，但关闭后AI将无法得知当前时间，按需启用", style = MaterialTheme.typography.labelSmall.copy(GrayText))
+
+            // 开发者设置
+            HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+            Text("开发者设置", style = MaterialTheme.typography.titleMedium)
+            SwitchWithText(
+                checked = showLogcatView,
+                onCheckedChange = { showLogcatView = it },
+                text = "显示悬浮日志",
+                modifier = Modifier.padding(top = 16.dp)
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
         }

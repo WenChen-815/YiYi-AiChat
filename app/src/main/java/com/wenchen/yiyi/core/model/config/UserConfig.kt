@@ -27,6 +27,9 @@ data class UserConfig(
     var enableSeparator: Boolean = false,
     var enableTimePrefix: Boolean = true,
 
+    // ======开发者设置=====================
+    var showLogcatView: Boolean = false,
+
     // 选中的角色相关
     var selectedCharacterId: String? = null,
 )
