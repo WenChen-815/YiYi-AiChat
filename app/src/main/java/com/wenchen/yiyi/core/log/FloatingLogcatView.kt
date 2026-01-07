@@ -114,7 +114,7 @@ fun FloatingLogcatView() {
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("Logcat", style = MaterialTheme.typography.titleSmall, color = Color.White)
+                            Text("日志信息", style = MaterialTheme.typography.titleSmall, color = Color.White)
                             Row {
                                 IconButton(onClick = {
                                     val logText = logs.joinToString("\n") { "[${it.tag ?: "NO_TAG"}] ${it.message}" }

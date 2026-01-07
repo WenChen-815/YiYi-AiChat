@@ -1,8 +1,10 @@
 package com.wenchen.yiyi.core.network.interceptor
 
 import com.wenchen.yiyi.core.state.UserConfigState
+import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.Interceptor
+import okhttp3.Request
 import okhttp3.Response
 import timber.log.Timber
 import javax.inject.Inject
@@ -38,35 +40,47 @@ class ApiKeyInterceptor @Inject constructor(
         requestBuilder.removeHeader(CUSTOM_API_KEY_HEADER)
 
         // 优先使用自定义值，否则回退到UserConfigState中的配置
-        val apiKey = customApiKey ?: userConfigState.userConfig.value?.baseApiKey
-        val baseUrl = customBaseUrl ?: userConfigState.userConfig.value?.baseUrl
+        val userConfig = userConfigState.userConfig.value
+        val apiKey = customApiKey ?: userConfig?.baseApiKey
+        val baseUrl = customBaseUrl ?: userConfig?.baseUrl
 
         // 添加API密钥
-        if (!apiKey.isNullOrEmpty()) {
-            requestBuilder.header("Authorization", "Bearer $apiKey")
+        apiKey?.takeIf { it.isNotEmpty() }?.let {
+            requestBuilder.header("Authorization", "Bearer $it")
         }
 
         // 动态修改baseUrl
         if (!baseUrl.isNullOrEmpty()) {
-            val newHttpUrl = baseUrl.toHttpUrlOrNull()
-            if (newHttpUrl != null) {
-                val newUrl = originalRequest.url.newBuilder()
-                    .scheme(newHttpUrl.scheme)
-                    .host(newHttpUrl.host)
-                    .port(newHttpUrl.port)
-                    .build()
-                requestBuilder.url(newUrl)
-            } else {
-                Timber.tag("ApiKeyInterceptor").w("Invalid baseUrl: $baseUrl")
-            }
+            baseUrl.toHttpUrlOrNull()?.let { newHttpUrl ->
+                val finalUrl = buildFinalUrl(newHttpUrl, originalRequest.url)
+                requestBuilder.url(finalUrl)
+            } ?: Timber.tag("ApiKeyInterceptor").w("Invalid baseUrl: $baseUrl")
         }
+
         // 构建最终的请求
         val finalRequest = requestBuilder.build()
 
         // 输出请求头信息
         printRequestHeaders(finalRequest)
 
-        return chain.proceed(requestBuilder.build())
+        return chain.proceed(finalRequest)
+    }
+
+    private fun buildFinalUrl(newHttpUrl: HttpUrl, originalUrl: HttpUrl): HttpUrl {
+        // 从用户自定义的 baseUrl 获取路径, 并处理 "/v1" 的特殊情况
+        val pathPrefix = newHttpUrl.encodedPath.let {
+            if (it == "/v1" || it == "/v1/") "" else it.removeSuffix("/")
+        }
+
+        // 从 Retrofit 接口获取原始请求路径
+        val servicePath = originalUrl.encodedPath
+
+        // 组合路径，并构建新的 URL，同时保留原始的查询参数和片段
+        return newHttpUrl.newBuilder()
+            .encodedPath(pathPrefix + servicePath)
+            .encodedQuery(originalUrl.encodedQuery)
+            .encodedFragment(originalUrl.encodedFragment)
+            .build()
     }
 
     /**
@@ -74,9 +88,9 @@ class ApiKeyInterceptor @Inject constructor(
      *
      * @param request OkHttp请求对象
      */
-    private fun printRequestHeaders(request: okhttp3.Request) {
+    private fun printRequestHeaders(request: Request) {
         val headersInfo = buildString {
-            append("====== Request Headers ======\n")
+            append("===== Request Headers =====\n")
             append("- Method: ${request.method}\n")
             append("- URL: ${request.url}\n")
             for (i in 0 until request.headers.size) {
@@ -103,7 +117,7 @@ class ApiKeyInterceptor @Inject constructor(
                 append("- Body: null\n")
             }
 
-            append("=============================")
+            append("=========================")
         }
         Timber.tag("ApiKeyInterceptor").d(headersInfo.trim())
     }
