@@ -3,6 +3,7 @@ package com.wenchen.yiyi
 import android.app.Application
 import android.content.res.Configuration
 import com.wenchen.yiyi.core.database.AppDatabase
+import com.wenchen.yiyi.core.log.GlobalLogcatTree
 import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.core.state.UserState
 import com.wenchen.yiyi.core.util.storage.MMKVUtils
@@ -60,9 +61,9 @@ class Application : Application() {
      * 初始化 Log 框架
      */
     private fun initLog() {
-        if (BuildConfig.DEBUG) {
-            Timber.plant(Timber.DebugTree())
-        }
+//        if (BuildConfig.DEBUG) {
+        Timber.plant(GlobalLogcatTree())
+//        }
     }
 
     /**

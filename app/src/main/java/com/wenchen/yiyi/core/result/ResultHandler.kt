@@ -45,7 +45,6 @@ object ResultHandler {
     ) {
         scope.launch {
             try {
-                Timber.tag("test").d("开始处理网络请求结果")
                 flow.collectLatest { result ->
                     when (result) {
                         is Result.Loading -> onLoading()
@@ -206,7 +205,6 @@ object ResultHandler {
         showToast: Boolean,
         onError: (String, Throwable?) -> Unit
     ) {
-        Timber.tag("test").d("处理成功状态")
         onSuccess(response)
         if (response.isSucceeded) {
             val data = response.data ?: return

@@ -10,6 +10,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import com.wenchen.yiyi.core.common.theme.AIChatTheme
+import com.wenchen.yiyi.core.log.FloatingLogcatView
 import com.wenchen.yiyi.core.util.PermissionUtils
 import com.wenchen.yiyi.core.util.StatusBarUtil
 import com.wenchen.yiyi.navigation.AppNavigator
@@ -38,6 +39,7 @@ class MainActivity : ComponentActivity() {
             AIChatTheme {
 //                MainScreen()
                 AppNavHost(navigator = navigator)
+                FloatingLogcatView()
             }
         }
 

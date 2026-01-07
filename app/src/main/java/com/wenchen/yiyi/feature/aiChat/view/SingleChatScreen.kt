@@ -378,7 +378,6 @@ fun ChatScreen(
     }
     // 监听滚动位置以加载更多消息
     LaunchedEffect(listState, initFinish.value) {
-        Timber.tag("ChatScreen").i("initFinish: ${initFinish.value}")
         if (!initFinish.value) return@LaunchedEffect
         snapshotFlow { listState.firstVisibleItemIndex }
             .collect { firstVisibleIndex ->
