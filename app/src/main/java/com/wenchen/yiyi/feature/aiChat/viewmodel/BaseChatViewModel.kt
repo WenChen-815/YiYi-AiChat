@@ -104,17 +104,16 @@ abstract class BaseChatViewModel(
     }
 
     init {
-        userConfigState.userConfig.onEach { 
-            initApiService()
+        userConfigState.userConfig.onEach {
+            initApi()
         }.launchIn(viewModelScope)
     }
 
     fun init() {
-        initApiService()
         setupChatListener()
     }
 
-    private fun initApiService() {
+    private fun initApi() {
         val userConfig = userConfigState.userConfig.value
         val apiKey = userConfig?.baseApiKey ?: ""
         val baseUrl = userConfig?.baseUrl ?: ""
@@ -296,7 +295,6 @@ abstract class BaseChatViewModel(
         if (isInitialLoading) return
         isInitialLoading = true
 
-        Timber.tag("BaseChatViewModel").d("loadInitialData: ${conversation.value.id}")
         viewModelScope.launch {
             _chatUiState.value = _chatUiState.value.copy(isLoading = true)
             val initialMessages = chatMessageRepository.getMessagesByPage(
