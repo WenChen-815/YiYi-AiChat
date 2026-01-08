@@ -446,7 +446,7 @@ class AIChatManager @Inject constructor(
             Timber.tag(TAG).e("未选择AI角色")
             return
         }
-        Timber.tag(TAG).d("send to ${aiCharacter.name}\n%s", messages.joinToString("\n"))
+//        Timber.tag(TAG).d("send to ${aiCharacter.name}\n%s", messages.joinToString("\n"))
         val chatRequest = ChatRequest(userConfig?.selectedModel ?: "", messages, 1.0f)
         ResultHandler.handleResultWithData<ChatResponse>(
             scope = CoroutineScope(Dispatchers.IO),
@@ -479,7 +479,7 @@ class AIChatManager @Inject constructor(
                     afterSend.invoke(true)
                     listeners.forEach { it.onMessageReceived(aiMessage) }
                 }
-                Timber.tag(TAG).d("AI回复:${aiMessage.content}")
+//                Timber.tag(TAG).d("AI回复:${aiMessage.content}")
 //                CoroutineScope(Dispatchers.Main).launch {
 //                    listeners.forEach { it.onMessageReceived(aiMessage) }
 //                }

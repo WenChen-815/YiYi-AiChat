@@ -41,8 +41,8 @@ class ApiKeyInterceptor @Inject constructor(
 
         // 优先使用自定义值，否则回退到UserConfigState中的配置
         val userConfig = userConfigState.userConfig.value
-        val apiKey = customApiKey ?: userConfig?.baseApiKey
-        val baseUrl = customBaseUrl ?: userConfig?.baseUrl
+        val apiKey = (customApiKey ?: userConfig?.baseApiKey)?.trim()
+        val baseUrl = (customBaseUrl ?: userConfig?.baseUrl)?.trim()
 
         // 添加API密钥
         apiKey?.takeIf { it.isNotEmpty() }?.let {
