@@ -17,9 +17,9 @@ data class ModelsResponse(
 @Serializable
 data class Model(
     val id: String,  // 模型ID，如"gpt-3.5-turbo"
-    val `object`: String,
-    val created: Long,
-    val owned_by: String,
+    val `object`: String? = null,
+    val created: Long? = null,
+    val owned_by: String? = null,
     val permission: List<Permission>? = null,
     val root: String? = null,
     val parent: String? = null
@@ -30,15 +30,15 @@ data class Model(
 @Serializable
 data class Permission(
     val id: String,
-    val `object`: String,
-    val created: Long,
-    val allow_create_engine: Boolean,
-    val allow_sampling: Boolean,
-    val allow_logprobs: Boolean,
-    val allow_search_indices: Boolean,
-    val allow_view: Boolean,
-    val allow_fine_tuning: Boolean,
-    val organization: String,
-    val group: String?,
-    val is_blocking: Boolean
+    val `object`: String? = null,
+    val created: Long? = null,
+    val allow_create_engine: Boolean? = null,
+    val allow_sampling: Boolean? = null,
+    val allow_logprobs: Boolean? = null,
+    val allow_search_indices: Boolean? = null,
+    val allow_view: Boolean? = null,
+    val allow_fine_tuning: Boolean? = null,
+    val organization: String? = null,
+    val group: String? = null,
+    val is_blocking: Boolean? = null
 )
