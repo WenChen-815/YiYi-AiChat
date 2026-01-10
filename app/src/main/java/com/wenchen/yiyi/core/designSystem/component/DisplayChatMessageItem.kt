@@ -110,7 +110,7 @@ fun DisplayChatMessageItem(
             }
             if (message.contentType == MessageContentType.TEXT) {
                 val parts = if (userConfig?.enableSeparator == true) {
-                    parseMessage.cleanedContent.split('\\').filter { it.isNotBlank() }.reversed()
+                    parseMessage.cleanedContent.split('\\').reversed()
                 } else {
                     listOf(parseMessage.cleanedContent)
                 }
@@ -131,9 +131,7 @@ fun DisplayChatMessageItem(
                     viewModel = viewModel,
                     messageId = message.id,
                     content = parseMessage.cleanedContent,
-                    avatarUrl = if (chatUiState.currentCharacter?.avatarPath?.isNotBlank() == true) {
-                        chatUiState.currentCharacter?.avatarPath
-                    } else "android.resource://${LocalContext.current.packageName}/${R.mipmap.ai_closed}",
+                    avatarUrl = avatarUrl,
                     messageType = message.type,
                     contentType = message.contentType,
                     chatWindowHazeState = chatWindowHazeState

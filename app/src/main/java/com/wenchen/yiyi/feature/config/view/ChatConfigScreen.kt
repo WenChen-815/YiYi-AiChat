@@ -126,6 +126,7 @@ fun ChatConfigScreenContent(
     var maxSummarizeCount by remember { mutableStateOf(viewModel.userConfig?.maxSummarizeCount?.toString() ?: "20") }
     var enableSeparator by remember { mutableStateOf(viewModel.userConfig?.enableSeparator ?: false) }
     var enableTimePrefix by remember { mutableStateOf(viewModel.userConfig?.enableTimePrefix ?: true) }
+    var enableStreamOutput by remember { mutableStateOf(viewModel.userConfig?.enableStreamOutput ?: true) }
 
     // 开发者设置
     var showLogcatView by remember { mutableStateOf(viewModel.userConfig?.showLogcatView ?: false) }
@@ -313,6 +314,7 @@ fun ChatConfigScreenContent(
                             maxSummarizeCount = maxSummarizeCount.toIntOrNull() ?: 20,
                             enableSeparator = enableSeparator,
                             enableTimePrefix = enableTimePrefix,
+                            enableStreamOutput = enableStreamOutput,
                             showLogcatView = showLogcatView
                         )
                         viewModel.updateUserConfig(userConfig)
@@ -687,6 +689,14 @@ fun ChatConfigScreenContent(
                 modifier = Modifier.padding(top = 16.dp)
             )
             Text(text = "此选项不会影响消息内容的显示，但关闭后AI将无法得知当前时间，按需启用", style = MaterialTheme.typography.labelSmall.copy(GrayText))
+
+            SwitchWithText(
+                checked = enableStreamOutput,
+                onCheckedChange = { enableStreamOutput = it },
+                text = "启用流式输出",
+                modifier = Modifier.padding(top = 16.dp)
+            )
+            Text(text = "开启后，AI的回复将实时显示在屏幕上\n若所选模型不支持流式输出，此选项将失效，必要时请关闭", style = MaterialTheme.typography.labelSmall.copy(GrayText))
 
             // 开发者设置
             HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))

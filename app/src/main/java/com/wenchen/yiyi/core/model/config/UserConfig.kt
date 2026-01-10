@@ -26,6 +26,7 @@ data class UserConfig(
     var maxSummarizeCount: Int = 20,
     var enableSeparator: Boolean = false,
     var enableTimePrefix: Boolean = true,
+    var enableStreamOutput: Boolean = true,
 
     // ======开发者设置=====================
     var showLogcatView: Boolean = false,

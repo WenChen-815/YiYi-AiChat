@@ -82,7 +82,8 @@ class AIChatManager @Inject constructor(
         isHandleUserMessage: Boolean,
         oldMessages: List<TempChatMessage>,
         showInChat: Boolean = true,
-        isSendSystemMessage: Boolean = false
+        isSendSystemMessage: Boolean = false,
+        enableStreamOutput: Boolean = userConfigState.userConfig.value?.enableStreamOutput ?: false
     ) : Int {
         // 参数校验
         if (conversation.characterIds.isEmpty() || aiCharacters.isEmpty()) {
@@ -146,12 +147,13 @@ class AIChatManager @Inject constructor(
 
 
         // 启动处理流程
-        return processMessageQueue(conversation, oldMessages)
+        return processMessageQueue(conversation, oldMessages, enableStreamOutput)
     }
 
     private suspend fun processMessageQueue(
         conversation: Conversation,
-        oldMessages: List<TempChatMessage>
+        oldMessages: List<TempChatMessage>,
+        enableStreamOutput: Boolean = userConfigState.userConfig.value?.enableStreamOutput ?: false
     ) : Int {
         var replyCount = 0
         val queueKey = conversation.id
@@ -167,8 +169,14 @@ class AIChatManager @Inject constructor(
                     val messages = generateBaseMessages(aiCharacter, conversation, oldMessages)
 
                     val completion = CompletableDeferred<Boolean>()
-                    send(conversation, aiCharacter, messages) { isSuccess ->
+                    if (enableStreamOutput){
+                        sendWithStream(conversation, aiCharacter, messages) { isSuccess ->
                             completion.complete(isSuccess)
+                        }
+                    } else {
+                        sendWithoutStream(conversation, aiCharacter, messages) { isSuccess ->
+                            completion.complete(isSuccess)
+                        }
                     }
                     // 等待当前消息发送完成
                     if (completion.await()) replyCount++ else break
@@ -201,6 +209,7 @@ class AIChatManager @Inject constructor(
      * @param oldMessages 历史临时消息列表，用于构造上下文中的过往对话内容。
      * @param showInChat 是否在界面上显示这些新发送的消息，默认为true。
      * @param isSendSystemMessage 标识是否以系统旁白形式发送消息，默认为false。
+     * @param enableStreamOutput 是否启用流式输出，默认为用户配置中的值。
      */
     suspend fun sendMessage(
         conversation: Conversation,
@@ -209,7 +218,8 @@ class AIChatManager @Inject constructor(
         isHandleUserMessage: Boolean,
         oldMessages: List<TempChatMessage>,
         showInChat: Boolean = true,
-        isSendSystemMessage: Boolean = false
+        isSendSystemMessage: Boolean = false,
+        enableStreamOutput: Boolean = userConfigState.userConfig.value?.enableStreamOutput ?: false
     ) {
         // 参数校验
         if (aiCharacter == null) {
@@ -225,7 +235,11 @@ class AIChatManager @Inject constructor(
 
         // 发送消息和总结
 //        messages.addAll(userMessages)
-        send(conversation, aiCharacter, messages)
+        if (enableStreamOutput) {
+            sendWithStream(conversation, aiCharacter, messages)
+        } else {
+            sendWithoutStream(conversation, aiCharacter, messages)
+        }
 
         val count = tempChatMessageRepository.getCountByConversationId(conversation.id)
         if (count >= (Application.globalUserConfigState.userConfig.value?.summarizeTriggerCount ?: 20)) {
@@ -473,6 +487,7 @@ class AIChatManager @Inject constructor(
 //                    summarize(conversation, aiCharacter, summaryMessages)
                     afterSend.invoke(true)
                     listeners.forEach { it.onMessageReceived(aiMessage) }
+                    listeners.forEach { it.onAllReplyCompleted() }
                 }
 //                Timber.tag(TAG).d("AI回复:${aiMessage.content}")
             },
@@ -495,7 +510,7 @@ class AIChatManager @Inject constructor(
      * @param messages 要发送的消息列表，包括系统提示、历史消息和用户最新消息
      * @param afterSend 发送完成后的回调函数，用于通知调用方是否成功
      */
-    private suspend fun send(
+    private suspend fun sendWithStream(
         conversation: Conversation,
         aiCharacter: AICharacter?,
         messages: MutableList<Message>,

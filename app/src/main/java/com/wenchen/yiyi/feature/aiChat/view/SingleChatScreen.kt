@@ -360,10 +360,11 @@ fun ChatScreen(
     }
 
     val initFinish = remember { mutableStateOf(false) }
-    // 滚动到底部（仅在新消息时）
-    LaunchedEffect(messages.size) {
+    // 滚动到底部
+    LaunchedEffect(chatUiState.receiveNewMessage) {
         if (messages.isNotEmpty() && (chatUiState.receiveNewMessage || !initFinish.value)) {
-            listState.scrollToItem(0)
+            // 使用 animateScrollToItem 确保动画滚动到底部，提供更好的用户体验
+            listState.animateScrollToItem(0)
             initFinish.value = true
             if (chatUiState.receiveNewMessage) {
                 viewModel.setReceiveNewMessage(false)

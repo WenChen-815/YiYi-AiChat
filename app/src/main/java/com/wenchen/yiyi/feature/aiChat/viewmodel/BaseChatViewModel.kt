@@ -180,7 +180,6 @@ abstract class BaseChatViewModel(
 
                 override fun onMessageReceived(message: ChatMessage) {
                     addMessage(message)
-                    // 流式输出时，这里不隐藏进度条，等待 onAllReplyCompleted
                 }
 
                 override fun onMessageChunk(messageId: String, chunk: String) {
@@ -293,9 +292,7 @@ abstract class BaseChatViewModel(
             onData = { modelsResponse ->
                 _uiState.value = BaseNetWorkUiState.Success(modelsResponse)
                 supportedModels = modelsResponse.data
-                _chatUiState.value = _chatUiState.value.copy(
-                    currentModelName = selectedModel
-                )
+                _chatUiState.update { it.copy(currentModelName = selectedModel) }
             },
             onError = { message, exception ->
                 Timber.tag("ChatConfigViewModel").d("Error: $message Exception: $exception")
@@ -315,7 +312,7 @@ abstract class BaseChatViewModel(
         isInitialLoading = true
 
         viewModelScope.launch {
-            _chatUiState.value = _chatUiState.value.copy(isLoading = true)
+            _chatUiState.update { it.copy(isLoading = true) }
             chatMessageRepository.getMessagesByPage(
                 conversation.value.id,
                 PAGE_SIZE,
@@ -324,13 +321,11 @@ abstract class BaseChatViewModel(
                 _messages.value = messages
             }
 
-            _chatUiState.value = _chatUiState.value.copy(
-                isLoading = false
-            )
+            _chatUiState.update { it.copy(isLoading = false) }
 
             currentPage = 1
             val totalCount = chatMessageRepository.getTotalMessageCount(conversation.value.id)
-            _chatUiState.value = _chatUiState.value.copy(hasMoreData = totalCount > PAGE_SIZE)
+            _chatUiState.update { it.copy(hasMoreData = totalCount > PAGE_SIZE) }
 
             isInitialLoading = false
 
@@ -349,7 +344,7 @@ abstract class BaseChatViewModel(
         Timber.tag("BaseChatViewModel").d("loadMoreMessages: $currentPage")
 
         viewModelScope.launch(Dispatchers.IO) {
-            _chatUiState.value = _chatUiState.value.copy(isLoading = true)
+            _chatUiState.update { it.copy(isLoading = true) }
             val offset = currentPage * PAGE_SIZE
             val moreMessages = chatMessageRepository.getMessagesByPage(
                 conversation.value.id,
@@ -366,12 +361,13 @@ abstract class BaseChatViewModel(
 
                     // 检查是否还有更多数据
                     val totalCount = chatMessageRepository.getTotalMessageCount(conversation.value.id)
-                    _chatUiState.value =
-                        _chatUiState.value.copy(hasMoreData = (currentPage * PAGE_SIZE) < totalCount)
+                    _chatUiState.update {
+                        it.copy(hasMoreData = (currentPage * PAGE_SIZE) < totalCount)
+                    }
                 } else {
-                    _chatUiState.value = _chatUiState.value.copy(hasMoreData = false)
+                    _chatUiState.update { it.copy(hasMoreData = false) }
                 }
-                _chatUiState.value = _chatUiState.value.copy(isLoading = false)
+                _chatUiState.update { it.copy(isLoading = false) }
             }
         }
     }
@@ -415,7 +411,7 @@ abstract class BaseChatViewModel(
         character: AICharacter? = currentAICharacter
     ) {
 //        if (messageText.isEmpty()) return
-        _chatUiState.value = _chatUiState.value.copy(isAiReplying = true)
+        _chatUiState.update { it.copy(isAiReplying = true) }
         character?.let { character ->
             viewModelScope.launch {
                 aiChatManager.sendMessage(
@@ -432,7 +428,7 @@ abstract class BaseChatViewModel(
 
     fun sendGroupMessage(messageText: String = "", isSendSystemMessage: Boolean = false) {
         if (conversation.value.characterIds.isEmpty()) return
-        _chatUiState.value = _chatUiState.value.copy(isAiReplying = true)
+        _chatUiState.update { it.copy(isAiReplying = true) }
         viewModelScope.launch {
             lastGroupChatReply = aiChatManager.sendGroupMessage(
                 conversation = conversation.value,
@@ -459,7 +455,7 @@ abstract class BaseChatViewModel(
     }
 
     fun sendImage(bitmap: Bitmap, savedUri: Uri, character: AICharacter? = currentAICharacter) {
-        _chatUiState.value = _chatUiState.value.copy(isAiReplying = true)
+        _chatUiState.update { it.copy(isAiReplying = true) }
         character?.let { character ->
             val tempChatContext = chatContext
             viewModelScope.launch {
@@ -495,9 +491,7 @@ abstract class BaseChatViewModel(
             )
             chatContext.add(tempMessage)
         }
-        if (!_chatUiState.value.receiveNewMessage) {
-            _chatUiState.value = _chatUiState.value.copy(receiveNewMessage = true)
-        }
+        _chatUiState.update { it.copy(receiveNewMessage = true) }
     }
 
     fun clearChatHistory() {
@@ -519,16 +513,14 @@ abstract class BaseChatViewModel(
                 userConfigState.updateUserConfig(it.copy(selectedModel = modelId))
             }
         }
-        _chatUiState.value = _chatUiState.value.copy(
-            currentModelName = selectedModel
-        )
+        _chatUiState.update { it.copy(currentModelName = selectedModel) }
     }
 
     fun getSupportedModels(): List<Model> = supportedModels
 
     fun getCurrentCharacter(): AICharacter? = currentAICharacter
     fun hideProgress() {
-        _chatUiState.value = _chatUiState.value.copy(isAiReplying = false)
+        _chatUiState.update { it.copy(isAiReplying = false) }
     }
     suspend fun deleteConversation(conversation: Conversation): Boolean {
         return try {
@@ -553,7 +545,7 @@ abstract class BaseChatViewModel(
     }
 
     fun setReceiveNewMessage(receiveNewMessage: Boolean) {
-        _chatUiState.value = _chatUiState.value.copy(receiveNewMessage = receiveNewMessage)
+        _chatUiState.update { it.copy(receiveNewMessage = receiveNewMessage) }
     }
 
     fun updateMessageContent(messageId: String, content: String, onComplete: ((Boolean) -> Unit)? = null) {
