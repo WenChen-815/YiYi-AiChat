@@ -13,6 +13,9 @@ activityCompose = "1.12.2"
 # AndroidX Lifecycle Runtime KTX: https://developer.android.com/jetpack/androidx/releases/lifecycle
 lifecycleRuntimeKtx = "2.10.0"
 
+# Exif
+exifinterface = "1.4.2"
+
 # 测试框架版本
 # JUnit 4 测试框架: https://junit.org/junit4/
 junit = "4.13.2"
@@ -112,6 +115,7 @@ gson = "2.13.2"
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+androidx-exifinterface = { group = "androidx.exifinterface", name = "exifinterface", version.ref = "exifinterface" }
 
 # Jetpack Compose UI
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }

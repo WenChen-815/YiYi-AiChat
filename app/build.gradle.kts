@@ -124,6 +124,9 @@ implementation(libs.androidx.lifecycle.runtime.ktx)
 implementation(libs.androidx.activity.compose)
 implementation(libs.androidx.core.splashscreen)
 
+// exif
+implementation(libs.androidx.exifinterface)
+
 // Jetpack Compose UI
 implementation(platform(libs.androidx.compose.bom))
 implementation(libs.androidx.compose.ui)

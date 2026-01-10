@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.rounded.ArrowCircleUp
 import androidx.compose.material.icons.rounded.Book
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.BottomAppBar
@@ -63,6 +64,7 @@ import com.wenchen.yiyi.core.util.StatusBarUtil
 import com.wenchen.yiyi.feature.main.viewmodel.MainViewModel
 import com.wenchen.yiyi.navigation.routes.AiChatRoutes
 import com.wenchen.yiyi.navigation.routes.ConfigRoutes
+import com.wenchen.yiyi.navigation.routes.OutputRoutes
 import com.wenchen.yiyi.navigation.routes.WorldBookRoutes
 
 /**
@@ -121,15 +123,19 @@ private fun MainScreenContent(
                             )
                         },
                         actions = {
-//                                TextButton(onClick = {
-//                                    val intent = Intent(
-//                                        this@MainActivity,
-//                                        ConfigActivity::class.java
-//                                    )
-//                                    startActivity(intent)
-//                                }) {
-//                                    Text("设置")
-//                                }
+                            IconWithText(
+                                icon = Icons.Rounded.ArrowCircleUp,
+                                iconTint = MaterialTheme.colorScheme.primary,
+                                text = "导出",
+                                modifier = Modifier
+                                    .clickable {
+                                        viewModel.navigate(OutputRoutes.Output)
+                                    }
+                                    .padding(horizontal = 8.dp),
+                                iconModifier = Modifier.size(24.dp),
+                                textModifier = Modifier.padding(top = 4.dp),
+                                textStyle = MaterialTheme.typography.labelSmall.copy(MaterialTheme.colorScheme.primary)
+                            )
                             IconWithText(
                                 icon = Icons.Rounded.Book,
                                 iconTint = MaterialTheme.colorScheme.primary,
@@ -355,62 +361,6 @@ private fun MainScreenContent(
             }
         }
     }
-
-//    val models = viewModel.models.collectAsState(emptyList())
-//    val uiState = viewModel.uiState.collectAsState(BaseNetWorkUiState.Loading)
-//    Scaffold { innerPadding ->
-//        Column(
-//            modifier = Modifier
-//                .fillMaxSize()
-//                .padding(innerPadding)
-//        ) {
-//            // 添加按钮触发网络请求
-//            Button(
-//                onClick = { viewModel.executeGetModels() },
-//                modifier = Modifier
-//                    .padding(16.dp)
-//            ) {
-//                Text(text = "发起网络请求")
-//            }
-//            // 显示加载状态
-//            if (uiState.value is BaseNetWorkUiState.Loading) {
-//                androidx.compose.material3.CircularProgressIndicator(
-//                    modifier = Modifier
-//                        .padding(16.dp)
-//                        .align(Alignment.CenterHorizontally)
-//                )
-//            }
-//
-//            // 显示错误状态
-//            if (uiState.value is BaseNetWorkUiState.Error) {
-//                Text(
-//                    text = "加载失败",
-//                    color = androidx.compose.material3.MaterialTheme.colorScheme.error,
-//                    modifier = Modifier.padding(16.dp)
-//                )
-//            }
-//
-//            // 显示模型列表数据
-//            if (models.value.isNotEmpty()) {
-//                androidx.compose.foundation.lazy.LazyColumn {
-//                    items(models.value.size) { index ->
-//                        val model = models.value[index]
-//                        Text(
-//                            text = "ID: ${model.id}, Owner: ${model.owned_by}",
-//                            modifier = Modifier
-//                                .padding(16.dp)
-//                        )
-//                    }
-//                }
-//            } else if (uiState.value is BaseNetWorkUiState.Success && models.value.isEmpty()) {
-//                Text(
-//                    text = "暂无数据",
-//                    modifier = Modifier
-//                        .padding(16.dp)
-//                )
-//            }
-//        }
-//    }
 }
 
 /**

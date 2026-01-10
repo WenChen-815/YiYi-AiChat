@@ -67,14 +67,25 @@ internal fun CharacterEditRoute(
     viewModel: CharacterEditViewModel = hiltViewModel(),
     navController: NavController
 ) {
+    val context = LocalContext.current
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let { viewModel.importCharacterFromImage(context, it) }
+    }
     AIChatTheme {
-        CharacterEditScreen(viewModel, navController)
+        CharacterEditScreen(
+            viewModel,
+            navController,
+            onPickImageClick = { launcher.launch("image/*") }
+        )
     }
 }
 @Composable
 private fun CharacterEditScreen(
     viewModel: CharacterEditViewModel = hiltViewModel(),
-    navController: NavController
+    navController: NavController,
+    onPickImageClick: () -> Unit
 ) {
     val activity = LocalActivity.current as ComponentActivity
 
@@ -152,6 +163,7 @@ private fun CharacterEditScreen(
         onResetCountClick = {
             ToastUtils.showToast("点击保存以生效")
         },
+        onPickImageClick = onPickImageClick,
     )
 }
 
@@ -169,6 +181,7 @@ private fun CharacterEditScreenContent(
     backgroundBitmap: Bitmap? = null,
     onAvatarDeleteClick: () -> Unit,
     onBackgroundDeleteClick: () -> Unit,
+    onPickImageClick: () -> Unit,
     viewModel: CharacterEditViewModel = viewModel()
 ) {
     if (isSystemInDarkTheme()) {
@@ -176,6 +189,7 @@ private fun CharacterEditScreenContent(
     } else {
         StatusBarUtil.setStatusBarTextColor(activity, true)
     }
+    val parsedCharacter = viewModel.parsedCharacter.collectAsState().value
     var name by remember { mutableStateOf("") }
     var roleIdentity by remember { mutableStateOf("") }
     var roleAppearance by remember { mutableStateOf("") }
@@ -198,11 +212,23 @@ private fun CharacterEditScreenContent(
     val moshi: Moshi = Moshi.Builder().build()
     val worldBookAdapter: JsonAdapter<WorldBook> = moshi.adapter(WorldBook::class.java)
 
-
     val scrollState = rememberScrollState()
-
+    // 监听解析后的角色数据，用于从图片导入角色功能
+    LaunchedEffect(parsedCharacter) {
+        parsedCharacter?.let {
+            name = it.name
+            roleIdentity = it.roleIdentity ?: ""
+            roleAppearance = it.roleAppearance ?: ""
+            roleDescription = it.roleDescription ?: ""
+            outputExample = it.outputExample ?: ""
+            behaviorRules = it.behaviorRules ?: ""
+            memory = it.memory ?: ""
+            // 图片已经在 ViewModel 中处理并直接通过参数传入，这里只需更新文本
+        }
+    }
     // 如果是编辑模式，加载角色数据
     LaunchedEffect(viewModel.characterId.collectAsState().value) {
+        if (isNewCharacter) return@LaunchedEffect
         viewModel.loadCharacterData(
             viewModel.conversationId.value,
             viewModel.characterId.value
@@ -239,7 +265,6 @@ private fun CharacterEditScreenContent(
         }
     }
 
-
     Scaffold(
         topBar = {
             Box(
@@ -260,6 +285,12 @@ private fun CharacterEditScreenContent(
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.align(Alignment.Center)
                 )
+                TextButton(
+                    modifier = Modifier.align(Alignment.CenterEnd),
+                    onClick = { onPickImageClick() }
+                ) {
+                    Text("导入角色")
+                }
             }
         },
         bottomBar = {

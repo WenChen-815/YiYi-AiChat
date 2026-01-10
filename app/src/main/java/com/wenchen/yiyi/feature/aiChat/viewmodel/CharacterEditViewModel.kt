@@ -2,9 +2,11 @@ package com.wenchen.yiyi.feature.aiChat.viewmodel
 
 import android.app.Activity
 import android.app.Activity.RESULT_OK
+import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
+import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import androidx.activity.result.ActivityResult
@@ -26,6 +28,8 @@ import com.wenchen.yiyi.core.datastore.storage.ImageManager
 import com.wenchen.yiyi.core.database.entity.AIChatMemory
 import com.wenchen.yiyi.core.database.entity.Conversation
 import com.wenchen.yiyi.core.database.entity.ConversationType
+import com.wenchen.yiyi.core.util.BitMapUtil
+import com.wenchen.yiyi.feature.output.model.OutputCharacterModel
 import com.wenchen.yiyi.navigation.AppNavigator
 import com.wenchen.yiyi.navigation.routes.AiChatRoutes
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -60,6 +64,13 @@ class CharacterEditViewModel @Inject constructor(
 
     val _isNewCharacter = MutableStateFlow(false)
     val isNewCharacter: StateFlow<Boolean> = _isNewCharacter.asStateFlow()
+
+    // 解析测试相关的状态
+    private val _parsedCharacter = MutableStateFlow<OutputCharacterModel?>(null)
+    val parsedCharacter: StateFlow<OutputCharacterModel?> = _parsedCharacter.asStateFlow()
+
+    private val _selectedImageUri = MutableStateFlow<Uri?>(null)
+    val selectedImageUri: StateFlow<Uri?> = _selectedImageUri.asStateFlow()
     
     private val imageManager = ImageManager()
 
@@ -136,6 +147,37 @@ class CharacterEditViewModel @Inject constructor(
                 }
             } else {
                 onError("未获取到图片URI")
+            }
+        }
+    }
+
+    /**
+     * 从图片导入角色数据
+     */
+    fun importCharacterFromImage(
+        context: Context,
+        uri: Uri,
+    ) {
+        _selectedImageUri.value = uri
+        viewModelScope.launch(Dispatchers.IO) {
+            val result = BitMapUtil.readLargeDataFromUri<OutputCharacterModel>(context, uri)
+            withContext(Dispatchers.Main) {
+                if (result != null) {
+                    _parsedCharacter.value = result
+                    // 更新图片状态
+                    result.avatarByte?.let {
+                        avatarBitmap = BitMapUtil.byteArrayToBitmap(it)
+                        hasNewAvatar = true
+                    }
+                    result.backgroundByte?.let {
+                        backgroundBitmap = BitMapUtil.byteArrayToBitmap(it)
+                        hasNewBackground = true
+                    }
+                    ToastUtils.showToast("导入成功: ${result.name}")
+                } else {
+                    _parsedCharacter.value = null
+                    ToastUtils.showToast("解析失败，未找到角色数据")
+                }
             }
         }
     }
