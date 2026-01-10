@@ -20,7 +20,16 @@ data class ChatResponse(
 data class Choice(
     val index: Int? = null,
     val message: Message? = null,
+    val delta: Delta? = null, // SSE 流式返回时使用 delta 而不是 message
     val finishReason: String? = null
+)
+
+// 聊天流式增量内容
+@Serializable
+@Keep
+data class Delta(
+    val role: String? = null,
+    val content: String? = null
 )
 
 // 聊天响应中的消息内容

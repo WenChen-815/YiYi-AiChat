@@ -67,6 +67,9 @@ abstract class BaseChatViewModel(
     val _chatUiState = MutableStateFlow(ChatUiState())
     val chatUiState: StateFlow<ChatUiState> = _chatUiState.asStateFlow()
 
+    val _messages = MutableStateFlow<List<ChatMessage>>(emptyList())
+    val messages: StateFlow<List<ChatMessage>> = _messages.asStateFlow()
+
     var currentAICharacter: AICharacter? = null
 
     val imageManager = ImageManager()
@@ -177,8 +180,20 @@ abstract class BaseChatViewModel(
 
                 override fun onMessageReceived(message: ChatMessage) {
                     addMessage(message)
-                    // 隐藏进度条
-                    hideProgress()
+                    // 流式输出时，这里不隐藏进度条，等待 onAllReplyCompleted
+                }
+
+                override fun onMessageChunk(messageId: String, chunk: String) {
+                    // 实时更新消息内容
+                    _messages.update { currentMessages ->
+                        currentMessages.map { message ->
+                            if (message.id == messageId) {
+                                message.copy(content = message.content + chunk)
+                            } else {
+                                message
+                            }
+                        }
+                    }
                 }
 
                 override fun onAllReplyCompleted() {
@@ -301,14 +316,15 @@ abstract class BaseChatViewModel(
 
         viewModelScope.launch {
             _chatUiState.value = _chatUiState.value.copy(isLoading = true)
-            val initialMessages = chatMessageRepository.getMessagesByPage(
+            chatMessageRepository.getMessagesByPage(
                 conversation.value.id,
                 PAGE_SIZE,
                 0
-            )
+            ).also { messages ->
+                _messages.value = messages
+            }
 
             _chatUiState.value = _chatUiState.value.copy(
-                messages = initialMessages,
                 isLoading = false
             )
 
@@ -343,11 +359,9 @@ abstract class BaseChatViewModel(
 
             withContext(Dispatchers.Main) {
                 if (moreMessages.isNotEmpty()) {
-                    val currentMessages = _chatUiState.value.messages.toMutableList()
-                    currentMessages.addAll(moreMessages)
-                    _chatUiState.value = _chatUiState.value.copy(
-                        messages = currentMessages
-                    )
+                    _messages.update { currentMessages ->
+                        currentMessages + moreMessages
+                    }
                     currentPage++
 
                     // 检查是否还有更多数据
@@ -383,10 +397,10 @@ abstract class BaseChatViewModel(
             chatContext.removeAt(chatContext.lastIndex)
             sendMessage()
         }
-        // 移除ui_state中对应的消息
-        _chatUiState.value = _chatUiState.value.copy(
-            messages = _chatUiState.value.messages.filter { !removeMessageIds.contains(it.id) }
-        )
+        // 移除消息
+        _messages.update { currentMessages ->
+            currentMessages.filter { !removeMessageIds.contains(it.id) }
+        }
         // 移除数据库中的消息
         if (removeMessageIds.isNotEmpty()) {
             viewModelScope.launch {
@@ -462,11 +476,9 @@ abstract class BaseChatViewModel(
 
     fun addMessage(message: ChatMessage) {
         if (message.conversationId != conversation.value.id) return
-        val currentMessages = _chatUiState.value.messages.toMutableList()
-        currentMessages.add(0, message)
-        _chatUiState.value = _chatUiState.value.copy(
-            messages = currentMessages
-        )
+        _messages.update { currentMessages ->
+            listOf(message) + currentMessages
+        }
 
         // 添加到聊天上下文中
         if (message.imgUrl == null && message.voiceUrl == null) {
@@ -494,9 +506,7 @@ abstract class BaseChatViewModel(
             tempChatMessageRepository.deleteByConversationId(conversation.value.id)
 
             withContext(Dispatchers.Main) {
-                _chatUiState.value = _chatUiState.value.copy(
-                    messages = emptyList()
-                )
+                _messages.value = emptyList()
                 chatContext.clear()
             }
         }
@@ -553,12 +563,11 @@ abstract class BaseChatViewModel(
                 chatMessageRepository.updateMessageContent(messageId, content)
                 tempChatMessageRepository.updateMessageContent(messageId, content)
 
-                // 更新UI状态中的消息列表
-                _chatUiState.update { currentState ->
-                    val updatedMessages = currentState.messages.map { message ->
+                // 更新消息列表
+                _messages.update { currentMessages ->
+                    currentMessages.map { message ->
                         if (message.id == messageId) message.copy(content = content) else message
                     }
-                    currentState.copy(messages = updatedMessages)
                 }
                 chatContext.forEach { message ->
                     if (message.id == messageId) {
@@ -581,11 +590,11 @@ abstract class BaseChatViewModel(
                 chatMessageRepository.deleteMessageById(messageId)
                 tempChatMessageRepository.deleteMessageById(messageId)
 
-                // 更新UI状态中的消息列表
-                _chatUiState.update { currentState ->
-                    val updatedMessages = currentState.messages.filter { it.id != messageId }
-                    currentState.copy(messages = updatedMessages)
+                // 更新消息列表
+                _messages.update { currentMessages ->
+                    currentMessages.filter { it.id != messageId }
                 }
+                
                 chatContext.removeIf { it.id == messageId }
 
                 Timber.tag("BaseChatViewModel").e("删除消息: $messageId")
@@ -597,7 +606,6 @@ abstract class BaseChatViewModel(
 }
 
 data class ChatUiState(
-    val messages: List<ChatMessage> = emptyList(),
     val currentCharacter: AICharacter? = null,
     val currentCharacters: List<AICharacter> = emptyList(),
     val currentModelName: String = "",

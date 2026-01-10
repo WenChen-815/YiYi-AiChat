@@ -5,6 +5,7 @@ import com.wenchen.yiyi.core.model.network.ModelsResponse
 import com.wenchen.yiyi.core.model.network.NetworkResponse
 import com.wenchen.yiyi.core.network.service.ChatRequest
 import com.wenchen.yiyi.core.network.service.MultimodalChatRequest
+import okhttp3.ResponseBody
 
 /**
  * AI模型网络数据源接口
@@ -24,9 +25,21 @@ interface AiHubNetworkDataSource {
         request: ChatRequest
     ): NetworkResponse<ChatResponse>
 
+    suspend fun streamSendMessage(
+        baseUrl: String? = null,
+        apiKey: String? = null,
+        request: ChatRequest
+    ): ResponseBody
+
     suspend fun sendMultimodalMessage(
         baseUrl: String? =  null,
         apiKey: String? =  null,
         request: MultimodalChatRequest
     ): NetworkResponse<ChatResponse>
+
+    suspend fun streamSendMultimodalMessage(
+        baseUrl: String? = null,
+        apiKey: String? = null,
+        request: MultimodalChatRequest
+    ): ResponseBody
 }

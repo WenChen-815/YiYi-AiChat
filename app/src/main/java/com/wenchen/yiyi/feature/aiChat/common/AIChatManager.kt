@@ -422,13 +422,15 @@ class AIChatManager @Inject constructor(
     }
 
     /**
+     * 非流式
      * 发送消息给AI模型并处理响应的核心方法
      *
      * @param conversation 当前聊天会话对象，包含会话相关信息
      * @param aiCharacter AI角色对象，包含角色身份、描述等配置信息
      * @param messages 要发送的消息列表，包括系统提示、历史消息和用户最新消息
+     * @param afterSend 发送完成后的回调函数，用于通知调用方是否成功
      */
-    private fun send(
+    private fun sendWithoutStream(
         conversation: Conversation,
         aiCharacter: AICharacter?,
         messages: MutableList<Message>,
@@ -482,6 +484,79 @@ class AIChatManager @Inject constructor(
             },
             onFinally = {}
         )
+    }
+
+    /**
+     * 流式
+     * 发送消息给AI模型并处理响应的核心方法
+     *
+     * @param conversation 当前聊天会话对象，包含会话相关信息
+     * @param aiCharacter AI角色对象，包含角色身份、描述等配置信息
+     * @param messages 要发送的消息列表，包括系统提示、历史消息和用户最新消息
+     * @param afterSend 发送完成后的回调函数，用于通知调用方是否成功
+     */
+    private suspend fun send(
+        conversation: Conversation,
+        aiCharacter: AICharacter?,
+        messages: MutableList<Message>,
+        afterSend: (Boolean) -> Unit = {}
+    ) {
+        val userConfig = Application.globalUserConfigState.userConfig.value
+        if (aiCharacter == null) {
+            Timber.tag(TAG).e("未选择AI角色")
+            return
+        }
+
+        val messageId = UUID.randomUUID().toString()
+        val currentDate = SimpleDateFormat("yyyy-MM-dd EEEE HH:mm:ss", Locale.getDefault()).format(Date())
+        val prefix = if (userConfig?.enableTimePrefix == true) "$currentDate|" else ""
+        val currentCharacterName = "[${aiCharacter.name}] "
+
+        // 1. 创建占位消息并通知 UI
+        val aiMessage = ChatMessage(
+            id = messageId,
+            content = "$prefix$currentCharacterName",
+            type = MessageType.ASSISTANT,
+            characterId = aiCharacter.aiCharacterId,
+            chatUserId = userConfig?.userId ?: "",
+            conversationId = conversation.id
+        )
+
+        CoroutineScope(Dispatchers.Main).launch {
+            listeners.forEach { it.onMessageReceived(aiMessage) }
+        }
+
+        // 2. 发起流式请求
+        val chatRequest = ChatRequest(userConfig?.selectedModel ?: "", messages, 1.0f)
+        var fullContent = ""
+        
+        try {
+            aiHubRepository.streamSendMessage(
+                baseUrl = userConfig?.baseUrl,
+                apiKey = userConfig?.baseApiKey,
+                request = chatRequest
+            ).collect { chunk ->
+                fullContent += chunk
+                CoroutineScope(Dispatchers.Main).launch {
+                    listeners.forEach { it.onMessageChunk(messageId, chunk) }
+                }
+            }
+
+            // 3. 流式结束，保存完整内容到数据库
+            val finalMessage = aiMessage.copy(content = "$prefix$currentCharacterName$fullContent")
+            savaMessage(finalMessage, true)
+            afterSend.invoke(true)
+        } catch (e: Exception) {
+            Timber.tag(TAG).e(e, "流式发送失败")
+            CoroutineScope(Dispatchers.Main).launch {
+                listeners.forEach { it.onError("${e.message}") }
+            }
+            afterSend.invoke(false)
+        } finally {
+            CoroutineScope(Dispatchers.Main).launch {
+                listeners.forEach { it.onAllReplyCompleted() }
+            }
+        }
     }
 
     /**
@@ -706,6 +781,7 @@ class AIChatManager @Inject constructor(
     interface AIChatMessageListener {
         fun onMessageSent(message: ChatMessage)
         fun onMessageReceived(message: ChatMessage)
+        fun onMessageChunk(messageId: String, chunk: String)
         fun onAllReplyCompleted()
         fun onError(error: String)
         fun onShowToast(message: String)

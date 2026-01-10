@@ -7,6 +7,7 @@ import com.wenchen.yiyi.core.network.base.BaseNetworkDataSource
 import com.wenchen.yiyi.core.network.service.AiHubService
 import com.wenchen.yiyi.core.network.service.ChatRequest
 import com.wenchen.yiyi.core.network.service.MultimodalChatRequest
+import okhttp3.ResponseBody
 import javax.inject.Inject
 
 /**
@@ -39,6 +40,14 @@ class AiHubNetworkDataSourceImpl @Inject constructor(
         )
     }
 
+    override suspend fun streamSendMessage(
+        baseUrl: String?,
+        apiKey: String?,
+        request: ChatRequest
+    ): ResponseBody {
+        return aiModelsApiService.streamSendMessage(baseUrl, apiKey, request)
+    }
+
     override suspend fun sendMultimodalMessage(
         baseUrl: String?,
         apiKey: String?,
@@ -50,5 +59,13 @@ class AiHubNetworkDataSourceImpl @Inject constructor(
             code = 1000,
             message = null
         )
+    }
+
+    override suspend fun streamSendMultimodalMessage(
+        baseUrl: String?,
+        apiKey: String?,
+        request: MultimodalChatRequest
+    ): ResponseBody {
+        return aiModelsApiService.streamSendMultimodalMessage(baseUrl, apiKey, request)
     }
 }

@@ -74,6 +74,7 @@ private fun GroupChatScreen(
         val drawerState = rememberDrawerState(DrawerValue.Closed)
         val scope = rememberCoroutineScope()
         val uiState by viewModel.uiState.collectAsState()
+        val messages by viewModel.messages.collectAsState()
         val bgImgHazeState = rememberHazeState()
         val chatWindowHazeState = rememberHazeState()
         val launcher = rememberLauncherForActivityResult(
@@ -147,7 +148,6 @@ private fun GroupChatScreen(
                         },
                         onNavAboutClick = {
                             // 获取聊天消息列表
-                            val messages = viewModel.chatUiState.value.messages
                             // 提取所有消息内容
                             val contents = messages.map { it.content }
                             // 记录到日志
@@ -296,6 +296,7 @@ private fun GroupChatScreen(
         chatWindowHazeState: HazeState
     ) {
         val chatUiState by viewModel.chatUiState.collectAsState()
+        val messages by viewModel.messages.collectAsState()
         var messageText by remember { mutableStateOf("") }
         val listState = rememberLazyListState()
 
@@ -326,15 +327,15 @@ private fun GroupChatScreen(
             }
         // 监听键盘高度变化
         LaunchedEffect(imeHeight) {
-            if (chatUiState.messages.isNotEmpty()) {
+            if (messages.isNotEmpty()) {
                 listState.scrollToItem(0)
             }
         }
 
         val initFinish = remember { mutableStateOf(false) }
         // 滚动到底部（仅在新消息时）
-        LaunchedEffect(chatUiState.messages.size) {
-            if (chatUiState.messages.isNotEmpty() && (chatUiState.receiveNewMessage || !initFinish.value)) {
+        LaunchedEffect(messages.size) {
+            if (messages.isNotEmpty() && (chatUiState.receiveNewMessage || !initFinish.value)) {
                 listState.scrollToItem(0)
                 initFinish.value = true
                 if (chatUiState.receiveNewMessage) {
@@ -390,7 +391,7 @@ private fun GroupChatScreen(
                             state = listState,
                             reverseLayout = true,
                         ) {
-                            items(chatUiState.messages) { message ->
+                            items(messages, key = { it.id }) { message ->
                                 if (message.isShow) {
                                     DisplayChatMessageItem(
                                         message = message,

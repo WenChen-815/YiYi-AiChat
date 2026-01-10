@@ -5,10 +5,12 @@ import com.wenchen.yiyi.core.model.network.Message
 import com.wenchen.yiyi.core.model.network.ModelsResponse
 import com.wenchen.yiyi.core.network.interceptor.ApiKeyInterceptor
 import kotlinx.serialization.Serializable
+import okhttp3.ResponseBody
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
+import retrofit2.http.Streaming
 
 /**
  * AI服务接口
@@ -43,6 +45,17 @@ interface AiHubService {
     ): ChatResponse
 
     /**
+     * 流式发送聊天消息。
+     */
+    @Streaming
+    @POST("v1/chat/completions")
+    suspend fun streamSendMessage(
+        @Header(ApiKeyInterceptor.CUSTOM_BASE_URL_HEADER) baseUrl: String?,
+        @Header(ApiKeyInterceptor.CUSTOM_API_KEY_HEADER) apiKey: String?,
+        @Body request: ChatRequest
+    ): ResponseBody
+
+    /**
      * 发送多模态消息（文本+图像）到AI模型。
      * @param baseUrl 动态指定的BaseUrl，会覆盖默认值
      * @param apiKey 动态指定的ApiKey，会覆盖默认值
@@ -54,6 +67,17 @@ interface AiHubService {
         @Header(ApiKeyInterceptor.CUSTOM_API_KEY_HEADER) apiKey: String?,
         @Body request: MultimodalChatRequest
     ): ChatResponse
+
+    /**
+     * 流式发送多模态聊天消息。
+     */
+    @Streaming
+    @POST("v1/chat/completions")
+    suspend fun streamSendMultimodalMessage(
+        @Header(ApiKeyInterceptor.CUSTOM_BASE_URL_HEADER) baseUrl: String?,
+        @Header(ApiKeyInterceptor.CUSTOM_API_KEY_HEADER) apiKey: String?,
+        @Body request: MultimodalChatRequest
+    ): ResponseBody
 }
 
 // --- Data Classes for Requests ---
@@ -62,14 +86,16 @@ interface AiHubService {
 data class ChatRequest(
     val model: String,
     val messages: List<Message>,
-    val temperature: Float? = null
+    val temperature: Float? = null,
+    val stream: Boolean? = null
 )
 
 @Serializable
 data class MultimodalChatRequest(
     val model: String,
     val messages: List<MultimodalMessage>,
-    val temperature: Float? = null
+    val temperature: Float? = null,
+    val stream: Boolean? = null
 )
 
 @Serializable
