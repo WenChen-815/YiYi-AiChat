@@ -181,10 +181,14 @@ abstract class BaseChatViewModel(
                     hideProgress()
                 }
 
-                override fun onAllReplyCompleted() {}
+                override fun onAllReplyCompleted() {
+                    hideProgress()
+                }
 
                 override fun onError(error: String) {
-                    ToastUtils.showToast(error)
+//                    ToastUtils.showToast("ERROR")
+                    hideProgress()
+                    Timber.tag("Chat").e(error)
                 }
 
                 override fun onShowToast(message: String) {

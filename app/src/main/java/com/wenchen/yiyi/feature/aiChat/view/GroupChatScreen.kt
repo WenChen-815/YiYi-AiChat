@@ -2,12 +2,6 @@ package com.wenchen.yiyi.feature.aiChat.view
 
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
-import android.graphics.ColorSpace
-import android.graphics.ImageDecoder
-import android.net.Uri
-import android.os.Build
-import android.provider.MediaStore
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -48,7 +42,6 @@ import dev.chrisbanes.haze.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import java.io.File
 
 @Composable
 internal fun GroupChatRoute (

@@ -1,6 +1,5 @@
 package com.wenchen.yiyi.feature.config.viewmodel
 
-import android.util.Log
 import androidx.lifecycle.viewModelScope
 import com.wenchen.yiyi.core.base.state.BaseNetWorkUiState
 import com.wenchen.yiyi.core.base.viewmodel.BaseNetWorkViewModel
@@ -16,10 +15,6 @@ import com.wenchen.yiyi.core.state.UserState
 import com.wenchen.yiyi.core.util.toast.ToastUtils
 import com.wenchen.yiyi.navigation.AppNavigator
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

@@ -40,21 +40,6 @@ abstract class AppDatabase : RoomDatabase() {
 
     companion object {
         const val DATABASE_NAME = "ai_chat_database"
-        @Volatile
-        private var INSTANCE: AppDatabase? = null
-//        fun getDatabase(context: Context): AppDatabase {
-//            return INSTANCE ?: synchronized(this) {
-//                val instance = Room.databaseBuilder(
-//                    context.applicationContext,
-//                    AppDatabase::class.java,
-//                    DATABASE_NAME
-//                )
-//                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
-//                    .build()
-//                INSTANCE = instance
-//                instance
-//            }
-//        }
 
         val MIGRATION_2_3 = object : Migration(2, 3) {
             override fun migrate(db: SupportSQLiteDatabase) {

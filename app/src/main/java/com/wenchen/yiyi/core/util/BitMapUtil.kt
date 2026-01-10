@@ -31,6 +31,7 @@ import timber.log.Timber
 import java.io.ByteArrayOutputStream
 import java.io.OutputStream
 import java.nio.ByteBuffer
+import androidx.core.graphics.createBitmap
 
 object BitMapUtil {
     // 定义一个魔术字，用于识别追加的数据
@@ -69,11 +70,7 @@ object BitMapUtil {
             composeView.measure(widthSpec, heightSpec)
             composeView.layout(0, 0, composeView.measuredWidth, composeView.measuredHeight)
 
-            val bitmap = Bitmap.createBitmap(
-                composeView.measuredWidth,
-                composeView.measuredHeight,
-                Bitmap.Config.ARGB_8888
-            )
+            val bitmap = createBitmap(composeView.measuredWidth, composeView.measuredHeight, Bitmap.Config.ARGB_8888)
             val canvas = Canvas(bitmap)
             composeView.draw(canvas)
 

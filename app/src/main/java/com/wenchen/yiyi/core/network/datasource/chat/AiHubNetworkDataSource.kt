@@ -5,7 +5,6 @@ import com.wenchen.yiyi.core.model.network.ModelsResponse
 import com.wenchen.yiyi.core.model.network.NetworkResponse
 import com.wenchen.yiyi.core.network.service.ChatRequest
 import com.wenchen.yiyi.core.network.service.MultimodalChatRequest
-import com.wenchen.yiyi.core.network.service.MultimodalMessage
 
 /**
  * AI模型网络数据源接口

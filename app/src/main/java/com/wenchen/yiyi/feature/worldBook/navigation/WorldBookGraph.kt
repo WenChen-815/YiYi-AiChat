@@ -4,7 +4,6 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
-import com.wenchen.yiyi.feature.worldBook.navigation.worldBookScreen
 
 /**
  * 世界相关模块导航图

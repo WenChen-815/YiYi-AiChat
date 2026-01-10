@@ -9,7 +9,6 @@ import com.wenchen.yiyi.core.state.UserState
 import com.wenchen.yiyi.core.util.storage.MMKVUtils
 import com.wenchen.yiyi.core.util.toast.ToastUtils
 import dagger.hilt.android.HiltAndroidApp
-import kotlinx.coroutines.runBlocking
 import timber.log.Timber
 import javax.inject.Inject
 

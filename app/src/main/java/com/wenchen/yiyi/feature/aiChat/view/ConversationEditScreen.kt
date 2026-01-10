@@ -52,11 +52,8 @@ import coil3.request.crossfade
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import com.wenchen.yiyi.core.database.entity.AIChatMemory
-import com.wenchen.yiyi.core.database.entity.Conversation
 import com.wenchen.yiyi.core.database.entity.ConversationType
-import com.wenchen.yiyi.Application
 import com.wenchen.yiyi.core.designSystem.component.SettingTextFieldItem
-import com.wenchen.yiyi.core.database.entity.AICharacter
 import com.wenchen.yiyi.core.common.theme.AIChatTheme
 import com.wenchen.yiyi.core.common.theme.BlackText
 import com.wenchen.yiyi.core.common.theme.DarkGray
@@ -64,8 +61,6 @@ import com.wenchen.yiyi.core.common.theme.GrayText
 import com.wenchen.yiyi.core.common.theme.LightGold
 import com.wenchen.yiyi.core.common.theme.LightGray
 import com.wenchen.yiyi.core.common.theme.WhiteText
-import com.wenchen.yiyi.core.data.repository.AIChatMemoryRepository
-import com.wenchen.yiyi.core.data.repository.ConversationRepository
 import com.wenchen.yiyi.core.util.StatusBarUtil
 import com.wenchen.yiyi.feature.aiChat.viewmodel.ConversationEditViewModel
 import com.wenchen.yiyi.feature.worldBook.model.WorldBook
@@ -76,7 +71,6 @@ import java.util.UUID
 import androidx.compose.runtime.collectAsState
 import com.wenchen.yiyi.core.util.toast.ToastUtils
 import com.wenchen.yiyi.feature.aiChat.viewmodel.ConversationEditUiState
-import javax.inject.Inject
 
 @Composable
 internal fun ConversationEditRoute(
@@ -802,18 +796,6 @@ fun ConversationEditScreenContent(
                 maxLines = 10,
             )
 
-//            SettingTextFieldItem(
-//                modifier =
-//                    Modifier
-//                        .fillMaxWidth()
-//                        .padding(top = 8.dp),
-//                singleLine = true,
-//                label = "世界ID",
-//                labelPadding = PaddingValues(bottom = 6.dp),
-//                value = chatWorldId,
-//                onValueChange = { chatWorldId = it },
-//                placeholder = { Text("未实现，敬请期待") },
-//            )
             Text(
                 text = "世界选择",
                 style = MaterialTheme.typography.titleMedium,

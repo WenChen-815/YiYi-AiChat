@@ -1,4 +1,4 @@
-package com.wenchen.learn.navigation
+package com.wenchen.yiyi.navigation
 
 /**
  * 导航返回结果的类型安全 Key。

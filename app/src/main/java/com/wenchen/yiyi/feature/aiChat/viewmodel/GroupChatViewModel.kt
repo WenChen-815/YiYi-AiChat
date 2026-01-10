@@ -1,6 +1,5 @@
 package com.wenchen.yiyi.feature.aiChat.viewmodel
 
-import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
@@ -16,6 +15,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 import javax.inject.Inject
 import kotlin.collections.component1
 import kotlin.collections.component2
@@ -91,7 +91,7 @@ class GroupChatViewModel @Inject constructor(
                 }
             }
         } catch (e: Exception) {
-            Log.e("ChatViewModel", "初始化群聊失败", e)
+            Timber.tag("ChatViewModel").e(e, "初始化群聊失败")
         }
     }
 }

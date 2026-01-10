@@ -3,7 +3,7 @@ package com.wenchen.yiyi.core.base.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavOptions
-import com.wenchen.learn.navigation.NavigationResultKey
+import com.wenchen.yiyi.navigation.NavigationResultKey
 import com.wenchen.yiyi.core.state.UserState
 import com.wenchen.yiyi.navigation.AppNavigator
 import com.wenchen.yiyi.navigation.RouteInterceptor

@@ -35,7 +35,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -59,11 +58,6 @@ class AIChatManager @Inject constructor(
 ) {
     // 基础配置
     private val TAG = "AIChatManager"
-
-    // 数据访问对象
-//    private val chatMessageDao = Application.appDatabase.chatMessageDao()
-//    private val tempChatMessageDao = Application.appDatabase.tempChatMessageDao()
-//    private val aiChatMemoryDao = Application.appDatabase.aiChatMemoryDao()
 
     // 并发控制
     private val characterLocks = ConcurrentHashMap<String, Mutex>()
@@ -364,7 +358,6 @@ class AIChatManager @Inject constructor(
                 append(aiCharacter.behaviorRules)
             }
         }.trim()
-//        Log.d(TAG, "prompt:\n $prompt")
         if (prompt.isNotEmpty()) {
             messages.add(0, Message("system", "$prompt\n"))
         }
@@ -480,9 +473,6 @@ class AIChatManager @Inject constructor(
                     listeners.forEach { it.onMessageReceived(aiMessage) }
                 }
 //                Timber.tag(TAG).d("AI回复:${aiMessage.content}")
-//                CoroutineScope(Dispatchers.Main).launch {
-//                    listeners.forEach { it.onMessageReceived(aiMessage) }
-//                }
             },
             onError = { messages, exception ->
                 CoroutineScope(Dispatchers.Main).launch {
@@ -534,12 +524,6 @@ class AIChatManager @Inject constructor(
                     return@withLock
                 }
             }
-//            val count = tempChatMessageDao.getCountByConversationId(conversation.id)
-//            if (count < summarizeTriggerCount) {
-////                Log.d(TAG, "无需总结 count=$count")
-//                return@withLock
-//            }
-//            Log.d(TAG, "开始总结 count=$count")
 
             // 构建消息列表
             val messages = mutableListOf<Message>()

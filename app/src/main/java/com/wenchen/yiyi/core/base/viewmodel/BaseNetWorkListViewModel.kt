@@ -4,7 +4,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.Observer
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavBackStackEntry
-import com.wenchen.learn.navigation.NavigationResultKey
+import com.wenchen.yiyi.navigation.NavigationResultKey
 import com.wenchen.yiyi.core.base.state.BaseNetWorkListUiState
 import com.wenchen.yiyi.core.base.state.LoadMoreState
 import com.wenchen.yiyi.core.model.network.NetworkPageData
