@@ -143,7 +143,7 @@ fun OutputScreenContent(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                items(characters.size) { index ->
+                items(characters.size, key = { index -> characters[index].aiCharacterId }) { index ->
                     val character = characters[index]
                     CharacterItem(
                         character = character,

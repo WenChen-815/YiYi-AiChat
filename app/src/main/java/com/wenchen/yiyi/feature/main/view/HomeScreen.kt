@@ -110,7 +110,7 @@ fun HomeScreen(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                items(characters.size) { index ->
+                items(characters.size, key = { index -> characters[index].aiCharacterId }) { index ->
                     CharacterItem(
                         character = characters[index],
                         onItemClick = { character ->
