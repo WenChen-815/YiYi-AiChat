@@ -183,6 +183,15 @@ abstract class BaseChatViewModel(
                 }
 
                 override fun onMessageChunk(messageId: String, chunk: String) {
+                    viewModelScope.launch {
+                        chatContext.replaceAll { message ->
+                            if (message.id == messageId) {
+                                message.copy(content = message.content + chunk)
+                            } else {
+                                message
+                            }
+                        }
+                    }
                     // 实时更新消息内容
                     _messages.update { currentMessages ->
                         currentMessages.map { message ->
@@ -335,6 +344,7 @@ abstract class BaseChatViewModel(
                     chatContext.clear()
                     chatContext.addAll(it)
                 }
+            _chatUiState.update { it.copy(initFinished = true) }
         }
     }
 
@@ -345,7 +355,8 @@ abstract class BaseChatViewModel(
 
         viewModelScope.launch(Dispatchers.IO) {
             _chatUiState.update { it.copy(isLoading = true) }
-            val offset = currentPage * PAGE_SIZE
+            // 使用当前已加载的消息数量作为 offset，防止因新消息插入导致的 offset 偏移
+            val offset = _messages.value.size
             val moreMessages = chatMessageRepository.getMessagesByPage(
                 conversation.value.id,
                 PAGE_SIZE,
@@ -355,14 +366,16 @@ abstract class BaseChatViewModel(
             withContext(Dispatchers.Main) {
                 if (moreMessages.isNotEmpty()) {
                     _messages.update { currentMessages ->
-                        currentMessages + moreMessages
+                        val existingIds = currentMessages.map { it.id }.toSet()
+                        // 过滤掉可能重复加载的消息
+                        currentMessages + moreMessages.filter { it.id !in existingIds }
                     }
                     currentPage++
 
                     // 检查是否还有更多数据
                     val totalCount = chatMessageRepository.getTotalMessageCount(conversation.value.id)
                     _chatUiState.update {
-                        it.copy(hasMoreData = (currentPage * PAGE_SIZE) < totalCount)
+                        it.copy(hasMoreData = _messages.value.size < totalCount)
                     }
                 } else {
                     _chatUiState.update { it.copy(hasMoreData = false) }
@@ -473,7 +486,12 @@ abstract class BaseChatViewModel(
     fun addMessage(message: ChatMessage) {
         if (message.conversationId != conversation.value.id) return
         _messages.update { currentMessages ->
-            listOf(message) + currentMessages
+            // 防止重复添加具有相同 ID 的消息导致 LazyColumn Key 重复崩溃
+            if (currentMessages.any { it.id == message.id }) {
+                currentMessages
+            } else {
+                listOf(message) + currentMessages
+            }
         }
 
         // 添加到聊天上下文中
@@ -603,6 +621,7 @@ data class ChatUiState(
     val currentModelName: String = "",
     val isLoading: Boolean = false,
     val isAiReplying: Boolean = false,
+    val initFinished: Boolean = false,
     val hasMoreData: Boolean = true,
     val receiveNewMessage: Boolean = false
 )

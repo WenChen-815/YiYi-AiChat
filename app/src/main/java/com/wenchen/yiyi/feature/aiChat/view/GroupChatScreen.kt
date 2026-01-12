@@ -332,35 +332,34 @@ private fun GroupChatScreen(
             }
         }
 
-        val initFinish = remember { mutableStateOf(false) }
-        // 滚动到底部（仅在新消息时）
-        LaunchedEffect(messages.size) {
-            if (messages.isNotEmpty() && (chatUiState.receiveNewMessage || !initFinish.value)) {
-                listState.scrollToItem(0)
-                initFinish.value = true
+        // 滚动到底部
+        LaunchedEffect(chatUiState.initFinished,chatUiState.receiveNewMessage) {
+            if (messages.isNotEmpty() && (chatUiState.receiveNewMessage || !chatUiState.initFinished)) {
+                // 使用 animateScrollToItem 确保动画滚动到底部，提供更好的用户体验
+                listState.animateScrollToItem(0)
                 if (chatUiState.receiveNewMessage) {
                     viewModel.setReceiveNewMessage(false)
                 }
             }
         }
         // 监听滚动位置以加载更多消息
-        LaunchedEffect(listState, initFinish.value) {
-            if (!initFinish.value) return@LaunchedEffect
-            snapshotFlow { listState.firstVisibleItemIndex }
-                .collect { firstVisibleIndex ->
-                    // 当用户滚动到顶部附近时加载更多消息
-                    if (firstVisibleIndex < 2 && viewModel.canLoadMore()) {
+        LaunchedEffect(listState, chatUiState.initFinished) {
+            if (!chatUiState.initFinished) return@LaunchedEffect
+
+            snapshotFlow {
+                val layoutInfo = listState.layoutInfo
+                // 在 reverseLayout 中，lastOrNull().index 对应的是最顶部的项（最旧的消息）
+                val lastVisibleItem = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+                val totalItems = layoutInfo.totalItemsCount
+
+                // 预加载逻辑：当前显示的项接近已加载总数的末尾时
+                totalItems > 0 && lastVisibleItem > totalItems - 3
+            }
+                .collect { shouldLoadMore ->
+                    if (shouldLoadMore && viewModel.canLoadMore()) {
                         viewModel.loadMoreMessages()
                     }
                 }
-//            snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull { it.index == uiState.messages.size - 1 } }
-//                .collect { lastVisibleItem ->
-//                    if (lastVisibleItem != null && lastVisibleItem.index > 10) {
-//                        if (viewModel.canLoadMore()) {
-//                            viewModel.loadMoreMessages()
-//                        }
-//                    }
-//                }
         }
 
         Scaffold(

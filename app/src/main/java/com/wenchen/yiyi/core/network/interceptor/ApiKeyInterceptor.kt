@@ -107,6 +107,7 @@ class ApiKeyInterceptor @Inject constructor(
                 try {
                     body.writeTo(buffer)
                     val bodyContent = buffer.readUtf8()
+                    // append("- Body: $bodyContent\n")
                     val regex = Regex("\"messages\":\\[[\\s\\S]*?\\],\"")
                     val redactedBody = bodyContent.replace(regex, "\"message\":[MESSAGE],\"")
                     append("- Body: $redactedBody\n")

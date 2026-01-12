@@ -1,6 +1,5 @@
 package com.wenchen.yiyi.core.designSystem.component
 
-import android.util.Log
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -12,6 +11,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.withStyle
+import timber.log.Timber
 import java.util.ArrayDeque
 import java.util.EnumMap
 
@@ -88,7 +88,6 @@ private fun buildColoredAnnotatedString(
 ): AnnotatedString {
     // 解析所有有效的括号配对区间
     val colorRanges = parseRanges(text, normalTextStyle, specialTextStyle)
-    Log.d("StyledBracketText", "colorRanges:" + colorRanges.joinToString("\n "))
     return buildAnnotatedString {
         colorRanges.forEach { range ->
             withStyle(range.textStyle.toSpanStyle()) {
@@ -112,7 +111,7 @@ private fun parseRanges(
 }
 
 private fun findMatchedBrackets(text: String): List<HalfBracket> {
-    val startTime = System.nanoTime()
+//    val startTime = System.nanoTime()
     val bracketIndices = mutableListOf<HalfBracket>()
     /* 知识点：旧方法
     * O(mn) 时间复杂度，m是文本长度，n是括号类型数量
@@ -165,13 +164,13 @@ private fun findMatchedBrackets(text: String): List<HalfBracket> {
             }
         }
     }
-    val endTime = System.nanoTime()
+//    val endTime = System.nanoTime()
     /*
      原方法用时：1579427 ns 反复调用经系统优化后：300052 ns
      空间换时间：558490 ns 反复调用经系统优化后：63333 ns
      初次加载时间提升64.64% 反复调用时提升78.89% 优化效果显著
      */
-    Log.d("Timer", "括号分析用时: ${endTime - startTime} ns")
+//    Timber.tag("Timer").d("括号分析用时: ${endTime - startTime} ns")
     return bracketIndices.sortedBy { it.index }
 }
 
