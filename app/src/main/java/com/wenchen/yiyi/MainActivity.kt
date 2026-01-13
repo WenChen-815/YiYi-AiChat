@@ -8,11 +8,15 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import com.wenchen.yiyi.core.common.theme.AIChatTheme
+import com.wenchen.yiyi.core.designSystem.component.UpdateAnnouncementDialog
 import com.wenchen.yiyi.core.log.FloatingLogcatView
 import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.core.util.PermissionUtils
 import com.wenchen.yiyi.core.util.StatusBarUtil
+import com.wenchen.yiyi.core.util.storage.MMKVUtils
 import com.wenchen.yiyi.navigation.AppNavigator
 import com.wenchen.yiyi.navigation.AppNavHost
 import dagger.hilt.android.AndroidEntryPoint
@@ -41,11 +45,29 @@ class MainActivity : ComponentActivity() {
         setContent {
             AIChatTheme {
                 val userConfig by userConfigState.userConfig.collectAsState()
-                val showLogcatView by remember { mutableStateOf(userConfig?.showLogcatView ?: false) }
+                val showLogcatView by mutableStateOf(userConfig?.showLogcatView ?: false)
 
                 AppNavHost(navigator = navigator)
                 if (showLogcatView) {
                     FloatingLogcatView()
+                }
+                val currentVersion = BuildConfig.VERSION_NAME
+                val announcementKey = "show_update_announcement_$currentVersion"
+                var showUpdateDialog by remember {
+                    // 读取 MMKV，如果没有记录则显示（默认 false）
+                    mutableStateOf(!MMKVUtils.getBoolean(announcementKey, false))
+                }
+
+                if (showUpdateDialog) {
+                    UpdateAnnouncementDialog(
+                        versionName = currentVersion,
+                        announcement = """
+                            1. 新增了API分组切换功能。由于存储方式变更，可能出现原配置丢失问题，请动动手指重新配置即可。
+                            2. 新增了更新公告弹窗功能（就像这样）
+                            3. 修复了聊天界面的一些漏洞
+                        """.trimIndent(),
+                        onDismiss = { showUpdateDialog = false }
+                    )
                 }
             }
         }
