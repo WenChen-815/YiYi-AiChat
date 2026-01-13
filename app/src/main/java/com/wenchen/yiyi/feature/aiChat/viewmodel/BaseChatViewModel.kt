@@ -395,6 +395,8 @@ abstract class BaseChatViewModel(
     fun continueGenerate(isGroupChat: Boolean) = if (isGroupChat) sendGroupMessage() else sendMessage()
 
     fun reGenerate(isGroupChat: Boolean){
+        // 检查上下文和消息列表
+        if (chatContext.isEmpty() || _messages.value.isEmpty()) return
         val removeMessageIds = mutableListOf<String>()
         if (isGroupChat){
             repeat(lastGroupChatReply) {
