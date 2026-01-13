@@ -17,7 +17,7 @@ class UserConfigStoreDataSourceImpl @Inject constructor(
     private fun getUserConfigMMKV(): MMKV {
         val userId = userState.userId.value
         require(userId.isNotEmpty()) { "用户ID不能为空，无法获取配置存储" }
-        Timber.tag("UserConfigStoreDataSourceImpl").d("userId = $userId")
+        Timber.tag("UserConfig").d("userId = $userId")
         return MMKVUtils.getInstance("user_config_$userId")
     }
     override suspend fun saveUserConfig(userConfig: UserConfig) {

@@ -46,7 +46,7 @@ class UserConfigState @Inject constructor(
             userConfig.baseApiKey?.isNotEmpty() == true &&
             userConfig.selectedModel?.isNotEmpty() == true)
         {
-            _allowBasicUsage .value= true
+            _allowBasicUsage.value = true
         }
     }
 

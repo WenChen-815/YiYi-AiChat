@@ -110,6 +110,9 @@ mmkv = "2.3.0"
 moshi = "1.15.2"
 gson = "2.13.2"
 
+# NanoID
+jnanoid = "2.0.0"
+
 [libraries]
 # AndroidX 基础组件
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -198,6 +201,9 @@ moshi = { module = "com.squareup.moshi:moshi", version.ref = "moshi" }
 moshi-kotlin = { module = "com.squareup.moshi:moshi-kotlin", version.ref = "moshi" }
 moshi-kotlin-codegen = { module = "com.squareup.moshi:moshi-kotlin-codegen", version.ref = "moshi" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
+
+# NanoID
+jnanoid = { module = "com.aventrix.jnanoid:jnanoid", version.ref = "jnanoid" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

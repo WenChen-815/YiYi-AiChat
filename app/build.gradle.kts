@@ -168,6 +168,9 @@ implementation(libs.toaster)
 // 数据存储
 implementation(libs.mmkv)
 
+// ID 生成
+implementation(libs.jnanoid)
+
 // 日志
 implementation(libs.timber)
 
