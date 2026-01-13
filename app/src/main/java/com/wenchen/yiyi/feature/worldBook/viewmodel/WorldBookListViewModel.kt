@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.squareup.moshi.JsonAdapter
 import com.wenchen.yiyi.core.base.viewmodel.BaseViewModel
+import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.core.util.storage.FilesUtil
 import com.wenchen.yiyi.core.state.UserState
 import com.wenchen.yiyi.feature.worldBook.model.WorldBook
@@ -18,10 +19,12 @@ import javax.inject.Inject
 class WorldBookListViewModel @Inject constructor(
     navigator: AppNavigator,
     userState: UserState,
+    userConfigState: UserConfigState,
     savedStateHandle: SavedStateHandle
 ) : BaseViewModel(
     navigator = navigator,
-    userState = userState
+    userState = userState,
+    userConfigState = userConfigState
 ){
     // 从文件加载世界书列表
     fun loadWorldBooks(

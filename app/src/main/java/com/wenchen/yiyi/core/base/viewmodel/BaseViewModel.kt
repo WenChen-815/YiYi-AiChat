@@ -3,6 +3,7 @@ package com.wenchen.yiyi.core.base.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavOptions
+import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.navigation.NavigationResultKey
 import com.wenchen.yiyi.core.state.UserState
 import com.wenchen.yiyi.navigation.AppNavigator
@@ -19,12 +20,14 @@ import timber.log.Timber
  * 3. 类型安全的结果返回
  *
  * @param navigator 导航控制器
- * @param userState 应用状态
+ * @param userState 全局用户状态
+ * @param userConfigState 用户配置状态
  * @param routeInterceptor 路由拦截器
  */
 abstract class BaseViewModel(
     protected val navigator: AppNavigator,
     protected val userState: UserState,
+    val userConfigState: UserConfigState,
     protected val routeInterceptor: RouteInterceptor = RouteInterceptor()
 ) : ViewModel() {
 
@@ -117,8 +120,13 @@ abstract class BaseViewModel(
             // 需要登录但未登录，跳转到登录页面
             routeInterceptor.getLoginRoute()
         } else {
-            // 不需要登录或已登录，正常跳转
-            route
+            if (routeInterceptor.requiresApi(route) && !userConfigState.allowBasicUsage.value) {
+                // 需要API，跳转到API配置页面
+                routeInterceptor.getApiConfigRoute()
+            } else {
+                // 不需要登录或已登录，正常跳转
+                route
+            }
         }
     }
 }

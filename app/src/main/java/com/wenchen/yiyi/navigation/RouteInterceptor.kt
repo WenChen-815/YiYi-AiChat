@@ -1,6 +1,8 @@
 package com.wenchen.yiyi.navigation
 
+import com.wenchen.yiyi.navigation.routes.AiChatRoutes
 import com.wenchen.yiyi.navigation.routes.AuthRoutes
+import com.wenchen.yiyi.navigation.routes.ConfigRoutes
 import com.wenchen.yiyi.navigation.routes.UserRoutes
 import kotlin.reflect.KClass
 
@@ -21,6 +23,15 @@ class RouteInterceptor {
     )
 
     /**
+     * 需要API的路由类型集合
+     * 在这里配置所有需要API才能访问的页面类型
+     */
+    private val apiRequiredRouteTypes: MutableSet<KClass<out Any>> = mutableSetOf(
+        AiChatRoutes.SingleChat::class,
+        AiChatRoutes.GroupChat::class,
+    )
+
+    /**
      * 检查指定路由对象是否需要登录
      *
      * @param route 要检查的路由对象（类型安全）
@@ -32,11 +43,24 @@ class RouteInterceptor {
     }
 
     /**
+     * 检查指定路由对象是否需要API
+     *
+     * @param route 要检查的路由对象（类型安全）
+     * @return true表示需要API，false表示不需要API
+     */
+    fun requiresApi(route: Any): Boolean {
+        val routeClass = route::class
+        return apiRequiredRouteTypes.contains(routeClass)
+    }
+
+    /**
      * 获取登录页面路由对象
      *
      * @return 登录页面的路由对象
      */
     fun getLoginRoute(): Any = AuthRoutes.Login
+
+    fun getApiConfigRoute(): Any = ConfigRoutes.ChatConfig
 
     /**
      * 添加需要登录的路由类型

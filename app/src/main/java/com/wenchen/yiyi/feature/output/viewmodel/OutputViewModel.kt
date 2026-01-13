@@ -8,6 +8,7 @@ import com.wenchen.yiyi.core.base.viewmodel.BaseViewModel
 import com.wenchen.yiyi.core.data.repository.AICharacterRepository
 import com.wenchen.yiyi.core.data.repository.AIChatMemoryRepository
 import com.wenchen.yiyi.core.database.entity.AICharacter
+import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.core.state.UserState
 import com.wenchen.yiyi.core.util.BitMapUtil
 import com.wenchen.yiyi.core.util.toast.ToastUtils
@@ -29,9 +30,11 @@ class OutputViewModel @Inject constructor(
     private val memoryRepository: AIChatMemoryRepository,
     navigator: AppNavigator,
     userState: UserState,
+    userConfigState: UserConfigState,
 ) : BaseViewModel(
     navigator = navigator,
-    userState = userState
+    userState = userState,
+    userConfigState = userConfigState
 ) {
     private val _characters = MutableStateFlow<List<AICharacter>>(emptyList())
     val characters: StateFlow<List<AICharacter>> = _characters.asStateFlow()

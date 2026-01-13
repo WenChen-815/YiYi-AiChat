@@ -10,6 +10,7 @@ import com.wenchen.yiyi.core.base.state.BaseNetWorkUiState
 import com.wenchen.yiyi.core.model.network.NetworkResponse
 import com.wenchen.yiyi.core.result.ResultHandler
 import com.wenchen.yiyi.core.result.asResult
+import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.core.state.UserState
 import com.wenchen.yiyi.navigation.AppNavigator
 import com.wenchen.yiyi.navigation.RefreshResultKey
@@ -34,8 +35,9 @@ import kotlinx.coroutines.launch
 abstract class BaseNetWorkViewModel<T>(
     navigator: AppNavigator,
     userState: UserState,
+    userConfigState: UserConfigState,
     protected val savedStateHandle: SavedStateHandle? = null,
-) : BaseViewModel(navigator, userState) {
+) : BaseViewModel(navigator, userState, userConfigState) {
 
     /**
      * 通用网络请求UI状态

@@ -58,11 +58,12 @@ abstract class BaseChatViewModel(
     private val aiChatManager: AIChatManager,
     navigator: AppNavigator,
     userState: UserState,
-    val userConfigState: UserConfigState,
+    userConfigState: UserConfigState,
     savedStateHandle: SavedStateHandle
 ): BaseNetWorkViewModel<ModelsResponse>(
     navigator = navigator,
-    userState = userState
+    userState = userState,
+    userConfigState = userConfigState,
 ) {
     val _chatUiState = MutableStateFlow(ChatUiState())
     val chatUiState: StateFlow<ChatUiState> = _chatUiState.asStateFlow()

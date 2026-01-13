@@ -50,11 +50,12 @@ class CharacterEditViewModel @Inject constructor(
     private val conversationRepository: ConversationRepository,
     navigator: AppNavigator,
     userState: UserState,
-    private val userConfigState: UserConfigState,
+    userConfigState: UserConfigState,
     savedStateHandle: SavedStateHandle
 ) : BaseViewModel(
     navigator = navigator,
-    userState = userState
+    userState = userState,
+    userConfigState = userConfigState,
 ) {
     val _characterId = MutableStateFlow("")
     val characterId: StateFlow<String> = _characterId.asStateFlow()

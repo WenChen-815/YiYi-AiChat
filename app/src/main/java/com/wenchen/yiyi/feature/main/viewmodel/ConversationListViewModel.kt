@@ -5,6 +5,7 @@ import com.wenchen.yiyi.Application
 import com.wenchen.yiyi.core.base.viewmodel.BaseViewModel
 import com.wenchen.yiyi.core.state.UserState
 import com.wenchen.yiyi.core.database.entity.Conversation
+import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.navigation.AppNavigator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,10 +16,12 @@ import javax.inject.Inject
 @HiltViewModel
 class ConversationListViewModel @Inject constructor(
     navigator: AppNavigator,
-    userState: UserState
+    userState: UserState,
+    userConfigState: UserConfigState
 ) : BaseViewModel(
     navigator = navigator,
-    userState = userState
+    userState = userState,
+    userConfigState = userConfigState
 ) {
     private val _conversations = MutableStateFlow<List<Conversation>>(emptyList())
     val conversations: StateFlow<List<Conversation>> = _conversations

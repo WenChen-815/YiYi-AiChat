@@ -6,6 +6,7 @@ import androidx.navigation.toRoute
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import com.wenchen.yiyi.core.base.viewmodel.BaseViewModel
+import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.core.util.storage.FilesUtil
 import com.wenchen.yiyi.core.state.UserState
 import com.wenchen.yiyi.core.util.toast.ToastUtils
@@ -26,10 +27,12 @@ import javax.inject.Inject
 class WorldBookEditViewModel @Inject constructor(
     navigator: AppNavigator,
     userState: UserState,
+    userConfigState: UserConfigState,
     savedStateHandle: SavedStateHandle
 ) : BaseViewModel(
     navigator = navigator,
-    userState = userState
+    userState = userState,
+    userConfigState = userConfigState
 ){
     val _worldId = MutableStateFlow("")
     var worldId: StateFlow<String> = _worldId.asStateFlow()

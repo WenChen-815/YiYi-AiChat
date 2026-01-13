@@ -27,11 +27,12 @@ import javax.inject.Inject
 class ChatConfigViewModel @Inject constructor(
     navigator: AppNavigator,
     userState: UserState,
-    private val userConfigState: UserConfigState,
+    userConfigState: UserConfigState,
     private val aiHubRepository: AiHubRepository
 ) : BaseNetWorkViewModel<ModelsResponse>(
     navigator = navigator,
-    userState = userState
+    userState = userState,
+    userConfigState = userConfigState
 ){
     val userConfig = userConfigState.userConfig.value
     private val _models = MutableStateFlow<List<Model>>(emptyList())

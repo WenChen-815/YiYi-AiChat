@@ -48,11 +48,12 @@ class ConversationEditViewModel @Inject constructor(
     private val aiChatMemoryRepository: AIChatMemoryRepository,
     navigator: AppNavigator,
     userState: UserState,
-    val userConfigState: UserConfigState,
+    userConfigState: UserConfigState,
     savedStateHandle: SavedStateHandle
 ) : BaseViewModel(
     navigator = navigator,
-    userState = userState
+    userState = userState,
+    userConfigState = userConfigState,
 ) {
     private val _uiState = MutableStateFlow(ConversationEditUiState())
     val uiState: StateFlow<ConversationEditUiState> = _uiState.asStateFlow()

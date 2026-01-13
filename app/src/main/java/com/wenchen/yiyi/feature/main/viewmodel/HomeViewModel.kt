@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import com.wenchen.yiyi.core.base.viewmodel.BaseViewModel
 import com.wenchen.yiyi.core.data.repository.AICharacterRepository
 import com.wenchen.yiyi.core.database.entity.AICharacter
+import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.core.state.UserState
 import com.wenchen.yiyi.navigation.AppNavigator
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,10 +20,12 @@ import javax.inject.Inject
 class HomeViewModel @Inject constructor(
     private val aiCharacterRepository: AICharacterRepository,
     navigator: AppNavigator,
-    userState: UserState
+    userState: UserState,
+    userConfigState: UserConfigState
 ) : BaseViewModel(
     navigator = navigator,
-    userState = userState
+    userState = userState,
+    userConfigState = userConfigState
 ) {
     private val _characters = MutableStateFlow<List<AICharacter>>(emptyList())
     val characters: StateFlow<List<AICharacter>> = _characters

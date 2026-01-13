@@ -11,6 +11,7 @@ import com.wenchen.yiyi.core.model.network.NetworkPageData
 import com.wenchen.yiyi.core.model.network.NetworkResponse
 import com.wenchen.yiyi.core.result.ResultHandler
 import com.wenchen.yiyi.core.result.asResult
+import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.core.state.UserState
 import com.wenchen.yiyi.navigation.AppNavigator
 import com.wenchen.yiyi.navigation.RefreshResultKey
@@ -33,8 +34,9 @@ import kotlinx.coroutines.launch
  */
 abstract class BaseNetWorkListViewModel<T : Any>(
     navigator: AppNavigator,
-    userState: UserState
-) : BaseViewModel(navigator, userState) {
+    userState: UserState,
+    userConfigState: UserConfigState
+) : BaseViewModel(navigator, userState, userConfigState) {
 
     /**
      * 当前页码
