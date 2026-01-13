@@ -10,14 +10,15 @@ data class UserConfig(
     var userName: String? = null,
     var userAvatarPath: String? = null,
 
-    // ======基础API配置====================
+    // ======API配置列表====================
     var apiConfigs: List<ApiConfig> = emptyList(),
+
+    // ======基础API配置====================
     var currentApiConfigId: String? = null,
     var selectedModel: String? = null,
 
     // ======图片识别相关配置=================
     var imgRecognitionEnabled: Boolean = false,
-    var imgApiConfigs: List<ApiConfig> = emptyList(),
     var currentImgApiConfigId: String? = null,
     var selectedImgModel: String? = null,
 
@@ -38,8 +39,8 @@ data class UserConfig(
     val baseUrl get() = apiConfigs.find { it.id == currentApiConfigId }?.baseUrl
     val baseApiKey get() = apiConfigs.find { it.id == currentApiConfigId }?.apiKey
 
-    val imgBaseUrl get() = imgApiConfigs.find { it.id == currentImgApiConfigId }?.baseUrl
-    val imgApiKey get() = imgApiConfigs.find { it.id == currentImgApiConfigId }?.apiKey
+    val imgBaseUrl get() = apiConfigs.find { it.id == currentImgApiConfigId }?.baseUrl
+    val imgApiKey get() = apiConfigs.find { it.id == currentImgApiConfigId }?.apiKey
 }
 
 @Serializable

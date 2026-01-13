@@ -111,6 +111,7 @@ fun ChatConfigScreenContent(
     var apiConfigs by remember { mutableStateOf(viewModel.userConfig?.apiConfigs ?: emptyList()) }
     var currentApiConfigId by remember { mutableStateOf(viewModel.userConfig?.currentApiConfigId) }
     var showAddApiDialog by remember { mutableStateOf(false) }
+    var editingApiConfig by remember { mutableStateOf<ApiConfig?>(null) }
 
     // 对话模型配置
     var apiKey by remember { mutableStateOf(viewModel.userConfig?.baseApiKey ?: "") }
@@ -120,9 +121,7 @@ fun ChatConfigScreenContent(
 
     // 图片识别配置
     var imgRecognitionEnabled by remember { mutableStateOf(viewModel.userConfig?.imgRecognitionEnabled ?: false) }
-    var imgApiConfigs by remember { mutableStateOf(viewModel.userConfig?.apiConfigs ?: emptyList()) }
-    var currentImgApiConfigId by remember { mutableStateOf(viewModel.userConfig?.currentApiConfigId) }
-    var showAddImgApiDialog by remember { mutableStateOf(false) }
+    var currentImgApiConfigId by remember { mutableStateOf(viewModel.userConfig?.currentImgApiConfigId) }
     var imgApiKey by remember { mutableStateOf(viewModel.userConfig?.imgApiKey ?: "") }
     var imgBaseUrl by remember { mutableStateOf(viewModel.userConfig?.imgBaseUrl ?: "") }
     var selectedImgModel by remember { mutableStateOf(viewModel.userConfig?.selectedImgModel ?: "") }
@@ -312,12 +311,9 @@ fun ChatConfigScreenContent(
                             userAvatarPath = userAvatarPath,
                             apiConfigs = apiConfigs,
                             currentApiConfigId = currentApiConfigId,
-//                            baseApiKey = apiKey,
-//                            baseUrl = baseUrl,
                             selectedModel = selectedModel,
                             imgRecognitionEnabled = imgRecognitionEnabled,
-//                            imgApiKey = imgApiKey,
-//                            imgBaseUrl = imgBaseUrl,
+                            currentImgApiConfigId = currentImgApiConfigId,
                             selectedImgModel = selectedImgModel,
                             maxContextMessageSize = maxContextCount.toIntOrNull() ?: 15,
                             summarizeTriggerCount = summarizeCount.toIntOrNull() ?: 20,
@@ -452,7 +448,10 @@ fun ChatConfigScreenContent(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(text = "API 配置列表", style = MaterialTheme.typography.titleMedium)
-                TextButton(onClick = { showAddApiDialog = true }) {
+                TextButton(onClick = { 
+                    editingApiConfig = null
+                    showAddApiDialog = true 
+                }) {
                     Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(4.dp))
                     Text("添加配置")
@@ -493,6 +492,30 @@ fun ChatConfigScreenContent(
                                 baseUrl = config.baseUrl ?: ""
                                 selectedModel = config.selectedModel ?: ""
                                 expanded = false
+                            },
+                            trailingIcon = {
+                                Row {
+                                    TextButton(onClick = {
+                                        editingApiConfig = config
+                                        showAddApiDialog = true
+                                        expanded = false
+                                    }) {
+                                        Text("编辑")
+                                    }
+                                    TextButton(onClick = {
+                                        val newList = apiConfigs.filter { it.id != config.id }
+                                        apiConfigs = newList
+                                        if (currentApiConfigId == config.id) {
+                                            val next = newList.firstOrNull()
+                                            currentApiConfigId = next?.id
+                                            apiKey = next?.apiKey ?: ""
+                                            baseUrl = next?.baseUrl ?: ""
+                                            selectedModel = next?.selectedModel ?: ""
+                                        }
+                                    }) {
+                                        Text("删除")
+                                    }
+                                }
                             }
                         )
                     }
@@ -507,6 +530,7 @@ fun ChatConfigScreenContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 8.dp),
+                enable = false,
                 singleLine = true,
                 label = "API Key",
                 labelPadding = PaddingValues(bottom = 6.dp),
@@ -519,6 +543,7 @@ fun ChatConfigScreenContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 8.dp),
+                enable = false,
                 singleLine = true,
                 label = "中转地址",
                 labelPadding = PaddingValues(bottom = 6.dp),
@@ -613,18 +638,21 @@ fun ChatConfigScreenContent(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(text = "图片识别 API 配置列表", style = MaterialTheme.typography.titleMedium)
-                    TextButton(onClick = { showAddImgApiDialog = true }) {
+                    TextButton(onClick = { 
+                        editingApiConfig = null
+                        showAddApiDialog = true
+                    }) {
                         Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(4.dp))
                         Text("添加配置")
                     }
                 }
 
-                var expanded by remember { mutableStateOf(false) }
+                var expandedImg by remember { mutableStateOf(false) }
                 Box(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
-                    val currentConfig = imgApiConfigs.find { it.id == currentImgApiConfigId }
+                    val currentConfig = apiConfigs.find { it.id == currentImgApiConfigId }
                     OutlinedCard(
-                        onClick = { expanded = true },
+                        onClick = { expandedImg = true },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp)
                     ) {
@@ -641,11 +669,11 @@ fun ChatConfigScreenContent(
                         }
                     }
                     DropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false },
+                        expanded = expandedImg,
+                        onDismissRequest = { expandedImg = false },
                         modifier = Modifier.fillMaxWidth(0.9f)
                     ) {
-                        imgApiConfigs.forEach { config ->
+                        apiConfigs.forEach { config ->
                             DropdownMenuItem(
                                 text = { Text(config.name) },
                                 onClick = {
@@ -653,12 +681,36 @@ fun ChatConfigScreenContent(
                                     imgApiKey = config.apiKey ?: ""
                                     imgBaseUrl = config.baseUrl ?: ""
                                     selectedImgModel = config.selectedModel ?: ""
-                                    expanded = false
+                                    expandedImg = false
+                                },
+                                trailingIcon = {
+                                    Row {
+                                        TextButton(onClick = {
+                                            editingApiConfig = config
+                                            showAddApiDialog = true
+                                            expandedImg = false
+                                        }) {
+                                            Text("编辑")
+                                        }
+                                        TextButton(onClick = {
+                                            val newList = apiConfigs.filter { it.id != config.id }
+                                            apiConfigs = newList
+                                            if (currentImgApiConfigId == config.id) {
+                                                val next = newList.firstOrNull()
+                                                currentImgApiConfigId = next?.id
+                                                imgApiKey = next?.apiKey ?: ""
+                                                imgBaseUrl = next?.baseUrl ?: ""
+                                                selectedImgModel = next?.selectedModel ?: ""
+                                            }
+                                        }) {
+                                            Text("删除")
+                                        }
+                                    }
                                 }
                             )
                         }
-                        if (imgApiConfigs.isEmpty()) {
-                            DropdownMenuItem(text = { Text("暂无配置") }, onClick = { expanded = false })
+                        if (apiConfigs.isEmpty()) {
+                            DropdownMenuItem(text = { Text("暂无配置") }, onClick = { expandedImg = false })
                         }
                     }
                 }
@@ -667,6 +719,7 @@ fun ChatConfigScreenContent(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 8.dp),
+                    enable = false,
                     singleLine = true,
                     label = "图片识别API Key",
                     labelPadding = PaddingValues(bottom = 6.dp),
@@ -679,6 +732,7 @@ fun ChatConfigScreenContent(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 8.dp),
+                    enable = false,
                     singleLine = true,
                     label = "图片识别中转地址",
                     labelPadding = PaddingValues(bottom = 6.dp),
@@ -840,28 +894,34 @@ fun ChatConfigScreenContent(
         }
 
         // 添加 API 配置对话框
-        if (showAddApiDialog || showAddImgApiDialog) {
+        if (showAddApiDialog) {
             AddApiConfigDialog(
-                onDismiss = { showAddApiDialog = false; showAddImgApiDialog = false },
+                config = editingApiConfig,
+                onDismiss = { showAddApiDialog = false; editingApiConfig = null },
                 onSave = { name, url, key ->
-                    val newConfig = ApiConfig(
-                        name = name.ifBlank { url },
-                        baseUrl = url,
-                        apiKey = key
-                    )
-                    if (showAddApiDialog) {
+                    if (editingApiConfig != null) {
+                        apiConfigs = apiConfigs.map {
+                            if (it.id == editingApiConfig?.id) {
+                                it.copy(name = name.ifBlank { url }, baseUrl = url, apiKey = key)
+                            } else it
+                        }
+                        if (currentApiConfigId == editingApiConfig?.id) {
+                            apiKey = key
+                            baseUrl = url
+                        }
+                        editingApiConfig = null
+                    } else {
+                        val newConfig = ApiConfig(
+                            name = name.ifBlank { url },
+                            baseUrl = url,
+                            apiKey = key
+                        )
                         apiConfigs = apiConfigs + newConfig
                         currentApiConfigId = newConfig.id
                         apiKey = key
                         baseUrl = url
-                        showAddApiDialog = false
-                    } else if (showAddImgApiDialog) {
-                        imgApiConfigs = imgApiConfigs + newConfig
-                        currentImgApiConfigId = newConfig.id
-                        imgApiKey = key
-                        imgBaseUrl = url
-                        showAddImgApiDialog = false
                     }
+                    showAddApiDialog = false
                 }
             )
         }
@@ -904,16 +964,17 @@ fun ChatConfigScreenContent(
 
 @Composable
 fun AddApiConfigDialog(
+    config: ApiConfig? = null,
     onDismiss: () -> Unit,
     onSave: (String, String, String) -> Unit
 ) {
-    var name by remember { mutableStateOf("") }
-    var url by remember { mutableStateOf("") }
-    var key by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf(config?.name ?: "") }
+    var url by remember { mutableStateOf(config?.baseUrl ?: "") }
+    var key by remember { mutableStateOf(config?.apiKey ?: "") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("添加 API 配置") },
+        title = { Text(if (config == null) "添加 API 配置" else "编辑 API 配置") },
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
                 OutlinedTextField(

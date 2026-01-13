@@ -21,6 +21,7 @@ import com.wenchen.yiyi.core.common.theme.LightGray
 @Composable
 fun SettingTextFieldItem(
     modifier: Modifier = Modifier,
+    enable: Boolean = true,
     label: @Composable () -> Unit = {},
     labelPadding: PaddingValues = PaddingValues(0.dp),
     value: String,
@@ -36,6 +37,7 @@ fun SettingTextFieldItem(
         }
         YiYiOutlinedTextField(
             value = value,
+            enabled = enable,
             onValueChange = onValueChange,
             modifier = Modifier.fillMaxSize(),
             singleLine = singleLine,
@@ -57,6 +59,7 @@ fun SettingTextFieldItem(
 @Composable
 fun SettingTextFieldItem(
     modifier: Modifier = Modifier,
+    enable: Boolean = true,
     label: String = "",
     labelPadding: PaddingValues = PaddingValues(0.dp),
     value: String,
@@ -76,6 +79,7 @@ fun SettingTextFieldItem(
         }
         YiYiOutlinedTextField(
             value = value,
+            enabled = enable,
             onValueChange = onValueChange,
             modifier = Modifier.fillMaxSize(),
             singleLine = singleLine,
