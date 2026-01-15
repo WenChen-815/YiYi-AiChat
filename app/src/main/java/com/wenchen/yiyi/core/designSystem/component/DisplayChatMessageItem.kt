@@ -44,9 +44,9 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.IntOffset
@@ -159,6 +159,7 @@ fun ChatMessageItem(
     var isMenuVisible by remember { mutableStateOf(false) }
     var messageItemBounds by remember { mutableStateOf(Rect.Zero) }
     var touchPosition by remember { mutableStateOf(Offset.Zero) }
+    val density = LocalDensity.current
 
     ConstraintLayout(
         modifier = Modifier
@@ -248,7 +249,9 @@ fun ChatMessageItem(
                         detectTapGestures(
                             onTap = { /* 处理点击事件 */ },
                             onLongPress = { offset ->
-                                touchPosition = offset
+                                // 修正：加上 8.dp 的 padding 偏移，使坐标相对于 Card
+                                val paddingPx = if (contentType == MessageContentType.TEXT) with(density) { 8.dp.toPx() } else 0f
+                                touchPosition = Offset(offset.x + paddingPx, offset.y + paddingPx)
                                 isMenuVisible = true
                             }
                         )
@@ -260,19 +263,51 @@ fun ChatMessageItem(
                             MessageType.USER -> BlackText
                             MessageType.ASSISTANT, MessageType.SYSTEM -> WhiteText
                         }
-                        val specialTextColor = when (messageType) {
-                            MessageType.USER -> Color.DarkGray
-                            MessageType.ASSISTANT -> Color.LightGray
-                            MessageType.SYSTEM -> WhiteText
+                        // 识别 HTML 的简单启发式算法
+                        val isHtmlContent = remember(content) {
+                            val trimmed = content.trim()
+                            (trimmed.contains("<") && trimmed.contains(">")) ||
+                                    trimmed.contains("class=") ||
+                                    trimmed.contains("style=")
                         }
-                        StyledBracketText(
-                            text = content.trim(),
-                            normalTextStyle = MaterialTheme.typography.bodyLarge.copy(color = color),
-                            specialTextStyle = MaterialTheme.typography.bodyLarge.copy(
-                                color = specialTextColor,
-                                fontStyle = FontStyle.Italic
+                        if (isHtmlContent) {
+                            HtmlWebView(
+                                id = messageId,
+                                html = content,
+                                textColor = color,
+                                height = viewModel.findMessageItemHeight(messageId),
+                                modifier = Modifier.fillMaxWidth(),
+                                onHeight = { height ->
+                                    // 处理高度回调
+                                    viewModel.rememberMessageItemHeight(messageId, height)
+                                },
+                                onLongClick = { offset ->
+                                    // 因为 WebView 放在带有 padding(8.dp) 的 Column 中
+                                    // touchPosition 需要加上这个偏移量，以匹配 Column 的坐标系
+                                    val paddingPx = with(density) { 8.dp.toPx() }
+                                    touchPosition = Offset(
+                                        x = offset.x + paddingPx,
+                                        y = offset.y + paddingPx
+                                    )
+                                    isMenuVisible = true
+                                }
                             )
-                        )
+                        }
+                        else {
+                            val specialTextColor = when (messageType) {
+                                MessageType.USER -> Color.DarkGray
+                                MessageType.ASSISTANT -> Color.LightGray
+                                MessageType.SYSTEM -> WhiteText
+                            }
+                            StyledBracketText(
+                                text = content.trim(),
+                                normalTextStyle = MaterialTheme.typography.bodyLarge.copy(color = color),
+                                specialTextStyle = MaterialTheme.typography.bodyLarge.copy(
+                                    color = specialTextColor,
+                                    fontStyle = FontStyle.Italic
+                                )
+                            )
+                        }
                     }
 
                     MessageContentType.IMAGE -> {
@@ -291,20 +326,25 @@ fun ChatMessageItem(
                 }
             }
             if (isMenuVisible) {
-                // 计算消息项中心点的 Y 坐标
-                val itemCenterY = (messageItemBounds.top + messageItemBounds.bottom) / 2
                 // 计算控件高度
-                val itemHeight = messageItemBounds.height
-                // 获取屏幕高度
-                val screenHeight = with(LocalDensity.current) {
-                    LocalWindowInfo.current.containerSize.height.toDp().value * density
-                }
-                // 判断显示位置：
-                // 如果消息项中心点在屏幕上方 3/4 区域内，则显示在控件下方
-                // 否则显示在控件上方
-                val showBelow = itemCenterY < screenHeight * 0.75
+//                val itemHeight = messageItemBounds.height
 
-                val yOffset = if (showBelow) itemHeight.toInt() else 0
+                // 使用 LocalConfiguration 获取高度
+//                val configuration = LocalConfiguration.current
+//                val screenHeightPx = with(density) { configuration.screenHeightDp.dp.toPx() }
+
+                // --- 跟随手指位置 ---
+                // 预估菜单高度
+                val menuHeightPx = with(density) { 50.dp.toPx() }
+                // 计算手指在屏幕上的绝对 Y 坐标
+                val absoluteTouchY = messageItemBounds.top + touchPosition.y
+
+                // 判断逻辑：如果手指位置太靠顶部，则在手指下方弹出；否则在手指上方弹出
+                val finalY = if (absoluteTouchY < threshold + menuHeightPx) {
+                    (touchPosition.y + with(density) { 10.dp.toPx() }).toInt()
+                } else {
+                    (touchPosition.y - menuHeightPx).toInt()
+                }
 
             Popup(
                 onDismissRequest = { isMenuVisible = false }, // 点击外部关闭菜单
@@ -316,12 +356,13 @@ fun ChatMessageItem(
                      * 但 messageItemBounds.value = coordinates.boundsInWindow() 获取到的位置是基于整个屏幕的坐标
                      * 直接应用会导致偏移甚远
                      */
-                    y = if (itemHeight > screenHeight * 0.75) {
-                        touchPosition.y.toInt()
-                    } else {
+//                    y = if (itemHeight > screenHeight * 0.75) {
+//                        touchPosition.y.toInt()
+//                    } else {
 //                        with(LocalDensity.current) { (-15).dp.toPx().toInt() }
-                        yOffset
-                    }
+//                        yOffset
+//                    }
+                    y = finalY
                 )
             ) {
                 val iconOffset1 = remember { Animatable(50f) } // 第一个图标初始位置偏移

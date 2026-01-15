@@ -71,6 +71,9 @@ abstract class BaseChatViewModel(
     val _messages = MutableStateFlow<List<ChatMessage>>(emptyList())
     val messages: StateFlow<List<ChatMessage>> = _messages.asStateFlow()
 
+    val _messageItemHeights = MutableStateFlow<Map<String, Int>>(emptyMap())
+    val messageItemHeights: StateFlow<Map<String, Int>> = _messageItemHeights.asStateFlow()
+
     var currentAICharacter: AICharacter? = null
 
     val imageManager = ImageManager()
@@ -124,6 +127,17 @@ abstract class BaseChatViewModel(
         selectedModel = userConfig?.selectedModel ?: ""
         loadSupportedModels(baseUrl, apiKey)
     }
+
+    fun rememberMessageItemHeight(messageId: String, height: Int) {
+        _messageItemHeights.update { current ->
+            current + (messageId to height)
+        }
+    }
+
+    fun findMessageItemHeight(messageId: String): Int? {
+        return messageItemHeights.value[messageId]
+    }
+
     /**
      * 在后台线程加载背景图片的辅助函数
      */
