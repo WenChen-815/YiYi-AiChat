@@ -38,7 +38,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import java.util.UUID
+import com.aventrix.jnanoid.jnanoid.NanoIdUtils
 import javax.inject.Inject
 
 @HiltViewModel
@@ -74,7 +74,7 @@ class ConversationEditViewModel @Inject constructor(
     init {
         val route = savedStateHandle.toRoute<AiChatRoutes.ConversationEdit>()
         _isNewConversation.value = route.isNewConversation
-        _conversationId.value = if (route.isNewConversation) UUID.randomUUID().toString() else route.conversationId
+        _conversationId.value = if (route.isNewConversation) NanoIdUtils.randomNanoId() else route.conversationId
         loadInitialData()
     }
 

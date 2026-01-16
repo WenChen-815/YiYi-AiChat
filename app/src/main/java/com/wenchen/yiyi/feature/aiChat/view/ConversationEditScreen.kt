@@ -67,8 +67,8 @@ import com.wenchen.yiyi.feature.worldBook.model.WorldBook
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.UUID
 import androidx.compose.runtime.collectAsState
+import com.aventrix.jnanoid.jnanoid.NanoIdUtils
 import com.wenchen.yiyi.core.util.toast.ToastUtils
 import com.wenchen.yiyi.feature.aiChat.viewmodel.ConversationEditUiState
 
@@ -595,7 +595,7 @@ fun ConversationEditScreenContent(
                                             } else {
                                                 // 创建新的记忆记录
                                                 val newMemory = AIChatMemory(
-                                                    id = UUID.randomUUID().toString(),
+                                                    id = NanoIdUtils.randomNanoId(),
                                                     characterId = selectCharacterId,
                                                     conversationId = conversationId,
                                                     content = newMemoryContent,

@@ -43,7 +43,7 @@ import java.text.SimpleDateFormat
 import java.util.Collections
 import java.util.Date
 import java.util.Locale
-import java.util.UUID
+import com.aventrix.jnanoid.jnanoid.NanoIdUtils
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -427,7 +427,7 @@ class AIChatManager @Inject constructor(
                 "$prefix${currentUserName} $newMessageText"
             }
             val userMessage = ChatMessage(
-                id = UUID.randomUUID().toString(),
+                id = NanoIdUtils.randomNanoId(),
                 content = newContent,
                 type = if (isSendSystemMessage) MessageType.SYSTEM else MessageType.USER,
                 characterId = "user",
@@ -485,7 +485,7 @@ class AIChatManager @Inject constructor(
                 val responseText = chatResponse.choices?.firstOrNull()?.message?.content
                 val messageContent = "$prefix${currentCharacterName} $responseText"
                 val aiMessage = ChatMessage(
-                    id = UUID.randomUUID().toString(),
+                    id = NanoIdUtils.randomNanoId(),
                     content = messageContent,
                     type = MessageType.ASSISTANT,
                     characterId = aiCharacter.id,
@@ -534,7 +534,7 @@ class AIChatManager @Inject constructor(
             return
         }
 
-        val messageId = UUID.randomUUID().toString()
+        val messageId = NanoIdUtils.randomNanoId()
         val currentDate = SimpleDateFormat("yyyy-MM-dd EEEE HH:mm:ss", Locale.getDefault()).format(Date())
         val prefix = if (userConfig?.enableTimePrefix == true) "$currentDate|" else ""
         val currentCharacterName = "[${aiCharacter.name}] "
@@ -668,7 +668,7 @@ class AIChatManager @Inject constructor(
                         Timber.tag(TAG).d("aiMemory :$aiMemory")
                         if (aiMemory == null) {
                             aiMemory = AIChatMemory(
-                                id = UUID.randomUUID().toString(),
+                                id = NanoIdUtils.randomNanoId(),
                                 characterId = aiCharacter.id,
                                 conversationId = conversation.id,
                                 content = newMemoryContent,

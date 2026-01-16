@@ -40,7 +40,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
-import java.util.UUID
+import com.aventrix.jnanoid.jnanoid.NanoIdUtils
 import javax.inject.Inject
 
 @HiltViewModel
@@ -85,7 +85,7 @@ class CharacterEditViewModel @Inject constructor(
         val route = savedStateHandle.toRoute<AiChatRoutes.CharacterEdit>()
         _isNewCharacter.value = route.isNewCharacter
         if (isNewCharacter.value) {
-            _characterId.value = UUID.randomUUID().toString()
+            _characterId.value = NanoIdUtils.randomNanoId()
         } else {
             _characterId.value = route.characterId
         }
@@ -254,7 +254,7 @@ class CharacterEditViewModel @Inject constructor(
             )
             if (memoryEntity == null) {
                 memoryEntity = AIChatMemory(
-                    id = UUID.randomUUID().toString(),
+                    id = NanoIdUtils.randomNanoId(),
                     conversationId = conversationId.value,
                     characterId = character.id,
                     content = memory.ifEmpty { "" },

@@ -79,8 +79,17 @@ private fun WorldBookEditScreenContent(
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     val scrollState = rememberScrollState()
-    val context = LocalContext.current
-    var worldBook by remember { mutableStateOf<WorldBook?>(null) }
+    val worldBookState = viewModel.worldBook.collectAsState()
+    // 根据 ViewModel 中的 WorldBook 数据更新 UI 状态
+    LaunchedEffect(worldBookState.value) {
+        worldBookState.value?.let { worldBook ->
+            name = worldBook.worldName
+            description = worldBook.worldDesc ?: ""
+
+            worldItems.clear()
+            worldItems.addAll(worldBook.worldItems ?: emptyList())
+        }
+    }
     // 删除确认对话框
     if (showDeleteDialog) {
         AlertDialog(
@@ -91,6 +100,7 @@ private fun WorldBookEditScreenContent(
                 TextButton(
                     onClick = {
                         // 执行删除操作
+                        Timber.tag("WorldBookEditScreen").d("delete worldId: ${viewModel.worldId.value}")
                         val deleted = FilesUtil.deleteFile("world_book/${viewModel.worldId.value}.json")
                         if (deleted) {
                             ToastUtils.showToast("世界删除成功")
@@ -111,41 +121,41 @@ private fun WorldBookEditScreenContent(
             }
         )
     }
-    LaunchedEffect(viewModel.worldId.collectAsState().value) {
-        launch(Dispatchers.IO) {
-            try {
-                if (!viewModel.isNewWorld.value) {
-                    val json = FilesUtil.readFile("world_book/${viewModel.worldId.value}.json")
-                    Timber.tag("WorldBookEditScreen").d("json: $json")
-                    val worldBookAdapter: JsonAdapter<WorldBook> =
-                        Moshi.Builder().build().adapter(WorldBook::class.java)
-                    // 转换为 WorldBook 对象
-                    val worldList = FilesUtil.listFileNames("world_book")
-                    worldBook = worldBookAdapter.fromJson(json) ?: WorldBook(
-                        viewModel.worldId.value,
-                        "无名世界${worldList.size + 1}"
-                    )
-                    name = worldBook?.worldName ?: "无名世界${worldList.size + 1}"
-                    description = worldBook?.worldDesc ?: ""
-
-                    //worldItems = worldBook?.worldItems?.toMutableStateList() ?: mutableStateListOf()
-                    /*
-                     知识点：对象引用
-                     使用这种方法会替换worldItems的引用，导致remember的worldItems失效，当数据更新时无法触发Compose的重新渲染
-                     */
-
-                    worldItems.clear() // 清空原有元素
-                    worldBook?.worldItems?.let { worldItems.addAll(it) } // 添加新元素
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    Toast
-                        .makeText(context, "加载世界数据失败: ${e.message}", Toast.LENGTH_SHORT)
-                        .show()
-                }
-            }
-        }
-    }
+//    LaunchedEffect(viewModel.worldId.collectAsState().value) {
+//        launch(Dispatchers.IO) {
+//            try {
+//                if (!viewModel.isNewWorld.value) {
+//                    val json = FilesUtil.readFile("world_book/${viewModel.worldId.value}.json")
+//                    Timber.tag("WorldBookEditScreen").d("json: $json")
+//                    val worldBookAdapter: JsonAdapter<WorldBook> =
+//                        Moshi.Builder().build().adapter(WorldBook::class.java)
+//                    // 转换为 WorldBook 对象
+//                    val worldList = FilesUtil.listFileNames("world_book")
+//                    worldBook = worldBookAdapter.fromJson(json) ?: WorldBook(
+//                        viewModel.worldId.value,
+//                        "无名世界${worldList.size + 1}"
+//                    )
+//                    name = worldBook?.worldName ?: "无名世界${worldList.size + 1}"
+//                    description = worldBook?.worldDesc ?: ""
+//
+//                    //worldItems = worldBook?.worldItems?.toMutableStateList() ?: mutableStateListOf()
+//                    /*
+//                     知识点：对象引用
+//                     使用这种方法会替换worldItems的引用，导致remember的worldItems失效，当数据更新时无法触发Compose的重新渲染
+//                     */
+//
+//                    worldItems.clear() // 清空原有元素
+//                    worldBook?.worldItems?.let { worldItems.addAll(it) } // 添加新元素
+//                }
+//            } catch (e: Exception) {
+//                withContext(Dispatchers.Main) {
+//                    Toast
+//                        .makeText(context, "加载世界数据失败: ${e.message}", Toast.LENGTH_SHORT)
+//                        .show()
+//                }
+//            }
+//        }
+//    }
 
     Scaffold(
         topBar = {

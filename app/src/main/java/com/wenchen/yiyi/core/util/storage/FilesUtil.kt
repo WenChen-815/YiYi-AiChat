@@ -5,7 +5,7 @@ import java.io.File
 import java.io.FileWriter
 
 object FilesUtil {
-    private val app = Application.Companion.instance
+    private val app = Application.instance
 
     fun deleteFile(fileName: String): Boolean {
         return try {
