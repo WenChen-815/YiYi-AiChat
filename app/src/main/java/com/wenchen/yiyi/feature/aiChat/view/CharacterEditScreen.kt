@@ -123,20 +123,23 @@ private fun CharacterEditScreen(
     CharacterEditScreenContent(
         activity = activity,
         isNewCharacter = viewModel.isNewCharacter.collectAsState().value,
-        onSaveClick = { name, roleIdentity, roleAppearance, roleDescription, outputExample, behaviorRules, memory, memoryCount, playerName, playGender, playerDescription, chatWorldId ->
+        onSaveClick = { name, description, mes_example, memory, memoryCount, playerName, playGender, playerDescription, chatWorldId ->
             viewModel.saveCharacter(
-                name,
-                roleIdentity,
-                roleAppearance,
-                roleDescription,
-                outputExample,
-                behaviorRules,
-                memory,
-                memoryCount,
-                playerName,
-                playGender,
-                playerDescription,
-                chatWorldId
+                name = name,
+                description = description,
+                first_mes = null, // 暂时不添加
+                mes_example = mes_example,
+                personality = null, // 暂时不添加
+                scenario = null, // 暂时不添加
+                creator_notes = null, // 暂时不添加
+                system_prompt = null, // 暂时不添加
+                post_history_instructions = null, // 暂时不添加
+                memory = memory,
+                memoryCount = memoryCount,
+                playerName = playerName,
+                playGender = playGender,
+                playerDescription = playerDescription,
+                chatWorldId = chatWorldId
             )
         },
         onCancelClick = {
@@ -172,7 +175,7 @@ private fun CharacterEditScreen(
 private fun CharacterEditScreenContent(
     activity: Activity,
     isNewCharacter: Boolean,
-    onSaveClick: (String, String, String, String, String, String, String, Int, String, String, String, String) -> Unit,
+    onSaveClick: (String, String, String?, String, Int, String, String, String, String) -> Unit,
     onCancelClick: () -> Unit,
     onAvatarClick: () -> Unit,
     onBackgroundClick: () -> Unit,
@@ -191,11 +194,8 @@ private fun CharacterEditScreenContent(
     }
     val parsedCharacter = viewModel.parsedCharacter.collectAsState().value
     var name by remember { mutableStateOf("") }
-    var roleIdentity by remember { mutableStateOf("") }
-    var roleAppearance by remember { mutableStateOf("") }
-    var roleDescription by remember { mutableStateOf("") }
-    var outputExample by remember { mutableStateOf("") }
-    var behaviorRules by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    var mes_example by remember { mutableStateOf("") }
     var memory by remember { mutableStateOf("") }
     var memoryCount by remember { mutableIntStateOf(0) }
     var avatarPath by remember { mutableStateOf("") }
@@ -217,13 +217,14 @@ private fun CharacterEditScreenContent(
     LaunchedEffect(parsedCharacter) {
         parsedCharacter?.let {
             name = it.name
-            roleIdentity = it.roleIdentity ?: ""
-            roleAppearance = it.roleAppearance ?: ""
-            roleDescription = it.roleDescription ?: ""
-            outputExample = it.outputExample ?: ""
-            behaviorRules = it.behaviorRules ?: ""
+            description = buildString {
+                it.roleIdentity?.let { append(it).append("\n") }
+                it.roleAppearance?.let { append(it).append("\n") }
+                it.roleDescription?.let { append(it).append("\n") }
+                it.behaviorRules?.let { append(it) }
+            }.trim()
+            mes_example = it.outputExample ?: ""
             memory = it.memory ?: ""
-            // 图片已经在 ViewModel 中处理并直接通过参数传入，这里只需更新文本
         }
     }
     // 如果是编辑模式，加载角色数据
@@ -234,16 +235,12 @@ private fun CharacterEditScreenContent(
             viewModel.characterId.value
         ) { character, memoryEntity ->
             name = character?.name ?: ""
-            roleIdentity = character?.roleIdentity ?: ""
-            roleAppearance = character?.roleAppearance ?: ""
-            roleDescription = character?.roleDescription ?: ""
-            outputExample = character?.outputExample ?: ""
-            behaviorRules = character?.behaviorRules
-                ?: "- 在 。 ？ ！ … 等表示句子结束处，或根于语境需要使用反斜线 (\\) 分隔,以确保良好的可读性与表达\n- 使用[]描述心理、场景或动作，但严格要求[]中的内容不允许使用分隔符(\\)"
+            description = character?.description ?: ""
+            mes_example = character?.mes_example ?: ""
             memory = memoryEntity?.content ?: ""
             memoryCount = memoryEntity?.count ?: 0
-            avatarPath = character?.avatarPath ?: ""
-            backgroundPath = character?.backgroundPath ?: ""
+            avatarPath = character?.avatar ?: ""
+            backgroundPath = character?.background ?: ""
             Timber.tag("ComposeCharacterEditActivity").d("加载角色数据: ${character?.name}")
         }
     }
@@ -317,11 +314,8 @@ private fun CharacterEditScreenContent(
                     onClick = {
                         onSaveClick(
                             name,
-                            roleIdentity,
-                            roleAppearance,
-                            roleDescription,
-                            outputExample,
-                            behaviorRules,
+                            description,
+                            mes_example,
                             memory,
                             memoryCount,
                             playerName,
@@ -367,42 +361,14 @@ private fun CharacterEditScreenContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 8.dp)
-                    .heightIn(max = 250.dp),
-                label = "角色任务&身份",
+                    .heightIn(min = 300.dp),
+                label = "角色设定",
                 labelPadding = PaddingValues(bottom = 6.dp),
-                value = roleIdentity,
-                onValueChange = { roleIdentity = it },
-                placeholder = { Text("例: 你需要扮演指定角色，根据角色信息和记忆内容，模仿所扮演的语气进行场景中的对话。你将扮演一位铁面无私的指月集团女总裁顾依依，是指月集团董事长的独女。") },
-                minLines = 3,
-                maxLines = 10,
-            )
-
-            SettingTextFieldItem(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp)
-                    .heightIn(max = 250.dp),
-                label = "角色外貌",
-                labelPadding = PaddingValues(bottom = 6.dp),
-                value = roleAppearance,
-                onValueChange = { roleAppearance = it },
-                placeholder = { Text("例: 身高171cm，身形挺拔舒展。质感上乘的浅沙色单扣西装外套，内搭无袖浅卡其色连衣短裙，搭配卡其色高跟鞋。姿态优雅从容，整体散发女总裁御姐的自信与魅力。") },
-                minLines = 3,
-                maxLines = 10,
-            )
-
-            SettingTextFieldItem(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp)
-                    .heightIn(max = 250.dp),
-                label = "角色描述",
-                labelPadding = PaddingValues(bottom = 6.dp),
-                value = roleDescription,
-                onValueChange = { roleDescription = it },
-                placeholder = { Text("例: (别看了,这里开始自己发挥吧)") },
-                minLines = 5,
-                maxLines = 15,
+                value = description,
+                onValueChange = { description = it },
+                placeholder = { Text("请输入角色设定、身份、外貌、行为规则等...") },
+                minLines = 15,
+                maxLines = 40,
             )
 
             SettingTextFieldItem(
@@ -412,8 +378,8 @@ private fun CharacterEditScreenContent(
                     .heightIn(max = 250.dp),
                 label = "输出示例",
                 labelPadding = PaddingValues(bottom = 6.dp),
-                value = outputExample,
-                onValueChange = { outputExample = it },
+                value = mes_example,
+                onValueChange = { mes_example = it },
                 placeholder = {
                     Text(
                         """
@@ -425,35 +391,6 @@ private fun CharacterEditScreenContent(
                 },
                 minLines = 3,
                 maxLines = 10,
-            )
-
-            SettingTextFieldItem(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp)
-                    .heightIn(max = 250.dp),
-                label = {
-                    Column {
-                        Text(
-                            text = "行为规则",
-                            style = MaterialTheme.typography.titleMedium,
-                        )
-                        if (isNewCharacter) {
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = "（预设模板，配合全局配置中的分隔符开关使用哦~）",
-                                style = MaterialTheme.typography.titleSmall.copy(Color.LightGray)
-                            )
-                        }
-
-                    }
-                },
-                labelPadding = PaddingValues(bottom = 6.dp),
-                value = behaviorRules,
-                onValueChange = { behaviorRules = it },
-                placeholder = { Text("请输入角色行为规则，建议分行分点") },
-                minLines = 5,
-                maxLines = 15,
             )
 
             SettingTextFieldItem(
@@ -474,7 +411,7 @@ private fun CharacterEditScreenContent(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "记忆次数: $memoryCount",
+                    text = "记忆次数: ${memoryCount}",
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Text(

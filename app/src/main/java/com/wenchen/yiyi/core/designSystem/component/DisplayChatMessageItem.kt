@@ -44,7 +44,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -102,10 +101,10 @@ fun DisplayChatMessageItem(
 
         MessageType.ASSISTANT -> {
             val avatarUrl = if (conversation.type == ConversationType.SINGLE) {
-                chatUiState.currentCharacter?.avatarPath
+                chatUiState.currentCharacter?.avatar
                     ?: "android.resource://${LocalContext.current.packageName}/${R.mipmap.ai_closed}"
             } else {
-                chatUiState.currentCharacters.find { it.aiCharacterId == message.characterId }?.avatarPath
+                chatUiState.currentCharacters.find { it.id == message.characterId }?.avatar
                     ?: "android.resource://${LocalContext.current.packageName}/${R.mipmap.ai_closed}"
             }
             if (message.contentType == MessageContentType.TEXT) {

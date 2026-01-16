@@ -108,7 +108,7 @@ fun ChatActivityTopBar(
             Box {
                 if (conversation.type == ConversationType.SINGLE) {
                     AsyncImage(
-                        model = chatUiState.currentCharacter?.avatarPath,
+                        model = chatUiState.currentCharacter?.avatar,
                         contentScale = ContentScale.Crop,
                         contentDescription = "角色头像",
                         modifier =
@@ -119,7 +119,7 @@ fun ChatActivityTopBar(
                 } else if (conversation.type == ConversationType.GROUP) {
                     chatUiState.currentCharacters.take(3).forEach {
                         AsyncImage(
-                            model = it.avatarPath,
+                            model = it.avatar,
                             contentScale = ContentScale.Crop,
                             contentDescription = "角色头像",
                             modifier =

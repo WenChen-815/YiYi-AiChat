@@ -27,7 +27,7 @@ import com.wenchen.yiyi.core.database.entity.AIChatMemory
         AIChatMemory::class,
         Conversation::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -40,6 +40,52 @@ abstract class AppDatabase : RoomDatabase() {
 
     companion object {
         const val DATABASE_NAME = "ai_chat_database"
+
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // 1. 创建新结构的临时表
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `ai_characters_new` (
+                        `id` TEXT NOT NULL, 
+                        `name` TEXT NOT NULL, 
+                        `userId` TEXT NOT NULL, 
+                        `description` TEXT NOT NULL, 
+                        `first_mes` TEXT, 
+                        `mes_example` TEXT, 
+                        `personality` TEXT, 
+                        `scenario` TEXT, 
+                        `creator_notes` TEXT, 
+                        `system_prompt` TEXT, 
+                        `post_history_instructions` TEXT, 
+                        `avatar` TEXT, 
+                        `background` TEXT, 
+                        `creation_date` INTEGER NOT NULL, 
+                        `modification_date` INTEGER NOT NULL, 
+                        PRIMARY KEY(`id`)
+                    )
+                """.trimIndent())
+
+                // 2. 迁移数据并合并字段
+                // 将旧表的 aiCharacterId 映射到新表的 id
+                db.execSQL("""
+                    INSERT INTO ai_characters_new (
+                        id, name, userId, description, mes_example, 
+                        avatar, background, creation_date, modification_date
+                    )
+                    SELECT 
+                        aiCharacterId, name, userId, 
+                        (COALESCE(roleIdentity, '') || CHAR(10) || COALESCE(roleAppearance, '') || CHAR(10) || COALESCE(roleDescription, '') || CHAR(10) || COALESCE(behaviorRules, '')), 
+                        outputExample, avatarPath, backgroundPath, createdAt, createdAt
+                    FROM ai_characters
+                """.trimIndent())
+
+                // 3. 删除旧表
+                db.execSQL("DROP TABLE ai_characters")
+
+                // 4. 重命名新表
+                db.execSQL("ALTER TABLE ai_characters_new RENAME TO ai_characters")
+            }
+        }
 
         val MIGRATION_2_3 = object : Migration(2, 3) {
             override fun migrate(db: SupportSQLiteDatabase) {

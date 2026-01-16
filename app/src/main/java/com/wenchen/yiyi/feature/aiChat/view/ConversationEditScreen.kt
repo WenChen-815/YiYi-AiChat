@@ -476,7 +476,7 @@ fun ConversationEditScreenContent(
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
                                     Text(
-                                        text = allCharacter.find { it.aiCharacterId == characterId }?.name
+                                        text = allCharacter.find { it.id == characterId }?.name
                                             ?: characterId,
                                         style = MaterialTheme.typography.bodyMedium.copy(WhiteText),
                                         modifier = Modifier.weight(1f),
@@ -874,7 +874,7 @@ fun ConversationEditScreenContent(
                     ) {
                         items(allCharacter.size) { index ->
                             val character = allCharacter[index]
-                            val id = character.aiCharacterId
+                            val id = character.id
                             val name = character.name
                             ListItem(
                                 headlineContent = { Text(name) },
@@ -981,7 +981,7 @@ fun ShowMemoryDialog(
             }
         },
         dismissButton = {
-            Button(onClick = onDismiss) {
+            Button(onClick = { onDismiss() }) {
                 Text("取消")
             }
         }

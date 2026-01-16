@@ -65,24 +65,24 @@ class SingleChatViewModel @Inject constructor(
                     ?.let { character ->
                         currentAICharacter = character
                         // 初始化会话ID
-                        val conversationId = "${userConfigState.userConfig.value?.userId}_${currentAICharacter?.aiCharacterId}"
+                        val conversationId = "${userConfigState.userConfig.value?.userId}_${currentAICharacter?.id}"
                         val conversation = conversationRepository.getById(conversationId)
                             ?: Conversation(
                                 id = conversationId,
                                 name = currentAICharacter?.name ?: "未获取到对话信息",
                                 type = ConversationType.SINGLE,
                                 characterIds = mapOf(
-                                    (currentAICharacter?.aiCharacterId ?: "") to 1.0f
+                                    (currentAICharacter?.id ?: "") to 1.0f
                                 ),
-                                characterKeywords = mapOf((currentAICharacter?.aiCharacterId ?: "") to emptyList()),
+                                characterKeywords = mapOf((currentAICharacter?.id ?: "") to emptyList()),
                                 playerName = "",
                                 playGender = "",
                                 playerDescription = "",
                                 chatWorldId = "",
                                 chatSceneDescription = "",
                                 additionalSummaryRequirement = "",
-                                avatarPath = currentAICharacter?.avatarPath,
-                                backgroundPath = currentAICharacter?.backgroundPath,
+                                avatarPath = currentAICharacter?.avatar,
+                                backgroundPath = currentAICharacter?.background,
                             )
                         withContext(Dispatchers.Main) {
                             _conversation.value = conversation
@@ -115,7 +115,7 @@ class SingleChatViewModel @Inject constructor(
                 val conversationId = conversation.value.id
                 val tag2 = imageManager.deleteAllChatImages(conversationId)
                 val tag3 = aiChatMemoryRepository.deleteByCharacterIdAndConversationId(
-                    character.aiCharacterId,
+                    character.id,
                     conversation.value.id
                 ) > 0
                 val tag4 = conversationRepository.deleteById(conversationId) > 0
@@ -148,7 +148,7 @@ class SingleChatViewModel @Inject constructor(
     fun refreshCharacterInfo() {
         currentAICharacter?.let { character ->
             viewModelScope.launch(Dispatchers.IO) {
-                aiCharacterRepository.getCharacterById(character.aiCharacterId)
+                aiCharacterRepository.getCharacterById(character.id)
                     ?.let { updatedCharacter ->
                         currentAICharacter = updatedCharacter
                         withContext(Dispatchers.Main) {

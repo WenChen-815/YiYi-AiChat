@@ -288,7 +288,7 @@ abstract class BaseChatViewModel(
     fun saveImage(bitmap: Bitmap): File? =
         try {
             val imageManager = ImageManager()
-            val conversationId = "${userConfigState.userConfig.value?.userId}_${getCurrentCharacter()?.aiCharacterId}"
+            val conversationId = "${userConfigState.userConfig.value?.userId}_${getCurrentCharacter()?.id}"
             imageManager.saveChatImage(conversationId, bitmap)
         } catch (e: Exception) {
             e.printStackTrace()

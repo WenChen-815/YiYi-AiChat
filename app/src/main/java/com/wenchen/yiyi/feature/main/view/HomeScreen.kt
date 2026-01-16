@@ -110,11 +110,11 @@ fun HomeScreen(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                items(characters.size, key = { index -> characters[index].aiCharacterId }) { index ->
+                items(characters.size, key = { index -> characters[index].id }) { index ->
                     CharacterItem(
                         character = characters[index],
                         onItemClick = { character ->
-                            viewModel.navigate(AiChatRoutes.SingleChat(character.aiCharacterId))
+                            viewModel.navigate(AiChatRoutes.SingleChat(character.id))
                         },
                     )
                 }
@@ -179,7 +179,7 @@ fun CharacterItem(
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             AsyncImage(
-                model = character.backgroundPath,
+                model = character.background,
                 contentDescription = "角色背景",
                 contentScale = ContentScale.Crop,
                 modifier =
@@ -232,7 +232,7 @@ fun CharacterItem(
                             modifier = Modifier.padding(bottom = 4.dp),
                         ) {
                             AsyncImage(
-                                model = character.avatarPath,
+                                model = character.avatar,
                                 contentDescription = "角色头像",
                                 contentScale = ContentScale.Crop,
                                 modifier =
@@ -247,20 +247,8 @@ fun CharacterItem(
                                 maxLines = 1,
                             )
                         }
-                        val prompt =
-                            buildString {
-                                if (character.roleIdentity.isNotBlank()) {
-                                    append("${character.roleIdentity}\n")
-                                }
-                                if (character.roleAppearance.isNotBlank()) {
-                                    append("${character.roleAppearance}\n")
-                                }
-                                if (character.roleDescription.isNotBlank()) {
-                                    append("${character.roleDescription}\n")
-                                }
-                            }.trim()
                         Text(
-                            text = prompt,
+                            text = character.description,
                             style = MaterialTheme.typography.bodySmall.copy(color = WhiteText),
                             maxLines = 3,
                             overflow = TextOverflow.Ellipsis,

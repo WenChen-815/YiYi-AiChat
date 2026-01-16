@@ -82,21 +82,21 @@ class OutputViewModel @Inject constructor(
                 val character = characters.value[index]
                 // 获取角色记忆
                 val memory = memoryRepository.getByCharacterIdAndConversationId(
-                    character.aiCharacterId,
-                    conversationId = "${userState.userId}_${character.aiCharacterId}",
+                    character.id,
+                    conversationId = "${userState.userId}_${character.id}",
                 )
                 // 加载角色头像 (IO线程)
-                val avatar = BitMapUtil.loadBitmapFromUri(context, character.avatarPath?.toUri(), false)
-                val background = BitMapUtil.loadBitmapFromUri(context, character.backgroundPath?.toUri(), false)
+                val avatar = BitMapUtil.loadBitmapFromUri(context, character.avatar?.toUri(), false)
+                val background = BitMapUtil.loadBitmapFromUri(context, character.background?.toUri(), false)
                 
-                // 构建输出模型
+                // 构建输出模型 (兼容旧模型格式，将新字段填入)
                 val outputCharacter = OutputCharacterModel(
                     name = character.name,
-                    roleIdentity = character.roleIdentity,
-                    roleAppearance = character.roleAppearance,
-                    roleDescription = character.roleDescription,
-                    outputExample = character.outputExample,
-                    behaviorRules = character.behaviorRules,
+                    roleIdentity = character.description, // 将融合后的描述填入旧身份字段
+                    roleAppearance = null,
+                    roleDescription = null,
+                    outputExample = character.mes_example,
+                    behaviorRules = null,
                     memory = memory?.content ?: "",
                     avatarByte = avatar?.let {
                         BitMapUtil.bitmapToByteArray(

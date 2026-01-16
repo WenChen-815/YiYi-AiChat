@@ -67,17 +67,17 @@ class GroupChatViewModel @Inject constructor(
                         name = currentAICharacter?.name ?: "未获取到对话信息",
                         type = ConversationType.SINGLE,
                         characterIds = mapOf(
-                            (currentAICharacter?.aiCharacterId ?: "") to 1.0f
+                            (currentAICharacter?.id ?: "") to 1.0f
                         ),
-                        characterKeywords = mapOf((currentAICharacter?.aiCharacterId ?: "") to emptyList()),
+                        characterKeywords = mapOf((currentAICharacter?.id ?: "") to emptyList()),
                         playerName = "",
                         playGender = "",
                         playerDescription = "",
                         chatWorldId = "",
                         chatSceneDescription = "",
                         additionalSummaryRequirement = "",
-                        avatarPath = currentAICharacter?.avatarPath,
-                        backgroundPath = currentAICharacter?.backgroundPath,
+                        avatarPath = currentAICharacter?.avatar,
+                        backgroundPath = currentAICharacter?.background,
                     )
                 val currentCharacters = conversation.characterIds.mapNotNull { (characterId, _) ->
                     aiCharacterRepository.getCharacterById(characterId)

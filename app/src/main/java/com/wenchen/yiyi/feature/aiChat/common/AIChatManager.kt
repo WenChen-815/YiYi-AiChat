@@ -113,7 +113,7 @@ class AIChatManager @Inject constructor(
         }
 
         conversation.characterIds.forEach { (id, chance) ->
-            val aiCharacter = aiCharacters.find { it.aiCharacterId == id }
+            val aiCharacter = aiCharacters.find { it.id == id }
             if (aiCharacter == null) {
                 Timber.tag(TAG).e("未找到AI角色: $id")
                 return@forEach
@@ -256,7 +256,7 @@ class AIChatManager @Inject constructor(
     ): MutableList<Message> {
         val messages = mutableListOf<Message>()
         val history = aiChatMemoryRepository.getByCharacterIdAndConversationId(
-            aiCharacter.aiCharacterId,
+            aiCharacter.id,
             conversation.id
         )?.content
         var worldBook: WorldBook? = null
@@ -288,7 +288,7 @@ class AIChatManager @Inject constructor(
         val matchedItems = mutableSetOf<String>() // 记录已匹配物品，避免重复添加
         // 添加历史消息
         for (message in oldMessages) {
-            if (message.type == MessageType.ASSISTANT && message.characterId == aiCharacter.aiCharacterId) {
+            if (message.type == MessageType.ASSISTANT && message.characterId == aiCharacter.id) {
                 messages.add(Message("assistant", ChatUtil.parseMessage(message).cleanedContent))
             } else {
                 messages.add(Message("user", message.content))
@@ -346,32 +346,44 @@ class AIChatManager @Inject constructor(
                     """.trimIndent()
                 )
             }
-            if (aiCharacter.roleIdentity.isNotBlank()) {
-                append("\n# [YOUR ROLE]${aiCharacter.name}\n## 角色任务&身份\n${aiCharacter.roleIdentity}")
+            
+            // 融合后的描述字段
+            if (aiCharacter.description.isNotBlank()) {
+                append("\n# [YOUR ROLE]${aiCharacter.name}\n## 角色设定\n${aiCharacter.description}")
             }
-            if (aiCharacter.roleAppearance.isNotBlank()) {
-                append("\n## 角色外貌\n${aiCharacter.roleAppearance}")
+            
+            // 其他可选字段
+            aiCharacter.personality?.takeIf { it.isNotBlank() }?.let {
+                append("\n## 角色性格\n$it")
             }
-            if (aiCharacter.roleDescription.isNotBlank()) {
-                append("\n## 角色描述\n${aiCharacter.roleDescription}")
+            aiCharacter.scenario?.takeIf { it.isNotBlank() }?.let {
+                append("\n## 角色场景\n$it")
             }
+
             append("\n# [MEMORY]以下为角色[${aiCharacter.name}]的记忆:\n$history")
-            if (aiCharacter.outputExample.isNotBlank()) {
-                append("\n# [EXAMPLE]角色输出示例\n${aiCharacter.outputExample}\n")
+            
+            if (aiCharacter.mes_example?.isNotBlank() == true) {
+                append("\n# [EXAMPLE]角色输出示例\n${aiCharacter.mes_example}\n")
             }
             // [PRIORITY 2]在“。 ？ ！ …”等表示句子结束处，或根于语境需要分隔处使用反斜线 (\) 分隔,以确保良好的可读性，但严格要求[]中的内容不允许使用(\)来分隔
             append(
                 """
                 # [RULES — STRICT]严格遵守以下行为准则
-                [PRIORITY 1]记住你要扮演的角色是[${aiCharacter.name}]，请保持这个身份进行对话，不要改变身份
+                [PRIORITY 1]记住你要扮演的是[${aiCharacter.name}]，请保持这个身份进行对话，不要改变身份
                 [PRIORITY 2]收到系统旁白消息时，必须根据其中提示内容进行扩写
                 其他规则:
                 """.trimIndent()
             )
-            if (aiCharacter.behaviorRules.isNotBlank()) {
-                append(aiCharacter.behaviorRules)
+            
+            // 系统提示和历史指令
+            aiCharacter.system_prompt?.takeIf { it.isNotBlank() }?.let {
+                append("\n$it")
+            }
+            aiCharacter.post_history_instructions?.takeIf { it.isNotBlank() }?.let {
+                append("\n$it")
             }
         }.trim()
+        
         if (prompt.isNotEmpty()) {
             messages.add(0, Message("system", "$prompt\n"))
         }
@@ -476,7 +488,7 @@ class AIChatManager @Inject constructor(
                     id = UUID.randomUUID().toString(),
                     content = messageContent,
                     type = MessageType.ASSISTANT,
-                    characterId = aiCharacter.aiCharacterId,
+                    characterId = aiCharacter.id,
                     chatUserId = userConfig?.userId ?: "",
                     conversationId = conversation.id
                 )
@@ -532,7 +544,7 @@ class AIChatManager @Inject constructor(
             id = messageId,
             content = "$prefix$currentCharacterName",
             type = MessageType.ASSISTANT,
-            characterId = aiCharacter.aiCharacterId,
+            characterId = aiCharacter.id,
             chatUserId = userConfig?.userId ?: "",
             conversationId = conversation.id
         )
@@ -588,19 +600,18 @@ class AIChatManager @Inject constructor(
         callback: (() -> Unit)? = null
     ) {
         val userConfig = Application.globalUserConfigState.userConfig.value
-        // 添加用户消息到列表
         if (aiCharacter == null) {
             Timber.tag(TAG).e("summarize: 未选择AI角色")
             return
         }
 
-        val characterId = aiCharacter.aiCharacterId
+        val characterId = aiCharacter.id
         // 获取该角色对应的锁，如果不存在则创建一个新的锁
         val characterLock = characterLocks.computeIfAbsent(characterId) { Mutex() }
         // 尝试获取角色锁，如果已被锁定则等待
         characterLock.withLock {
             var aiMemory = aiChatMemoryRepository.getByCharacterIdAndConversationId(
-                aiCharacter.aiCharacterId,
+                aiCharacter.id,
                 conversation.id
             )
             aiMemory?.count?.let {
@@ -617,15 +628,7 @@ class AIChatManager @Inject constructor(
 
             // 构建消息列表
             val messages = mutableListOf<Message>()
-            // 添加系统提示消息
-            val prompt = buildString {
-                if (aiCharacter.roleIdentity.isNotBlank()) {
-                    append("## 角色身份\n${aiCharacter.roleIdentity}\n")
-                }
-                if (aiCharacter.roleDescription.isNotBlank()) {
-                    append("## 角色描述\n${aiCharacter.roleDescription}\n")
-                }
-            }.trim()
+            val prompt = aiCharacter.description.trim()
             val currentDate =
                 SimpleDateFormat("yyyy-MM-dd EEEE HH:mm:ss", Locale.getDefault()).format(Date())
             var summaryRequest =
@@ -666,7 +669,7 @@ class AIChatManager @Inject constructor(
                         if (aiMemory == null) {
                             aiMemory = AIChatMemory(
                                 id = UUID.randomUUID().toString(),
-                                characterId = aiCharacter.aiCharacterId,
+                                characterId = aiCharacter.id,
                                 conversationId = conversation.id,
                                 content = newMemoryContent,
                                 count = 1,
@@ -740,15 +743,13 @@ class AIChatManager @Inject constructor(
             id = "${conversation.id}:${System.currentTimeMillis()}",
             content = "发送了图片:[$imgUri]",
             type = MessageType.USER,
-            characterId = character.aiCharacterId,
+            characterId = character.id,
             chatUserId = userConfig.userId ?: "",
             contentType = MessageContentType.IMAGE,
             imgUrl = imgUri.toString(),
             conversationId = conversation.id
         )
-        // 通知所有监听器消息已发送
         CoroutineScope(Dispatchers.Main).launch {
-            // 通知所有监听器消息已接收
             listeners.forEach { it.onMessageSent(imgMessage) }
         }
         chatMessageRepository.insertMessage(imgMessage)
@@ -756,10 +757,8 @@ class AIChatManager @Inject constructor(
         val compressedBitmap = BitMapUtil.compressBitmapToLimit(bitmap, 8 * 1024 * 1024)
         // 将压缩后的Bitmap转换为Base64字符串
         val imageBase64 = BitMapUtil.bitmapToBase64(compressedBitmap)
-        // 准备提示文本
         val prompt =
             "请用中文描述这张图片的主要内容或主题。不要使用'这是'、'这张'等开头，直接描述。如果有文字，请包含在描述中。"
-        // 创建请求体对象
         val contentItems = mutableListOf<ContentItem>().apply {
             add(ContentItem("text", prompt))
             add(ContentItem(type = "image_url", image_url = mapOf("url" to "data:image/jpeg;base64,$imageBase64")))

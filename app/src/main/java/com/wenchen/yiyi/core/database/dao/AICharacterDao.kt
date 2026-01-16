@@ -24,11 +24,11 @@ interface AICharacterDao {
     suspend fun deleteAICharacter(character: AICharacter): Int
 
     // 根据ID查询角色
-    @Query("SELECT * FROM ai_characters WHERE aiCharacterId = :id")
+    @Query("SELECT * FROM ai_characters WHERE id = :id")
     suspend fun getCharacterById(id: String): AICharacter?
 
     // 根据ID列表查询角色
-    @Query("SELECT * FROM ai_characters WHERE aiCharacterId IN (:ids)")
+    @Query("SELECT * FROM ai_characters WHERE id IN (:ids)")
     suspend fun getCharactersByIds(ids: List<String>): List<AICharacter>
 
     // 根据角色名称查询角色
@@ -36,19 +36,19 @@ interface AICharacterDao {
     suspend fun getCharacterByName(name: String): List<AICharacter>
 
     // 根据角色名称查询角色（返回PagingSource，用于分页）
-    @Query("SELECT * FROM ai_characters WHERE name LIKE '%' || :name || '%' ORDER BY createdAt DESC")
+    @Query("SELECT * FROM ai_characters WHERE name LIKE '%' || :name || '%' ORDER BY creation_date DESC")
     fun getCharacterByNamePagingSource(name: String): PagingSource<Int, AICharacter>
 
     // 查询指定用户的所有角色
-    @Query("SELECT * FROM ai_characters WHERE userId = :userId ORDER BY createdAt DESC")
+    @Query("SELECT * FROM ai_characters WHERE userId = :userId ORDER BY creation_date DESC")
     fun getCharactersByUser(userId: String): Flow<List<AICharacter>>
 
     // 查询所有角色
-    @Query("SELECT * FROM ai_characters ORDER BY createdAt DESC")
+    @Query("SELECT * FROM ai_characters ORDER BY creation_date DESC")
     suspend fun getAllCharacters(): List<AICharacter>
 
     // 查询所有角色（返回PagingSource，用于分页）
-    @Query("SELECT * FROM ai_characters ORDER BY createdAt DESC")
+    @Query("SELECT * FROM ai_characters ORDER BY creation_date DESC")
     fun getAllCharactersPagingSource(): PagingSource<Int, AICharacter>
 
     // 删除指定用户的所有角色

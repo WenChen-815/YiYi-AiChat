@@ -109,14 +109,14 @@ private fun SingleChatScreenContent(
     var bgBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var colors by remember { mutableStateOf(listOf(BlackBg)) }
     // 异步加载背景图片
-    LaunchedEffect(chatUiState.currentCharacter?.backgroundPath) {
-        val backgroundPath = chatUiState.currentCharacter?.backgroundPath
-        if (backgroundPath?.isNotEmpty() == true) {
+    LaunchedEffect(chatUiState.currentCharacter?.background) {
+        val background = chatUiState.currentCharacter?.background
+        if (background?.isNotEmpty() == true) {
             try {
                 // 在后台线程执行图片加载
                 viewModel.loadBackgroundBitmap(
                     activity = activity,
-                    backgroundPath = backgroundPath,
+                    backgroundPath = background,
                     onResult = { bitmap ->
                         bgBitmap = bitmap
                         colors = ThemeColorExtractor.extract(bgBitmap!!, maxValue = 1f)
@@ -151,7 +151,7 @@ private fun SingleChatScreenContent(
                         showModelsDialog = true
                     },
                     onEditClick = {
-                        viewModel.navigate(AiChatRoutes.CharacterEdit(it.aiCharacterId))
+                        viewModel.navigate(AiChatRoutes.CharacterEdit(it.id))
                     },
                     onNavClearChatClick = {
                         showClearChatDialog = true

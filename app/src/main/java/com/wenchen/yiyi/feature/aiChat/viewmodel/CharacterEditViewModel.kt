@@ -195,11 +195,14 @@ class CharacterEditViewModel @Inject constructor(
     // 保存角色数据
     fun saveCharacter(
         name: String,
-        roleIdentity: String,
-        roleAppearance: String,
-        roleDescription: String,
-        outputExample: String,
-        behaviorRules: String,
+        description: String,
+        first_mes: String?,
+        mes_example: String?,
+        personality: String?,
+        scenario: String?,
+        creator_notes: String?,
+        system_prompt: String?,
+        post_history_instructions: String?,
         memory: String,
         memoryCount: Int,
         playerName: String,
@@ -210,11 +213,10 @@ class CharacterEditViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             if (name.isEmpty()) {
                 ToastUtils.showLong("角色名称不能为空")
-                Timber.tag("CharacterEditViewModel").d("角色名称不能为空")
                 return@launch
             }
 
-            // 清理旧图片（如果有新图片被选择）
+            // 清理并保存新图片
             if (hasNewAvatar) {
                 imageManager.deleteAvatarImage(characterId.value)
                 imageManager.saveAvatarImage(characterId.value, avatarBitmap!!)
@@ -224,29 +226,37 @@ class CharacterEditViewModel @Inject constructor(
                 imageManager.saveBackgroundImage(characterId.value, backgroundBitmap!!)
             }
 
+            // 获取现有角色以保留创建日期，如果是新角色则使用当前时间
+            val existingCharacter = aiCharacterRepository.getCharacterById(characterId.value)
+            val now = System.currentTimeMillis()
+            
             val character = AICharacter(
-                aiCharacterId = characterId.value,
+                id = characterId.value,
                 name = name,
-                roleIdentity = roleIdentity,
-                roleAppearance = roleAppearance,
-                roleDescription = roleDescription,
-                outputExample = outputExample,
-                behaviorRules = behaviorRules,
                 userId = userState.userId.value,
-                createdAt = System.currentTimeMillis(),
-                avatarPath = imageManager.getAvatarImagePath(characterId.value),
-                backgroundPath = imageManager.getBackgroundImagePath(characterId.value)
+                description = description,
+                first_mes = first_mes,
+                mes_example = mes_example,
+                personality = personality,
+                scenario = scenario,
+                creator_notes = creator_notes,
+                system_prompt = system_prompt,
+                post_history_instructions = post_history_instructions,
+                avatar = imageManager.getAvatarImagePath(characterId.value),
+                background = imageManager.getBackgroundImagePath(characterId.value),
+                creation_date = existingCharacter?.creation_date ?: now,
+                modification_date = now
             )
 
             var memoryEntity = aiChatMemoryRepository.getByCharacterIdAndConversationId(
-                character.aiCharacterId,
+                character.id,
                 conversationId.value
             )
             if (memoryEntity == null) {
                 memoryEntity = AIChatMemory(
                     id = UUID.randomUUID().toString(),
                     conversationId = conversationId.value,
-                    characterId = character.aiCharacterId,
+                    characterId = character.id,
                     content = memory.ifEmpty { "" },
                     createdAt = System.currentTimeMillis(),
                     count = memoryCount
@@ -255,20 +265,20 @@ class CharacterEditViewModel @Inject constructor(
                 memoryEntity.content = memory.ifEmpty { "" }
                 memoryEntity.count = memoryCount
             }
-            Timber.tag("CharacterEditViewModel").d("保存角色数据")
+
             try {
                 if (isNewCharacter.value) {
                     // 新增角色
                     val result = aiCharacterRepository.insertAICharacter(character)
-                    val result2 = aiChatMemoryRepository.insert(memoryEntity)
+                    aiChatMemoryRepository.insert(memoryEntity)
 
                     // 创建初始Conversation
                     val initialConversation = Conversation(
                         id = conversationId.value,
                         name = character.name,
                         type = ConversationType.SINGLE,
-                        characterIds = mapOf(character.aiCharacterId to 1.0f),
-                        characterKeywords = mapOf(character.aiCharacterId to emptyList()),
+                        characterIds = mapOf(character.id to 1.0f),
+                        characterKeywords = mapOf(character.id to emptyList()),
                         playerName = playerName.ifEmpty {
                             userConfigState.userConfig.value?.userName ?: ""
                         },
@@ -277,36 +287,28 @@ class CharacterEditViewModel @Inject constructor(
                         chatWorldId = chatWorldId,
                         chatSceneDescription = "",
                         additionalSummaryRequirement = "",
-                        avatarPath = character.avatarPath,
-                        backgroundPath = character.backgroundPath,
+                        avatarPath = character.avatar,
+                        backgroundPath = character.background,
                     )
-                    conversationRepository.insert(initialConversation) // 保存初始对话
+                    conversationRepository.insert(initialConversation)
 
                     withContext(Dispatchers.Main) {
-                        if (result > 0 && result2 > 0) {
-                            ToastUtils.show("保存成功")
-                        } else {
-                            ToastUtils.show("保存失败")
-                        }
+                        if (result > 0) ToastUtils.show("保存成功") else ToastUtils.show("保存失败")
                         navigateBack()
                     }
                 } else {
                     // 更新角色
                     val result = aiCharacterRepository.updateAICharacter(character)
-                    val result2 = aiChatMemoryRepository.update(memoryEntity)
+                    aiChatMemoryRepository.update(memoryEntity)
                     withContext(Dispatchers.Main) {
-                        if (result > 0 && result2 > 0) {
-                            ToastUtils.show("更新成功")
-                        } else {
-                            ToastUtils.show("更新失败")
-                        }
+                        if (result > 0) ToastUtils.show("更新成功") else ToastUtils.show("更新失败")
                         navigateBack()
                     }
                 }
             } catch (e: Exception) {
-                Timber.tag("CharacterEditViewModel").d("保存角色数据失败: ${e.message}")
+                Timber.tag("CharacterEditViewModel").e(e, "保存失败")
                 withContext(Dispatchers.Main) {
-                    ToastUtils.show("保存角色数据失败: ${e.message}")
+                    ToastUtils.show("保存失败: ${e.message}")
                 }
             }
         }

@@ -244,8 +244,8 @@ class ImageManager(private val context: Context = Application.Companion.instance
      * @return 是否删除成功
      */
     fun deleteAllCharacterImages(character: AICharacter): Boolean {
-        return deleteAvatarImage(character.aiCharacterId) &&
-                deleteBackgroundImage(character.aiCharacterId)
+        return deleteAvatarImage(character.id) &&
+                deleteBackgroundImage(character.id)
     }
 
     /**

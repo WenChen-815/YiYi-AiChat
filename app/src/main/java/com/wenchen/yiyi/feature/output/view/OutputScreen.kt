@@ -143,7 +143,7 @@ fun OutputScreenContent(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                items(characters.size, key = { index -> characters[index].aiCharacterId }) { index ->
+                items(characters.size, key = { index -> characters[index].id }) { index ->
                     val character = characters[index]
                     CharacterItem(
                         character = character,
@@ -194,7 +194,7 @@ fun CharacterItem(
             } else {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
-                        .data(character.backgroundPath)
+                        .data(character.background)
                         .build(),
                     contentDescription = "角色背景",
                     contentScale = ContentScale.Crop,
@@ -259,7 +259,7 @@ fun CharacterItem(
                             } else {
                                 AsyncImage(
                                     model = ImageRequest.Builder(LocalContext.current)
-                                        .data(character.avatarPath)
+                                        .data(character.avatar)
                                         .build(),
                                     contentDescription = "角色头像",
                                     contentScale = ContentScale.Crop,
@@ -287,47 +287,7 @@ fun CharacterItem(
 @Preview(showBackground = true)
 @Composable
 fun OutputScreenPreview() {
-    val characters = listOf(
-        AICharacter(
-            aiCharacterId = "001",
-            name = "角色1",
-            roleIdentity = "角色身份",
-            roleAppearance = "角色外观",
-            roleDescription = "角色描述",
-            backgroundPath = "背景路径",
-            avatarPath = "头像路径",
-            outputExample = "输出示例",
-            behaviorRules = "行为规则",
-            userId = "user001",
-            createdAt = System.currentTimeMillis(),
-        ),
-        AICharacter(
-            aiCharacterId = "002",
-            name = "角色2",
-            roleIdentity = "角色身份",
-            roleAppearance = "角色外观",
-            roleDescription = "角色描述",
-            backgroundPath = "背景路径",
-            avatarPath = "头像路径",
-            outputExample = "输出示例",
-            behaviorRules = "行为规则",
-            userId = "user001",
-            createdAt = System.currentTimeMillis(),
-        ),
-        AICharacter(
-            aiCharacterId = "003",
-            name = "角色3",
-            roleIdentity = "角色身份",
-            roleAppearance = "角色外观",
-            roleDescription = "角色描述",
-            backgroundPath = "背景路径",
-            avatarPath = "头像路径",
-            outputExample = "输出示例",
-            behaviorRules = "行为规则",
-            userId = "user001",
-            createdAt = System.currentTimeMillis(),
-        ),
-    )
+    val characters = emptyList<AICharacter>()
     AIChatTheme {
         OutputScreenContent(
             characters = characters,
