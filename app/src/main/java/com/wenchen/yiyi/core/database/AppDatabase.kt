@@ -74,7 +74,10 @@ abstract class AppDatabase : RoomDatabase() {
                     )
                     SELECT 
                         aiCharacterId, name, userId, 
-                        (COALESCE(roleIdentity, '') || CHAR(10) || COALESCE(roleAppearance, '') || CHAR(10) || COALESCE(roleDescription, '') || CHAR(10) || COALESCE(behaviorRules, '')), 
+                        ('# 角色身份' || CHAR(10) || COALESCE(roleIdentity, '') || CHAR(10) || CHAR(10) || 
+                         '# 角色外貌' || CHAR(10) || COALESCE(roleAppearance, '') || CHAR(10) || CHAR(10) || 
+                         '# 角色描述' || CHAR(10) || COALESCE(roleDescription, '') || CHAR(10) || CHAR(10) || 
+                         '# 行为规则' || CHAR(10) || COALESCE(behaviorRules, '')), 
                         outputExample, avatarPath, backgroundPath, createdAt, createdAt
                     FROM ai_characters
                 """.trimIndent())
