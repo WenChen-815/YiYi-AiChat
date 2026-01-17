@@ -1,25 +1,22 @@
 package com.wenchen.yiyi
 
-import android.os.Build
 import android.os.Bundle
-import android.provider.Settings
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import com.hjq.permissions.permission.PermissionLists
 import com.wenchen.yiyi.core.common.theme.AIChatTheme
 import com.wenchen.yiyi.core.designSystem.component.UpdateAnnouncementDialog
 import com.wenchen.yiyi.core.log.FloatingLogcatView
 import com.wenchen.yiyi.core.state.UserConfigState
-import com.wenchen.yiyi.core.util.PermissionUtils
-import com.wenchen.yiyi.core.util.ui.StatusBarUtils
-import com.wenchen.yiyi.core.util.system.WebViewPool
 import com.wenchen.yiyi.core.util.storage.MMKVUtils
-import com.wenchen.yiyi.navigation.AppNavigator
+import com.wenchen.yiyi.core.util.system.PermissionUtils
+import com.wenchen.yiyi.core.util.system.WebViewPool
+import com.wenchen.yiyi.core.util.ui.StatusBarUtils
 import com.wenchen.yiyi.navigation.AppNavHost
+import com.wenchen.yiyi.navigation.AppNavigator
 import dagger.hilt.android.AndroidEntryPoint
 import timber.log.Timber
 import javax.inject.Inject
@@ -38,10 +35,22 @@ class MainActivity : ComponentActivity() {
         // 设置状态栏
         StatusBarUtils.transparentNavBar(this)
 
-        // 请求权限
-        PermissionUtils.checkAndRequestStoragePermission(this, requestPermissionLauncher)
+        // 使用 system 下的 PermissionUtils 请求权限
+        PermissionUtils.requestStoragePermission(this) { granted ->
+            if (granted) {
+                Timber.tag("MainActivity").d("存储权限已授予")
+            }
+        }
         // 请求悬浮窗权限
-        PermissionUtils.checkAndRequestOverlayPermission(this, overlayPermissionLauncher)
+        PermissionUtils.requestCustomPermissions(
+            this,
+            arrayOf(PermissionLists.getSystemAlertWindowPermission()),
+            "悬浮窗权限"
+        ) { granted ->
+            if (granted) {
+                Timber.tag("MainActivity").d("悬浮窗权限已授予")
+            }
+        }
 
         setContent {
             AIChatTheme {
@@ -73,25 +82,4 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-
-    private val requestPermissionLauncher =
-        registerForActivityResult(
-            ActivityResultContracts.RequestPermission(),
-        ) { isGranted ->
-            if (isGranted) {
-                Timber.tag("MainActivity").d("权限已授予")
-            } else {
-                // 权限被拒绝，显示提示信息
-                Toast.makeText(this, "需要权限才能正常使用", Toast.LENGTH_SHORT).show()
-            }
-        }
-
-    private val overlayPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && Settings.canDrawOverlays(this)) {
-                Timber.tag("MainActivity").d("悬浮窗权限已授予")
-            } else {
-                Toast.makeText(this, "悬浮窗权限未授予，部分功能可能受限", Toast.LENGTH_SHORT).show()
-            }
-        }
 }
