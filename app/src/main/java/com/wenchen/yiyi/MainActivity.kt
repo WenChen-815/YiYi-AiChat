@@ -35,10 +35,12 @@ class MainActivity : ComponentActivity() {
         // 设置状态栏
         StatusBarUtils.transparentNavBar(this)
 
-        // 使用 system 下的 PermissionUtils 请求权限
-        PermissionUtils.requestStoragePermission(this) { granted ->
-            if (granted) {
-                Timber.tag("MainActivity").d("存储权限已授予")
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.TIRAMISU) {
+            // targetSDK < 33 可以申请存储权限
+            PermissionUtils.requestStoragePermission(this) { granted ->
+                if (granted) {
+                    Timber.tag("MainActivity").d("存储权限已授予")
+                }
             }
         }
         // 请求悬浮窗权限
@@ -55,7 +57,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             AIChatTheme {
                 val userConfig by userConfigState.userConfig.collectAsState()
-                val showLogcatView by mutableStateOf(userConfig?.showLogcatView ?: false)
+                val showLogcatView by remember{ mutableStateOf(userConfig?.showLogcatView ?: false) }
 
                 AppNavHost(navigator = navigator)
                 if (showLogcatView) {
