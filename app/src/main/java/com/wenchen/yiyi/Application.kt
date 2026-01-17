@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.res.Configuration
 import com.wenchen.yiyi.core.database.AppDatabase
 import com.wenchen.yiyi.core.log.GlobalLogcatTree
+import com.wenchen.yiyi.core.log.LogRepository
 import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.core.state.UserState
 import com.wenchen.yiyi.core.util.storage.MMKVUtils
@@ -62,7 +63,16 @@ class Application : Application() {
     private fun initLog() {
 //        if (BuildConfig.DEBUG) {
         Timber.plant(GlobalLogcatTree())
+        initCrashHandler()
 //        }
+    }
+    private fun initCrashHandler() {val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+            // 1. 将异常信息记录到文件
+            LogRepository.logThrowable(throwable)
+            // 2. 依然让系统执行默认的崩溃操作（弹出“应用已停止”对话框）
+            defaultHandler?.uncaughtException(thread, throwable)
+        }
     }
 
     /**

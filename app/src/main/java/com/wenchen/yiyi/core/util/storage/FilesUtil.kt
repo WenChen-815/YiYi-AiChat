@@ -1,12 +1,60 @@
 package com.wenchen.yiyi.core.util.storage
 
+import android.content.ContentValues
+import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
 import com.wenchen.yiyi.Application
 import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
 import java.io.FileWriter
 
 object FilesUtil {
     private val app = Application.instance
+    fun exportLogFile(fileName: String, targetDirName: String): Boolean {
+        return try {
+            val sourceFile = File(app.applicationContext?.filesDir, fileName)
+            if (!sourceFile.exists()) return false
 
+            val context = app.applicationContext ?: return false
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                // Android 10+ 使用 MediaStore
+                val contentValues = ContentValues().apply {
+                    put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+                    put(MediaStore.MediaColumns.MIME_TYPE, "text/plain")
+                    put(MediaStore.MediaColumns.RELATIVE_PATH, "${Environment.DIRECTORY_DOWNLOADS}/$targetDirName")
+                }
+                val contentResolver = context.contentResolver
+                val uri = contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
+                uri?.let {
+                    contentResolver.openOutputStream(it).use { outputStream ->
+                        FileInputStream(sourceFile).use { inputStream ->
+                            inputStream.copyTo(outputStream!!)
+                        }
+                    }
+                    true
+                } ?: false
+            } else {
+                // Android 9 及以下使用传统文件操作 (需要 WRITE_EXTERNAL_STORAGE 权限)
+                val targetDir = File(Environment.getExternalStoragePublicDirectory(
+                    Environment.DIRECTORY_DOWNLOADS), targetDirName)
+                if (!targetDir.exists()) targetDir.mkdirs()
+                val targetFile = File(targetDir, fileName)
+
+                FileInputStream(sourceFile).use { inputStream ->
+                    FileOutputStream(targetFile).use { outputStream ->
+                        inputStream.copyTo(outputStream)
+                    }
+                }
+                true
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
     fun deleteFile(fileName: String): Boolean {
         return try {
             val file = File(app.applicationContext?.filesDir, fileName)

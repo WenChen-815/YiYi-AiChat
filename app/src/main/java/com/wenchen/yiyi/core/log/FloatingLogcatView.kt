@@ -24,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoDelete
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.UnfoldLess
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -116,6 +117,15 @@ fun FloatingLogcatView() {
                         ) {
                             Text("日志信息", style = MaterialTheme.typography.titleSmall, color = Color.White)
                             Row {
+                                IconButton(onClick = {
+                                    if (LogRepository.exportLogs()) {
+                                        ToastUtils.showToast("日志已导出到 Download/YiYi")
+                                    } else {
+                                        ToastUtils.showToast("导出失败")
+                                    }
+                                }) {
+                                    Icon(Icons.Default.FileDownload, contentDescription = "Export logs", tint = Color.White)
+                                }
                                 IconButton(onClick = {
                                     val logText = logs.joinToString("\n") { "[${it.tag ?: "NO_TAG"}] ${it.message}" }
                                     clipboardManager.setText(AnnotatedString(logText))
