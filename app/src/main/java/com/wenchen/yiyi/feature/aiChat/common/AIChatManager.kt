@@ -597,7 +597,7 @@ class AIChatManager @Inject constructor(
         conversation: Conversation,
         aiCharacter: AICharacter?,
         summaryMessages: List<TempChatMessage>,
-        callback: (() -> Unit)? = null
+        callback: () -> Unit = {}
     ) {
         val userConfig = Application.globalUserConfigState.userConfig.value
         if (aiCharacter == null) {
@@ -628,23 +628,32 @@ class AIChatManager @Inject constructor(
 
             // 构建消息列表
             val messages = mutableListOf<Message>()
-            val prompt = aiCharacter.description.trim()
             val currentDate =
                 SimpleDateFormat("yyyy-MM-dd EEEE HH:mm:ss", Locale.getDefault()).format(Date())
-            var summaryRequest =
-                """
-                # [任务] 根据对话内容、角色设定、当前时间，使用中文总结对话中的重要信息
-                # [当前时间] [$currentDate]
-                # [角色设定]
-                $prompt
-                # [对话片段]
-            """.trimIndent()
+            val summaryRequest = StringBuilder()
+            summaryRequest.append("""
+                # [角色定义] 
+                你现在是 ${aiCharacter.name}
+                # [任务目标] 
+                请以${aiCharacter.name}的第一人称（“我”）视角，结合角色的性格特点，将提供的[对话片段]提炼成一段深刻的心里话或回忆。
+                # [当前时间] [$currentDate]""".trimIndent()
+            )
+            if (conversation.additionalSummaryRequirement?.isNotBlank() == true) {
+                summaryRequest.append("""
+                    # [总结要求]
+                    ${conversation.additionalSummaryRequirement}
+                    """.trimIndent())
+            }
+            summaryRequest.append("\n# [对话片段]".trimIndent())
             // 添加历史消息
             for (message in summaryMessages) {
-                summaryRequest += "\n${message.content}"
+                summaryRequest.append("\n${message.content}")
             }
-            summaryRequest += "\n现在请你代入${aiCharacter.name}的角色并以“我”自称，代入角色的性格特点，用[回忆的口吻]总结以上对话片段为一段话(直接回复一段话)"
-            messages.add(Message("system", summaryRequest))
+            summaryRequest.append("""
+                
+                【深度执行】直接回复一段话，请勿回复多余内容
+            """.trimIndent())
+            messages.add(Message("system", summaryRequest.toString()))
             // 使用CompletableDeferred来等待API调用完成
             val apiCompleted = CompletableDeferred<Boolean>()
             val chatRequest = ChatRequest(userConfig?.selectedModel ?: "", messages, 0.3f)
@@ -662,7 +671,7 @@ class AIChatManager @Inject constructor(
                         **摘要**:$aiResponse
                     """.trimIndent()
                     CoroutineScope(Dispatchers.IO).launch {
-                        Timber.tag(TAG).d("总结成功 delete :${summaryMessages.map { it.content }}")
+//                        Timber.tag(TAG).d("总结成功 delete :${summaryMessages.map { it.content }}")
                         // 删除已总结的临时消息
                         tempChatMessageRepository.deleteMessagesByIds(summaryMessages.map { it.id })
                         Timber.tag(TAG).d("aiMemory :$aiMemory")
