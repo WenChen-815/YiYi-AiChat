@@ -71,8 +71,11 @@ abstract class BaseChatViewModel(
     val _messages = MutableStateFlow<List<ChatMessage>>(emptyList())
     val messages: StateFlow<List<ChatMessage>> = _messages.asStateFlow()
 
-    val _messageItemHeights = MutableStateFlow<Map<String, Int>>(emptyMap())
-    val messageItemHeights: StateFlow<Map<String, Int>> = _messageItemHeights.asStateFlow()
+//    val _messageItemHeights = MutableStateFlow<Map<String, Int>>(emptyMap())
+//    val messageItemHeights: StateFlow<Map<String, Int>> = _messageItemHeights.asStateFlow()
+
+    private val _messageSegmentHeights = MutableStateFlow<Map<String, Map<Int, Int>>>(emptyMap())
+    val messageSegmentHeights: StateFlow<Map<String, Map<Int, Int>>> = _messageSegmentHeights.asStateFlow()
 
     var currentAICharacter: AICharacter? = null
 
@@ -127,16 +130,34 @@ abstract class BaseChatViewModel(
         selectedModel = userConfig?.selectedModel ?: ""
         loadSupportedModels(baseUrl, apiKey)
     }
-
-    fun rememberMessageItemHeight(messageId: String, height: Int) {
-        _messageItemHeights.update { current ->
-            current + (messageId to height)
+    /**
+     * 记录消息片段的高度
+     * @param messageId 消息唯一ID
+     * @param segmentIndex 片段索引
+     * @param height 高度(px)
+     */
+    fun rememberSegmentHeight(messageId: String, segmentIndex: Int, height: Int) {
+        _messageSegmentHeights.update { current ->
+            val existingSegments = current[messageId] ?: emptyMap()
+            current + (messageId to (existingSegments + (segmentIndex to height)))
         }
     }
 
-    fun findMessageItemHeight(messageId: String): Int? {
-        return messageItemHeights.value[messageId]
+    /**
+     * 获取消息片段的高度
+     */
+    fun findSegmentHeight(messageId: String, segmentIndex: Int): Int? {
+        return _messageSegmentHeights.value[messageId]?.get(segmentIndex)
     }
+//    fun rememberMessageItemHeight(messageId: String, height: Int) {
+//        _messageItemHeights.update { current ->
+//            current + (messageId to height)
+//        }
+//    }
+//
+//    fun findMessageItemHeight(messageId: String): Int? {
+//        return messageItemHeights.value[messageId]
+//    }
 
     /**
      * 在后台线程加载背景图片的辅助函数

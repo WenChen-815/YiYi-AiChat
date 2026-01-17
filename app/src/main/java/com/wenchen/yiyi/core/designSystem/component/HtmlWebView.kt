@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import com.wenchen.yiyi.core.util.WebViewPool
 import kotlin.math.abs
 
 @SuppressLint("SetJavaScriptEnabled", "ClickableViewAccessibility")
@@ -35,7 +36,7 @@ fun HtmlWebView(
     var webViewHeight by remember(id) { mutableIntStateOf(heightValue) }
     // 增加一个标记，确保在 Composable 被销毁后不再更新高度状态
     var isDisposed by remember { mutableStateOf(false) }
-    DisposableEffect(Unit) {
+    DisposableEffect(id) {
         onDispose { isDisposed = true }
     }
 
@@ -68,7 +69,7 @@ fun HtmlWebView(
                 body { 
                     color: $colorHex; 
                     font-family: -apple-system, system-ui, sans-serif;
-                    font-size: 14px;
+                    font-size: 15px;
                     line-height: 1.4;
                     word-wrap: break-word;
                     overflow: hidden; 
@@ -100,17 +101,11 @@ fun HtmlWebView(
 
                 window.onload = reportHeight;
                 
-                // 核心修改：ResizeObserver 只观察 container 的尺寸变化
+                // ResizeObserver 观察 container 的尺寸变化
                 const resizeObserver = new ResizeObserver(() => {
                     reportHeight();
                 });
                 resizeObserver.observe(document.getElementById('container'));
-
-                // 补偿：针对 Tab 切换后的潜在渲染延迟，多报几次高度
-                //document.addEventListener('click', () => {
-                  //  setTimeout(reportHeight, 50);
-                   //setTimeout(reportHeight, 300);
-                //});
             </script>
         </body>
         </html>
@@ -122,17 +117,7 @@ fun HtmlWebView(
             .fillMaxWidth()
             .height(webViewHeight.dp),
         factory = { context ->
-            WebView(context).apply {
-                settings.javaScriptEnabled = true
-                settings.domStorageEnabled = true
-                settings.loadsImagesAutomatically = true
-                setBackgroundColor(0)
-                
-                // 禁用一切滚动，由 Compose 外部容器负责滚动
-                isVerticalScrollBarEnabled = false
-                isHorizontalScrollBarEnabled = false
-                overScrollMode = android.view.View.OVER_SCROLL_NEVER
-
+            WebViewPool.acquire(context).apply {
                 // 记录最后一次点击位置
                 setOnTouchListener { _, event ->
                     if (event.action == MotionEvent.ACTION_DOWN) {
@@ -181,6 +166,9 @@ fun HtmlWebView(
                 webView.loadDataWithBaseURL("https://tavo.ai/", styledHtml, "text/html", "UTF-8", null)
                 webView.tag = styledHtml
             }
+        },
+        onRelease = { webView ->
+            WebViewPool.release(webView)
         }
     )
 }

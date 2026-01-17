@@ -248,7 +248,7 @@ fun ChatMessageItem(
                         detectTapGestures(
                             onTap = { /* 处理点击事件 */ },
                             onLongPress = { offset ->
-                                // 修正：加上 8.dp 的 padding 偏移，使坐标相对于 Card
+                                // 加上 8.dp 的 padding 偏移，使坐标相对于 Card
                                 val paddingPx = if (contentType == MessageContentType.TEXT) with(density) { 8.dp.toPx() } else 0f
                                 touchPosition = Offset(offset.x + paddingPx, offset.y + paddingPx)
                                 isMenuVisible = true
@@ -262,51 +262,94 @@ fun ChatMessageItem(
                             MessageType.USER -> BlackText
                             MessageType.ASSISTANT, MessageType.SYSTEM -> WhiteText
                         }
-                        // 识别 HTML 的简单启发式算法
-                        val isHtmlContent = remember(content) {
-                            val trimmed = content.trim()
-                            (trimmed.contains("<") && trimmed.contains(">")) ||
-                                    trimmed.contains("class=") ||
-                                    trimmed.contains("style=")
+                        val specialTextColor = when (messageType) {
+                            MessageType.USER -> Color.DarkGray
+                            MessageType.ASSISTANT -> Color.LightGray
+                            MessageType.SYSTEM -> WhiteText
                         }
-                        if (isHtmlContent) {
-                            HtmlWebView(
-                                id = messageId,
-                                html = content,
-                                textColor = color,
-                                height = viewModel.findMessageItemHeight(messageId),
-                                modifier = Modifier.fillMaxWidth(),
-                                onHeight = { height ->
-                                    // 处理高度回调
-                                    viewModel.rememberMessageItemHeight(messageId, height)
-                                },
-                                onLongClick = { offset ->
-                                    // 因为 WebView 放在带有 padding(8.dp) 的 Column 中
-                                    // touchPosition 需要加上这个偏移量，以匹配 Column 的坐标系
-                                    val paddingPx = with(density) { 8.dp.toPx() }
-                                    touchPosition = Offset(
-                                        x = offset.x + paddingPx,
-                                        y = offset.y + paddingPx
-                                    )
-                                    isMenuVisible = true
+                        // 拆分内容
+                        val segments = remember(content) { splitMessageContent(content) }
+
+                        Column {
+                            segments.forEachIndexed { index, segment ->
+                                when (segment) {
+                                    is MessageSegment.Text -> {
+                                        StyledBracketText(
+                                            text = segment.content.trim(),
+                                            normalTextStyle = MaterialTheme.typography.bodyLarge.copy(color = color),
+                                            specialTextStyle = MaterialTheme.typography.bodyLarge.copy(
+                                                color = specialTextColor,
+                                                fontStyle = FontStyle.Italic
+                                            )
+                                        )
+                                    }
+                                    is MessageSegment.Html -> {
+                                        HtmlWebView(
+                                            id = "${messageId}_$index", // 使用唯一片段ID
+                                            html = segment.content,
+                                            textColor = color,
+                                            height = viewModel.findSegmentHeight(messageId, index),
+                                            modifier = Modifier.fillMaxWidth(),
+                                            onHeight = { height ->
+                                                viewModel.rememberSegmentHeight(messageId, index, height)
+                                            },
+                                            onLongClick = { offset ->
+                                                val paddingPx = with(density) { 8.dp.toPx() }
+                                                touchPosition = Offset(offset.x + paddingPx, offset.y + paddingPx)
+                                                isMenuVisible = true
+                                            }
+                                        )
+                                    }
                                 }
-                            )
-                        }
-                        else {
-                            val specialTextColor = when (messageType) {
-                                MessageType.USER -> Color.DarkGray
-                                MessageType.ASSISTANT -> Color.LightGray
-                                MessageType.SYSTEM -> WhiteText
                             }
-                            StyledBracketText(
-                                text = content.trim(),
-                                normalTextStyle = MaterialTheme.typography.bodyLarge.copy(color = color),
-                                specialTextStyle = MaterialTheme.typography.bodyLarge.copy(
-                                    color = specialTextColor,
-                                    fontStyle = FontStyle.Italic
-                                )
-                            )
                         }
+                        // 识别 HTML 的简单启发式算法
+//                        val isHtmlContent = remember(content) {
+//                            val trimmed = content.trim()
+//                            (trimmed.contains("<") && trimmed.contains(">")) ||
+//                                    trimmed.contains("class=") ||
+//                                    trimmed.contains("style=")
+//                        }
+//                        if (isHtmlContent) {
+//                            HtmlWebView(
+//                                id = messageId,
+//                                html = content,
+//                                textColor = color,
+//                                height = viewModel.findMessageItemHeight(messageId),
+//                                modifier = Modifier.fillMaxWidth(),
+//                                onHeight = { height ->
+//                                    // 处理高度回调
+//                                    viewModel.rememberMessageItemHeight(messageId, height)
+//                                },
+//                                onLongClick = { offset ->
+//                                    // 因为 WebView 放在带有 padding(8.dp) 的 Column 中
+//                                    // touchPosition 需要加上这个偏移量，以匹配 Column 的坐标系
+//                                    val paddingPx = with(density) { 8.dp.toPx() }
+//                                    touchPosition = Offset(
+//                                        x = offset.x + paddingPx,
+//                                        y = offset.y + paddingPx
+//                                    )
+//                                    isMenuVisible = true
+//                                }
+//                            )
+//                        }
+//                        else {
+//                            val specialTextColor = when (messageType) {
+//                                MessageType.USER -> Color.DarkGray
+//                                MessageType.ASSISTANT -> Color.LightGray
+//                                MessageType.SYSTEM -> WhiteText
+//                            }
+//                            StyledBracketText(
+//                                text = content.trim(),
+//                                normalTextStyle = MaterialTheme.typography.bodyLarge.copy(color = color),
+//                                specialTextStyle = MaterialTheme.typography.bodyLarge.copy(
+//                                    color = specialTextColor,
+//                                    fontStyle = FontStyle.Italic
+//                                )
+//                            )
+//                        }
+
+
                     }
 
                     MessageContentType.IMAGE -> {
@@ -504,4 +547,118 @@ fun EditMessageDialog(
             }
         }
     )
+}
+/**
+ * 将消息内容拆分为文本和HTML片段，支持处理嵌套标签
+ */
+private fun splitMessageContent(content: String): List<MessageSegment> {
+    val segments = mutableListOf<MessageSegment>()
+    // 识别 HTML 标签的正则，忽略大小写
+    val tagRegex = Regex("""<(/?)([a-zA-Z1-6]+)[^>]*>""", RegexOption.IGNORE_CASE)
+    val matches = tagRegex.findAll(content).toList()
+
+    if (matches.isEmpty()) {
+        return listOf(MessageSegment.Text(content))
+    }
+
+    var lastIndex = 0
+    var i = 0
+    while (i < matches.size) {
+        val match = matches[i]
+
+        // 添加标签前的文本
+        if (match.range.first > lastIndex) {
+            val text = content.substring(lastIndex, match.range.first)
+            if (text.isNotBlank()) segments.add(MessageSegment.Text(text))
+        }
+
+        val isClosing = match.groupValues[1] == "/"
+        val tagName = match.groupValues[2]
+        val isSelfClosing = match.value.endsWith("/>")
+
+        if (isClosing || isSelfClosing) {
+            // 孤立的闭合标签或自闭合标签，直接作为 HTML 片段
+            segments.add(MessageSegment.Html(match.value))
+            lastIndex = match.range.last + 1
+            i++
+        } else {
+            // 起始标签，寻找平衡的闭合标签（考虑嵌套）
+            var depth = 1
+            var j = i + 1
+            var blockEnd = match.range.last + 1
+            var foundEnd = false
+
+            while (j < matches.size) {
+                val nextMatch = matches[j]
+                val nextIsClosing = nextMatch.groupValues[1] == "/"
+                val nextTagName = nextMatch.groupValues[2]
+
+                if (nextTagName.equals(tagName, ignoreCase = true)) {
+                    if (nextIsClosing) {
+                        depth--
+                    } else if (!nextMatch.value.endsWith("/>")) {
+                        depth++
+                    }
+                }
+
+                if (depth == 0) {
+                    blockEnd = nextMatch.range.last + 1
+                    foundEnd = true
+                    i = j + 1
+                    break
+                }
+                j++
+            }
+
+            if (foundEnd) {
+                // 找到了匹配的闭合标签，将整个范围作为 HTML 片段
+                segments.add(MessageSegment.Html(content.substring(match.range.first, blockEnd)))
+                lastIndex = blockEnd
+            } else {
+                // 未找到匹配，仅将当前标签视为 HTML 并继续
+                segments.add(MessageSegment.Html(match.value))
+                lastIndex = match.range.last + 1
+                i++
+            }
+        }
+    }
+
+    if (lastIndex < content.length) {
+        val remaining = content.substring(lastIndex)
+        if (remaining.isNotBlank()) segments.add(MessageSegment.Text(remaining))
+    }
+
+    // 合并相邻的 HTML 片段（包括它们之间的空白字符），减少 WebView 数量并防止布局断裂
+    val mergedSegments = mutableListOf<MessageSegment>()
+    segments.forEach { segment ->
+        when (val last = mergedSegments.lastOrNull()) {
+            is MessageSegment.Html if segment is MessageSegment.Html -> {
+                mergedSegments[mergedSegments.size - 1] =
+                    MessageSegment.Html(last.content + segment.content)
+            }
+
+            is MessageSegment.Html if segment is MessageSegment.Text && segment.content.isBlank() -> {
+                mergedSegments.add(segment)
+            }
+
+            is MessageSegment.Text if last.content.isBlank() && segment is MessageSegment.Html &&
+                    mergedSegments.size >= 2 && mergedSegments[mergedSegments.size - 2] is MessageSegment.Html -> {
+                val prevHtml = mergedSegments[mergedSegments.size - 2] as MessageSegment.Html
+                mergedSegments.removeAt(mergedSegments.size - 1)
+                mergedSegments[mergedSegments.size - 1] =
+                    MessageSegment.Html(prevHtml.content + last.content + segment.content)
+            }
+
+            else -> {
+                mergedSegments.add(segment)
+            }
+        }
+    }
+
+    return if (mergedSegments.isEmpty() && content.isNotEmpty()) listOf(MessageSegment.Text(content)) else mergedSegments
+}
+// 定义消息片段类型
+private sealed class MessageSegment {
+    data class Text(val content: String) : MessageSegment()
+    data class Html(val content: String) : MessageSegment()
 }

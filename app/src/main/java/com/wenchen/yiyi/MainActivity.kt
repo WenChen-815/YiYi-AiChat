@@ -16,6 +16,7 @@ import com.wenchen.yiyi.core.log.FloatingLogcatView
 import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.core.util.PermissionUtils
 import com.wenchen.yiyi.core.util.StatusBarUtil
+import com.wenchen.yiyi.core.util.WebViewPool
 import com.wenchen.yiyi.core.util.storage.MMKVUtils
 import com.wenchen.yiyi.navigation.AppNavigator
 import com.wenchen.yiyi.navigation.AppNavHost
@@ -33,7 +34,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
+        WebViewPool.prepare(this)
         // 设置状态栏
         StatusBarUtil.transparentNavBar(this)
 
