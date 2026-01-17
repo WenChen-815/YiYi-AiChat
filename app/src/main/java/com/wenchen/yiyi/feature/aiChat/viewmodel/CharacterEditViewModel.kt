@@ -28,8 +28,8 @@ import com.wenchen.yiyi.core.datastore.storage.ImageManager
 import com.wenchen.yiyi.core.database.entity.AIChatMemory
 import com.wenchen.yiyi.core.database.entity.Conversation
 import com.wenchen.yiyi.core.database.entity.ConversationType
-import com.wenchen.yiyi.core.util.BitMapUtil
-import com.wenchen.yiyi.feature.output.model.OutputCharacterModel
+import com.wenchen.yiyi.feature.output.model.CharaCardV3
+import com.wenchen.yiyi.core.util.CharaCardParser
 import com.wenchen.yiyi.navigation.AppNavigator
 import com.wenchen.yiyi.navigation.routes.AiChatRoutes
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -41,6 +41,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import com.aventrix.jnanoid.jnanoid.NanoIdUtils
+import com.wenchen.yiyi.core.util.AppJson
+import com.wenchen.yiyi.core.util.BitMapUtil
+import com.wenchen.yiyi.feature.output.model.CharaExtensionModel
+import com.wenchen.yiyi.feature.output.model.CharacterData
+import kotlinx.serialization.json.Json
 import javax.inject.Inject
 
 @HiltViewModel
@@ -67,8 +72,11 @@ class CharacterEditViewModel @Inject constructor(
     val isNewCharacter: StateFlow<Boolean> = _isNewCharacter.asStateFlow()
 
     // 解析测试相关的状态
-    private val _parsedCharacter = MutableStateFlow<OutputCharacterModel?>(null)
-    val parsedCharacter: StateFlow<OutputCharacterModel?> = _parsedCharacter.asStateFlow()
+    private val _parsedCharacter = MutableStateFlow<CharacterData?>(null)
+    val parsedCharacter: StateFlow<CharacterData?> = _parsedCharacter.asStateFlow()
+
+    private val _parsedMemory = MutableStateFlow<String>("")
+    val parsedMemory: StateFlow<String?> = _parsedMemory.asStateFlow()
 
     private val _selectedImageUri = MutableStateFlow<Uri?>(null)
     val selectedImageUri: StateFlow<Uri?> = _selectedImageUri.asStateFlow()
@@ -161,20 +169,39 @@ class CharacterEditViewModel @Inject constructor(
     ) {
         _selectedImageUri.value = uri
         viewModelScope.launch(Dispatchers.IO) {
-            val result = BitMapUtil.readLargeDataFromUri<OutputCharacterModel>(context, uri)
+            val (cardV3, extension) = CharaCardParser.readTavernCardAndLargeDataFromUri<CharaCardV3, CharaExtensionModel>(context, uri)
             withContext(Dispatchers.Main) {
-                if (result != null) {
-                    _parsedCharacter.value = result
-                    // 更新图片状态
-                    result.avatarByte?.let {
-                        avatarBitmap = BitMapUtil.byteArrayToBitmap(it)
-                        hasNewAvatar = true
-                    }
-                    result.backgroundByte?.let {
-                        backgroundBitmap = BitMapUtil.byteArrayToBitmap(it)
+                if (cardV3 != null) {
+                    try {
+                        _parsedCharacter.value = cardV3.data
+
+                        // 从图片加载位图作为头像
+                        val originalBitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                            ImageDecoder.decodeBitmap(
+                                ImageDecoder.createSource(
+                                    context.contentResolver,
+                                    uri
+                                )
+                            )
+                        } else {
+                            @Suppress("DEPRECATION")
+                            MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+                        }
+
+                        // 优先从扩展数据中恢复位图，如果没有则使用原图补偿
+                        avatarBitmap = extension?.avatarByte?.let { BitMapUtil.byteArrayToBitmap(it) } ?: originalBitmap
+                        backgroundBitmap = extension?.backgroundByte?.let { BitMapUtil.byteArrayToBitmap(it) } ?: originalBitmap
                         hasNewBackground = true
+                        hasNewAvatar = true
+
+                        // 恢复记忆
+                        _parsedMemory.value = extension?.memory ?: ""
+                        ToastUtils.showToast("导入成功: ${cardV3.data.name}")
+                    } catch (e: Exception) {
+                        Timber.tag("CharacterEditViewModel").e(e, "解析角色卡失败")
+                        _parsedCharacter.value = null
+                        ToastUtils.showToast("解析失败，角色卡格式错误")
                     }
-                    ToastUtils.showToast("导入成功: ${result.name}")
                 } else {
                     _parsedCharacter.value = null
                     ToastUtils.showToast("解析失败，未找到角色数据")
@@ -306,7 +333,7 @@ class CharacterEditViewModel @Inject constructor(
                     }
                 }
             } catch (e: Exception) {
-                Timber.tag("CharacterEditViewModel").e(e, "保存失败")
+                Timber.e(e, "保存角色失败")
                 withContext(Dispatchers.Main) {
                     ToastUtils.show("保存失败: ${e.message}")
                 }

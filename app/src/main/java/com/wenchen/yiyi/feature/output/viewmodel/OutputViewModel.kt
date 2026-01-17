@@ -11,9 +11,12 @@ import com.wenchen.yiyi.core.database.entity.AICharacter
 import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.core.state.UserState
 import com.wenchen.yiyi.core.util.BitMapUtil
+import com.wenchen.yiyi.core.util.CharaCardParser
 import com.wenchen.yiyi.core.util.toast.ToastUtils
 import com.wenchen.yiyi.feature.output.component.OutputCharacterView
-import com.wenchen.yiyi.feature.output.model.OutputCharacterModel
+import com.wenchen.yiyi.feature.output.model.CharaCardV3
+import com.wenchen.yiyi.feature.output.model.CharaExtensionModel
+import com.wenchen.yiyi.feature.output.model.CharacterData
 import com.wenchen.yiyi.navigation.AppNavigator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -83,33 +86,42 @@ class OutputViewModel @Inject constructor(
                 // 获取角色记忆
                 val memory = memoryRepository.getByCharacterIdAndConversationId(
                     character.id,
-                    conversationId = "${userState.userId}_${character.id}",
+                    conversationId = "${userState.userId.value}_${character.id}",
                 )
                 // 加载角色头像 (IO线程)
                 val avatar = BitMapUtil.loadBitmapFromUri(context, character.avatar?.toUri(), false)
                 val background = BitMapUtil.loadBitmapFromUri(context, character.background?.toUri(), false)
                 
-                // 构建输出模型 (兼容旧模型格式，将新字段填入)
-                val outputCharacter = OutputCharacterModel(
-                    name = character.name,
-                    roleIdentity = character.description, // 将融合后的描述填入旧身份字段
-                    roleAppearance = null,
-                    roleDescription = null,
-                    outputExample = character.mes_example,
-                    behaviorRules = null,
-                    memory = memory?.content ?: "",
-                    avatarByte = avatar?.let {
-                        BitMapUtil.bitmapToByteArray(
-                            it,
-                            Bitmap.CompressFormat.PNG
-                        )
-                    },
-                    backgroundByte = background?.let {
-                        BitMapUtil.bitmapToByteArray(
-                            it,
-                            Bitmap.CompressFormat.PNG
-                        )
-                    },
+                // 转换头像和背景为 ByteArray
+                val avatarByte = avatar?.let {
+                    BitMapUtil.bitmapToByteArray(it, Bitmap.CompressFormat.PNG)
+                }
+                val backgroundByte = background?.let {
+                    BitMapUtil.bitmapToByteArray(it, Bitmap.CompressFormat.PNG)
+                }
+
+                // 构建符合 CharaCardV3 格式的对象，并将头像和背景存入特定字段
+                val cardV3 = CharaCardV3(
+                    data = CharacterData(
+                        name = character.name,
+                        description = character.description,
+                        personality = character.personality ?: "",
+                        scenario = character.scenario ?: "",
+                        first_mes = character.first_mes ?: "",
+                        mes_example = character.mes_example ?: "",
+                        creator_notes = character.creator_notes ?: "",
+                        system_prompt = character.system_prompt ?: "",
+                        post_history_instructions = character.post_history_instructions ?: "",
+                        creation_date = character.creation_date,
+                        modification_date = character.modification_date,
+                    )
+                )
+
+                // YiYi 扩展数据 (追加到文件末尾)
+                val extension = CharaExtensionModel(
+                    avatarByte = avatarByte,
+                    backgroundByte = backgroundByte,
+                    memory = memory?.content
                 )
 
                 /*
@@ -129,12 +141,9 @@ class OutputViewModel @Inject constructor(
                     )
                 }
 
-                // 保存文件 (IO线程)
-                BitMapUtil.saveBitmapWithLargeDataToGallery<OutputCharacterModel>(
-                    context,
-                    bitmap,
-                    displayName = "${character.name}_${System.currentTimeMillis()}",
-                    data = outputCharacter
+                // 保存文件，直接传入 CharaCardV3 对象
+                CharaCardParser.saveBitmapWithTavernCardAndLargeDataToGallery(
+                    context, bitmap, "${character.name}_${System.currentTimeMillis()}", cardV3, extension
                 )
             }
             withContext(Dispatchers.Main) {

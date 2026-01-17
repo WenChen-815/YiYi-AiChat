@@ -193,6 +193,8 @@ private fun CharacterEditScreenContent(
         StatusBarUtil.setStatusBarTextColor(activity, true)
     }
     val parsedCharacter = viewModel.parsedCharacter.collectAsState().value
+    val parsedMemory = viewModel.parsedMemory.collectAsState().value
+
     var name by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var mes_example by remember { mutableStateOf("") }
@@ -215,16 +217,15 @@ private fun CharacterEditScreenContent(
     val scrollState = rememberScrollState()
     // 监听解析后的角色数据，用于从图片导入角色功能
     LaunchedEffect(parsedCharacter) {
-        parsedCharacter?.let {
-            name = it.name
+        parsedCharacter?.let { charaData ->
+            name = charaData.name
             description = buildString {
-                it.roleIdentity?.let { append(it).append("\n") }
-                it.roleAppearance?.let { append(it).append("\n") }
-                it.roleDescription?.let { append(it).append("\n") }
-                it.behaviorRules?.let { append(it) }
+                if (charaData.description.isNotEmpty()) {
+                    append(charaData.description)
+                }
             }.trim()
-            mes_example = it.outputExample ?: ""
-            memory = it.memory ?: ""
+            mes_example = charaData.mes_example ?: ""
+            memory = parsedMemory ?: ""
         }
     }
     // 如果是编辑模式，加载角色数据

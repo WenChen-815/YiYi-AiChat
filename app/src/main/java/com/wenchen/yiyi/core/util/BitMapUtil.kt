@@ -19,28 +19,25 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.core.graphics.scale
-import androidx.exifinterface.media.ExifInterface
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import kotlinx.serialization.json.Json
 import timber.log.Timber
 import java.io.ByteArrayOutputStream
 import java.io.OutputStream
-import java.nio.ByteBuffer
 import androidx.core.graphics.createBitmap
 
 object BitMapUtil {
-    // 定义一个魔术字，用于识别追加的数据
-    const val MAGIC_WORD = "YIYI_DATA"
+
+    // --- 1. 捕获与加载 ---
 
     /**
      * 将 Composable 内容捕获为 Bitmap。
      */
-    fun captureComposableAsBitmap(context: Context, width: Int, height: Int = 0,content: @Composable () -> Unit): Bitmap {
+    fun captureComposableAsBitmap(context: Context, width: Int, height: Int = 0, content: @Composable () -> Unit): Bitmap {
         val activity = findActivity(context) ?: throw IllegalArgumentException("Context must be an Activity or wrapped by an Activity")
         val composeView = ComposeView(activity).apply {
             setContent(content)
@@ -81,14 +78,36 @@ object BitMapUtil {
         }
     }
 
-    private fun findActivity(context: Context): Activity? {
-        var currentContext = context
-        while (currentContext is ContextWrapper) {
-            if (currentContext is Activity) return currentContext
-            currentContext = currentContext.baseContext
+    /**
+     * 从Uri加载Bitmap
+     */
+    fun loadBitmapFromUri(context: Context, uri: Uri?, useHardware: Boolean = true): Bitmap? {
+        return try {
+            uri?.let {
+                val options = BitmapFactory.Options().apply {
+                    // 强制不使用硬件位图
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !useHardware) {
+                        inPreferredConfig = Bitmap.Config.ARGB_8888
+                    }
+                }
+                val scheme = it.scheme
+                if (scheme == null || scheme == "file") {
+                    // 处理纯文件路径或 file:// 协议，避免调用 ContentResolver
+                    BitmapFactory.decodeFile(it.path ?: it.toString(), options)
+                } else {
+                    // 处理 content:// 等内容提供者协议
+                    context.contentResolver.openInputStream(it)?.use { inputStream ->
+                        BitmapFactory.decodeStream(inputStream, null, options)
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
         }
-        return null
     }
+
+    // --- 2. 保存图片到图库 ---
 
     /**
      * 将 Bitmap 保存到设备的公共图库目录。
@@ -98,89 +117,129 @@ object BitMapUtil {
     }
 
     /**
-     * 使用 Exif (UserComment) 将数据写入图片。
-     * ⚠️ 注意：数据量不能太大（通常限制在 64KB 以内）。
+     * 将原始字节数组保存到图库。
      */
-    inline fun <reified T> saveBitmapWithDataToGallery(
-        context: Context,
-        bitmap: Bitmap,
-        displayName: String,
-        data: T
-    ): Uri? {
-        return saveBitmapToGalleryInternal(context, bitmap, displayName) { uri ->
+    fun saveBytesToGallery(context: Context, bytes: ByteArray, displayName: String): Uri? {
+        val imageCollection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+        } else {
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+        }
+
+        val contentValues = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, "$displayName.png")
+            put(MediaStore.MediaColumns.MIME_TYPE, "image/png")
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                context.contentResolver.openFileDescriptor(uri, "rw")?.use { pfd ->
-                    val exif = ExifInterface(pfd.fileDescriptor)
-                    val jsonData = Json.encodeToString(data)
-                    exif.setAttribute(ExifInterface.TAG_USER_COMMENT, jsonData)
-                    exif.saveAttributes()
-                }
+                put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
+                put(MediaStore.MediaColumns.IS_PENDING, 1)
             }
         }
-    }
 
-    /**
-     * 使用文件末尾追加法 (EOF Append) 将大容量数据写入图片。
-     * 适用于包含 ByteArray 等大数据。
-     */
-    inline fun <reified T> saveBitmapWithLargeDataToGallery(
-        context: Context,
-        bitmap: Bitmap,
-        displayName: String,
-        data: T
-    ): Uri? {
-        val jsonData = Json.encodeToString(data)
-        val dataBytes = jsonData.toByteArray(Charsets.UTF_8)
-        
-        return saveBitmapToGalleryInternal(
-            context = context,
-            bitmap = bitmap,
-            displayName = displayName,
-            onStreamWrite = { os ->
-                // 1. 追加 JSON 数据
-                os.write(dataBytes)
-                // 2. 追加 4 字节的数据长度（BigEndian）
-                val lengthBytes = ByteBuffer.allocate(4).putInt(dataBytes.size).array()
-                os.write(lengthBytes)
-                // 3. 追加魔术字作为标识
-                os.write(MAGIC_WORD.toByteArray(Charsets.UTF_8))
+        val resolver = context.contentResolver
+        val uri = resolver.insert(imageCollection, contentValues)
+
+        uri?.let {
+            try {
+                resolver.openOutputStream(it)?.use { outputStream ->
+                    outputStream.write(bytes)
+                    outputStream.flush()
+                }
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    contentValues.clear()
+                    contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
+                    resolver.update(it, contentValues, null, null)
+                }
+                return it
+            } catch (e: Exception) {
+                resolver.delete(it, null, null)
+                Timber.e(e, "Failed to save bytes to gallery")
             }
-        )
+        }
+        return null
     }
 
+    // --- 4. 压缩与处理 ---
+
     /**
-     * 从图片的 Uri 中读取末尾追加的大容量数据。
+    * 压缩图片到指定大小以下
+    */
+    fun compressBitmapToLimit(bitmap: Bitmap, maxSize: Int): Bitmap {
+        var currentBitmap = bitmap
+        var quality = 100
+
+        while (getBitmapSize(currentBitmap) > maxSize && quality > 10) {
+            quality -= 10
+            currentBitmap = compressBitmapQuality(currentBitmap, quality)
+        }
+
+        var scale = 1.0f
+        while (getBitmapSize(currentBitmap) > maxSize && scale > 0.1f) {
+            scale -= 0.1f
+            currentBitmap = scaleBitmap(currentBitmap, scale)
+            currentBitmap = compressBitmapQuality(currentBitmap, quality)
+        }
+
+        return currentBitmap
+    }
+
+    fun compressBitmapQuality(bitmap: Bitmap, quality: Int): Bitmap {
+        val stream = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.JPEG, quality, stream)
+        val byteArray = stream.toByteArray()
+        return BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
+    }
+
+    fun scaleBitmap(bitmap: Bitmap, scale: Float): Bitmap {
+        val width = (bitmap.width * scale).toInt()
+        val height = (bitmap.height * scale).toInt()
+        return bitmap.scale(width, height)
+    }
+
+    fun getBitmapSize(bitmap: Bitmap): Int {
+        return bitmap.allocationByteCount
+    }
+
+    // --- 5. 转换工具 ---
+
+    /**
+     * 将Bitmap转换为ByteArray
      */
-    inline fun <reified T> readLargeDataFromUri(context: Context, uri: Uri): T? {
+    fun bitmapToByteArray(bitmap: Bitmap, format: Bitmap.CompressFormat, quality: Int = 100): ByteArray? {
         return try {
-            context.contentResolver.openInputStream(uri)?.use { inputStream ->
-                val allBytes = inputStream.readBytes()
-                val magicBytes = MAGIC_WORD.toByteArray(Charsets.UTF_8)
-                val footerSize = magicBytes.size + 4
-                
-                if (allBytes.size < footerSize) return null
-                
-                // 1. 验证魔术字
-                val magicStart = allBytes.size - magicBytes.size
-                val magicFound = allBytes.copyOfRange(magicStart, allBytes.size)
-                if (!magicFound.contentEquals(magicBytes)) return null
-                
-                // 2. 读取长度信息
-                val lengthStart = magicStart - 4
-                val lengthBuffer = ByteBuffer.wrap(allBytes, lengthStart, 4)
-                val dataLength = lengthBuffer.int
-                
-                // 3. 提取并解析 JSON
-                val dataStart = lengthStart - dataLength
-                if (dataStart < 0) return null
-                val jsonData = String(allBytes, dataStart, dataLength, Charsets.UTF_8)
-                Json.decodeFromString<T>(jsonData)
-            }
+            val outputStream = ByteArrayOutputStream()
+            bitmap.compress(format, quality, outputStream)
+            outputStream.flush()
+            outputStream.toByteArray()
         } catch (e: Exception) {
-            Timber.e(e, "Failed to read large data from image")
+            e.printStackTrace()
             null
         }
     }
+
+    /**
+     * 将ByteArray转换为Bitmap
+     */
+    fun byteArrayToBitmap(byteArray: ByteArray, options: BitmapFactory.Options? = null): Bitmap? {
+        return try {
+            BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size, options)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    /**
+    * 将Bitmap转换为Base64字符串
+    */
+    fun bitmapToBase64(bitmap: Bitmap): String {
+        val baos = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos)
+        val bytes = baos.toByteArray()
+        return Base64.encodeToString(bytes, Base64.DEFAULT)
+    }
+
+    // --- 6. 内部辅助方法 ---
 
     /**
      * 内部通用的图片保存逻辑
@@ -241,108 +300,12 @@ object BitMapUtil {
         return null
     }
 
-    /**
-     * 将Bitmap转换为ByteArray
-     */
-    fun bitmapToByteArray(bitmap: Bitmap, format: Bitmap.CompressFormat, quality: Int = 100): ByteArray? {
-        return try {
-            val outputStream = ByteArrayOutputStream()
-            bitmap.compress(format, quality, outputStream)
-            outputStream.flush()
-            outputStream.toByteArray()
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
+    private fun findActivity(context: Context): Activity? {
+        var currentContext = context
+        while (currentContext is ContextWrapper) {
+            if (currentContext is Activity) return currentContext
+            currentContext = currentContext.baseContext
         }
-    }
-
-    /**
-     * 将ByteArray转换为Bitmap
-     */
-    fun byteArrayToBitmap(byteArray: ByteArray, options: BitmapFactory.Options? = null): Bitmap? {
-        return try {
-            BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size, options)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
-    }
-
-    /**
-     * 从Uri加载Bitmap
-     */
-    fun loadBitmapFromUri(context: Context, uri: Uri?, useHardware: Boolean = true): Bitmap? {
-        return try {
-            uri?.let {
-                val options = BitmapFactory.Options().apply {
-                    // 强制不使用硬件位图
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !useHardware) {
-                        inPreferredConfig = Bitmap.Config.ARGB_8888
-                    }
-                }
-                val scheme = it.scheme
-                if (scheme == null || scheme == "file") {
-                    // 处理纯文件路径或 file:// 协议，避免调用 ContentResolver
-                    BitmapFactory.decodeFile(it.path ?: it.toString(), options)
-                } else {
-                    // 处理 content:// 等内容提供者协议
-                    context.contentResolver.openInputStream(it)?.use { inputStream ->
-                        BitmapFactory.decodeStream(inputStream, null, options)
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
-    }
-
-    /**
-    * 将Bitmap转换为Base64字符串
-    */
-    fun bitmapToBase64(bitmap: Bitmap): String {
-        val baos = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos)
-        val bytes = baos.toByteArray()
-        return Base64.encodeToString(bytes, Base64.DEFAULT)
-    }
-
-    /**
-    * 压缩图片到指定大小以下
-    */
-    fun compressBitmapToLimit(bitmap: Bitmap, maxSize: Int): Bitmap {
-        var currentBitmap = bitmap
-        var quality = 100
-
-        while (getBitmapSize(currentBitmap) > maxSize && quality > 10) {
-            quality -= 10
-            currentBitmap = compressBitmapQuality(currentBitmap, quality)
-        }
-
-        var scale = 1.0f
-        while (getBitmapSize(currentBitmap) > maxSize && scale > 0.1f) {
-            scale -= 0.1f
-            currentBitmap = scaleBitmap(currentBitmap, scale)
-            currentBitmap = compressBitmapQuality(currentBitmap, quality)
-        }
-
-        return currentBitmap
-    }
-
-    fun getBitmapSize(bitmap: Bitmap): Int {
-        return bitmap.allocationByteCount
-    }
-
-    fun compressBitmapQuality(bitmap: Bitmap, quality: Int): Bitmap {
-        val stream = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.JPEG, quality, stream)
-        val byteArray = stream.toByteArray()
-        return BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
-    }
-
-    fun scaleBitmap(bitmap: Bitmap, scale: Float): Bitmap {
-        val width = (bitmap.width * scale).toInt()
-        val height = (bitmap.height * scale).toInt()
-        return bitmap.scale(width, height)
+        return null
     }
 }
