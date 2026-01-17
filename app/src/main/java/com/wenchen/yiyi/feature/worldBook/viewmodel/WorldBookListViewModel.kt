@@ -6,7 +6,7 @@ import com.squareup.moshi.JsonAdapter
 import com.wenchen.yiyi.Application
 import com.wenchen.yiyi.core.base.viewmodel.BaseViewModel
 import com.wenchen.yiyi.core.state.UserConfigState
-import com.wenchen.yiyi.core.util.storage.FilesUtil
+import com.wenchen.yiyi.core.util.storage.FilesUtils
 import com.wenchen.yiyi.core.state.UserState
 import com.wenchen.yiyi.feature.worldBook.model.WorldBook
 import com.wenchen.yiyi.navigation.AppNavigator
@@ -73,13 +73,13 @@ class WorldBookListViewModel @Inject constructor(
         adapter: JsonAdapter<WorldBook>,
         onLoaded: (List<WorldBook>) -> Unit
     ) = viewModelScope.launch(Dispatchers.IO) {
-        val worldBookFiles = FilesUtil.listFileNames("world_book")
+        val worldBookFiles = FilesUtils.listFileNames("world_book")
         Timber.tag("WorldBookListActivity").d("loadWorldBooks: $worldBookFiles")
         val worldBooks = mutableListOf<WorldBook>()
 
         worldBookFiles.forEach { fileName ->
             try {
-                val json = FilesUtil.readFile("world_book/$fileName")
+                val json = FilesUtils.readFile("world_book/$fileName")
                 val worldBook = adapter.fromJson(json)
                 worldBook?.let { worldBooks.add(it) }
             } catch (e: Exception) {

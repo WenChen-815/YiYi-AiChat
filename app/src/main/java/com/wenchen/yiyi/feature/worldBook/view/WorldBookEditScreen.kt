@@ -1,6 +1,5 @@
 package com.wenchen.yiyi.feature.worldBook.view
 
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.clickable
@@ -16,25 +15,18 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.squareup.moshi.JsonAdapter
-import com.squareup.moshi.Moshi
 import com.wenchen.yiyi.core.designSystem.component.SettingTextFieldItem
 import com.wenchen.yiyi.core.common.theme.AIChatTheme
 import com.wenchen.yiyi.core.common.theme.WhiteText
-import com.wenchen.yiyi.core.util.storage.FilesUtil
-import com.wenchen.yiyi.core.util.StatusBarUtil
-import com.wenchen.yiyi.feature.worldBook.model.WorldBook
+import com.wenchen.yiyi.core.util.storage.FilesUtils
+import com.wenchen.yiyi.core.util.ui.StatusBarUtils
 import com.wenchen.yiyi.feature.worldBook.model.WorldBookItem
 import com.wenchen.yiyi.feature.worldBook.viewmodel.WorldBookEditViewModel
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import androidx.compose.runtime.collectAsState
-import com.wenchen.yiyi.core.util.toast.ToastUtils
+import com.wenchen.yiyi.core.util.ui.ToastUtils
 import timber.log.Timber
 
 @Composable
@@ -67,9 +59,9 @@ private fun WorldBookEditScreenContent(
 ) {
     val activity = LocalActivity.current as ComponentActivity
     if (isSystemInDarkTheme()) {
-        StatusBarUtil.setStatusBarTextColor(activity, false)
+        StatusBarUtils.setStatusBarTextColor(activity, false)
     } else {
-        StatusBarUtil.setStatusBarTextColor(activity, true)
+        StatusBarUtils.setStatusBarTextColor(activity, true)
     }
 
     var name by remember { mutableStateOf("") }
@@ -101,7 +93,7 @@ private fun WorldBookEditScreenContent(
                     onClick = {
                         // 执行删除操作
                         Timber.tag("WorldBookEditScreen").d("delete worldId: ${viewModel.worldId.value}")
-                        val deleted = FilesUtil.deleteFile("world_book/${viewModel.worldId.value}.json")
+                        val deleted = FilesUtils.deleteFile("world_book/${viewModel.worldId.value}.json")
                         if (deleted) {
                             ToastUtils.showToast("世界删除成功")
                             viewModel.navigateBack()

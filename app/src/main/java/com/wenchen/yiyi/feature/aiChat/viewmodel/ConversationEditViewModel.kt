@@ -21,10 +21,10 @@ import com.wenchen.yiyi.core.data.repository.AIChatMemoryRepository
 import com.wenchen.yiyi.core.data.repository.ConversationRepository
 import com.wenchen.yiyi.core.database.entity.AICharacter
 import com.wenchen.yiyi.core.database.entity.AIChatMemory
-import com.wenchen.yiyi.core.util.storage.FilesUtil
+import com.wenchen.yiyi.core.util.storage.FilesUtils
 import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.core.state.UserState
-import com.wenchen.yiyi.core.util.toast.ToastUtils
+import com.wenchen.yiyi.core.util.ui.ToastUtils
 import com.wenchen.yiyi.core.datastore.storage.ImageManager
 import com.wenchen.yiyi.core.database.entity.Conversation
 import com.wenchen.yiyi.core.database.entity.ConversationType
@@ -266,13 +266,13 @@ class ConversationEditViewModel @Inject constructor(
         adapter: JsonAdapter<WorldBook>,
         onLoaded: (List<WorldBook>) -> Unit
     ) = viewModelScope.launch(Dispatchers.IO) {
-        val worldBookFiles = FilesUtil.listFileNames("world_book")
+        val worldBookFiles = FilesUtils.listFileNames("world_book")
         Timber.tag("WorldBookListActivity").d("loadWorldBooks: $worldBookFiles")
         val worldBooks = mutableListOf(WorldBook("","未选择世界"))
 
         worldBookFiles.forEach { fileName ->
             try {
-                val json = FilesUtil.readFile("world_book/$fileName")
+                val json = FilesUtils.readFile("world_book/$fileName")
                 val worldBook = adapter.fromJson(json)
                 worldBook?.let { worldBooks.add(it) }
             } catch (e: Exception) {

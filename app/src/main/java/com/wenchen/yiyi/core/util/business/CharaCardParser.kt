@@ -1,4 +1,4 @@
-package com.wenchen.yiyi.core.util
+package com.wenchen.yiyi.core.util.business
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -6,8 +6,8 @@ import android.net.Uri
 import android.os.Build
 import android.util.Base64
 import androidx.exifinterface.media.ExifInterface
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
+import com.wenchen.yiyi.core.util.common.AppJson
+import com.wenchen.yiyi.core.util.ui.BitMapUtils
 import timber.log.Timber
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
@@ -30,7 +30,7 @@ object CharaCardParser {
                 extractCharaChunk(inputStream)
             }
         } catch (e: Exception) {
-            Timber.e(e, "解析角色卡失败")
+            Timber.Forest.e(e, "解析角色卡失败")
             null
         }
     }
@@ -101,7 +101,7 @@ object CharaCardParser {
         displayName: String,
         data: T
     ): Uri? {
-        return BitMapUtil.saveBitmapToGalleryInternal(context, bitmap, displayName) { uri ->
+        return BitMapUtils.saveBitmapToGalleryInternal(context, bitmap, displayName) { uri ->
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 context.contentResolver.openFileDescriptor(uri, "rw")?.use { pfd ->
                     val exif = ExifInterface(pfd.fileDescriptor)
@@ -125,8 +125,8 @@ object CharaCardParser {
     ): Uri? {
         val jsonData = AppJson.encodeToString(data)
         val dataBytes = jsonData.toByteArray(Charsets.UTF_8)
-        
-        return BitMapUtil.saveBitmapToGalleryInternal(
+
+        return BitMapUtils.saveBitmapToGalleryInternal(
             context = context,
             bitmap = bitmap,
             displayName = displayName,
@@ -155,16 +155,16 @@ object CharaCardParser {
         val tavernJson = AppJson.encodeToString(tavernData)
         val base64Data = Base64.encodeToString(tavernJson.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
         val payload = "chara\u0000$base64Data".toByteArray(Charsets.UTF_8)
-        
+
         val largeDataJson = AppJson.encodeToString(extraLargeData)
         val largeDataBytes = largeDataJson.toByteArray(Charsets.UTF_8)
 
         val baos = ByteArrayOutputStream()
         bitmap.compress(Bitmap.CompressFormat.PNG, 100, baos)
         val pngBytes = baos.toByteArray()
-        
+
         val pngWithTavern = injectPngChunk(pngBytes, "tEXt", payload)
-        
+
         // 最终拼接：PNG(含块) + LargeData + Length(4) + MagicWord
         val footerBytes = ByteBuffer.allocate(largeDataBytes.size + 4 + MAGIC_WORD.length)
             .put(largeDataBytes)
@@ -172,7 +172,7 @@ object CharaCardParser {
             .put(MAGIC_WORD.toByteArray(Charsets.UTF_8))
             .array()
 
-        return BitMapUtil.saveBytesToGallery(context, pngWithTavern + footerBytes, displayName)
+        return BitMapUtils.saveBytesToGallery(context, pngWithTavern + footerBytes, displayName)
     }
 
     /**
@@ -194,7 +194,7 @@ object CharaCardParser {
                 // 使用 ignoreUnknownKeys 增强兼容性
                 AppJson.decodeFromString<T>(it)
             } catch (e: Exception) {
-                Timber.e(e, "Failed to decode tavern block data")
+                Timber.Forest.e(e, "Failed to decode tavern block data")
                 null
             }
         }
@@ -214,19 +214,19 @@ object CharaCardParser {
                 val allBytes = inputStream.readBytes()
                 val magicBytes = MAGIC_WORD.toByteArray(Charsets.UTF_8)
                 val footerSize = magicBytes.size + 4
-                
+
                 if (allBytes.size < footerSize) return null
-                
+
                 // 1. 验证魔术字
                 val magicStart = allBytes.size - magicBytes.size
                 val magicFound = allBytes.copyOfRange(magicStart, allBytes.size)
                 if (!magicFound.contentEquals(magicBytes)) return null
-                
+
                 // 2. 读取长度信息
                 val lengthStart = magicStart - 4
                 val lengthBuffer = ByteBuffer.wrap(allBytes, lengthStart, 4)
                 val dataLength = lengthBuffer.int
-                
+
                 // 3. 提取并解析 JSON
                 val dataStart = lengthStart - dataLength
                 if (dataStart < 0) return null
@@ -234,7 +234,7 @@ object CharaCardParser {
                 AppJson.decodeFromString<T>(jsonData)
             }
         } catch (e: Exception) {
-            Timber.e(e, "Failed to read large data from image")
+            Timber.Forest.e(e, "Failed to read large data from image")
             null
         }
     }
@@ -245,18 +245,18 @@ object CharaCardParser {
     fun injectPngChunk(pngBytes: ByteArray, type: String, data: ByteArray): ByteArray {
         val typeBytes = type.toByteArray(StandardCharsets.US_ASCII)
         val length = data.size
-        
+
         val chunkBuffer = ByteBuffer.allocate(4 + 4 + length + 4)
         chunkBuffer.putInt(length)
         chunkBuffer.put(typeBytes)
         chunkBuffer.put(data)
-        
+
         val crc = CRC32()
         crc.update(typeBytes)
         crc.update(data)
         chunkBuffer.putInt(crc.value.toInt())
         val newChunk = chunkBuffer.array()
-        
+
         // 查找 IEND 块的位置以便在其之前插入
         val iendType = "IEND".toByteArray(StandardCharsets.US_ASCII)
         var iendOffset = -1
@@ -267,7 +267,7 @@ object CharaCardParser {
                 break
             }
         }
-        
+
         return if (iendOffset != -1) {
             val result = ByteArray(pngBytes.size + newChunk.size)
             System.arraycopy(pngBytes, 0, result, 0, iendOffset)

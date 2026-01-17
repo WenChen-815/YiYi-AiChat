@@ -26,9 +26,9 @@ import com.wenchen.yiyi.core.network.service.MultimodalMessage
 import com.wenchen.yiyi.core.result.ResultHandler
 import com.wenchen.yiyi.core.result.asResult
 import com.wenchen.yiyi.core.state.UserConfigState
-import com.wenchen.yiyi.core.util.BitMapUtil
-import com.wenchen.yiyi.core.util.ChatUtil
-import com.wenchen.yiyi.core.util.storage.FilesUtil
+import com.wenchen.yiyi.core.util.ui.BitMapUtils
+import com.wenchen.yiyi.core.util.business.ChatUtils
+import com.wenchen.yiyi.core.util.storage.FilesUtils
 import com.wenchen.yiyi.feature.worldBook.model.WorldBook
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -262,7 +262,7 @@ class AIChatManager @Inject constructor(
         var worldBook: WorldBook? = null
         if (conversation.chatWorldId.isNotEmpty()) {
             // 获取世界ID并通过moshi解析
-            val worldBookJson = FilesUtil.readFile("world_book/${conversation.chatWorldId}.json")
+            val worldBookJson = FilesUtils.readFile("world_book/${conversation.chatWorldId}.json")
             val worldBookAdapter: JsonAdapter<WorldBook> =
                 Moshi.Builder().build().adapter(WorldBook::class.java)
             worldBook = worldBookJson.let { worldBookAdapter.fromJson(it) }
@@ -289,7 +289,7 @@ class AIChatManager @Inject constructor(
         // 添加历史消息
         for (message in oldMessages) {
             if (message.type == MessageType.ASSISTANT && message.characterId == aiCharacter.id) {
-                messages.add(Message("assistant", ChatUtil.parseMessage(message).cleanedContent))
+                messages.add(Message("assistant", ChatUtils.parseMessage(message).cleanedContent))
             } else {
                 messages.add(Message("user", message.content))
             }
@@ -754,9 +754,9 @@ class AIChatManager @Inject constructor(
         }
         chatMessageRepository.insertMessage(imgMessage)
         // 验证图片的大小是否超过8MB，若超过则循环压缩图片至8MB以下
-        val compressedBitmap = BitMapUtil.compressBitmapToLimit(bitmap, 8 * 1024 * 1024)
+        val compressedBitmap = BitMapUtils.compressBitmapToLimit(bitmap, 8 * 1024 * 1024)
         // 将压缩后的Bitmap转换为Base64字符串
-        val imageBase64 = BitMapUtil.bitmapToBase64(compressedBitmap)
+        val imageBase64 = BitMapUtils.bitmapToBase64(compressedBitmap)
         val prompt =
             "请用中文描述这张图片的主要内容或主题。不要使用'这是'、'这张'等开头，直接描述。如果有文字，请包含在描述中。"
         val contentItems = mutableListOf<ContentItem>().apply {

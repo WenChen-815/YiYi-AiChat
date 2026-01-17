@@ -16,7 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import com.wenchen.yiyi.core.util.WebViewPool
+import com.wenchen.yiyi.core.util.system.WebViewPool
 import kotlin.math.abs
 
 @SuppressLint("SetJavaScriptEnabled", "ClickableViewAccessibility")

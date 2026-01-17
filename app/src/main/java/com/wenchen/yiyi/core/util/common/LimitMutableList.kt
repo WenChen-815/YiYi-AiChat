@@ -1,4 +1,4 @@
-package com.wenchen.yiyi.core.util
+package com.wenchen.yiyi.core.util.common
 
 /**
  * 创建一个具有指定限制大小的可变列表
@@ -125,7 +125,7 @@ class LimitMutableList<T>(private var limit: Int) : MutableList<T> {
     override fun subList(fromIndex: Int, toIndex: Int): MutableList<T> =
         list.subList(fromIndex, toIndex)
 
-    override fun equals(other: Any?): Boolean = list.equals(other)
+    override fun equals(other: Any?): Boolean = list == other
 
     override fun hashCode(): Int = list.hashCode()
 

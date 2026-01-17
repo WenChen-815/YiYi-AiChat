@@ -1,4 +1,4 @@
-package com.wenchen.yiyi.core.util.toast
+package com.wenchen.yiyi.core.util.ui
 
 import android.app.Application
 import android.content.Context

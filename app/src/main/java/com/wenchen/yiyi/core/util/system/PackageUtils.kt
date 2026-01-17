@@ -1,4 +1,4 @@
-package com.wenchen.yiyi.core.util.`package`
+package com.wenchen.yiyi.core.util.system
 
 import android.content.Context
 import android.content.pm.PackageInfo

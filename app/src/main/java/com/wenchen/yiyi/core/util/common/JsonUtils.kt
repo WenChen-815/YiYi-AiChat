@@ -1,4 +1,4 @@
-package com.wenchen.yiyi.core.util
+package com.wenchen.yiyi.core.util.common
 
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json

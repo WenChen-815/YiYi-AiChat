@@ -29,11 +29,11 @@ import com.wenchen.yiyi.core.model.network.ModelsResponse
 import com.wenchen.yiyi.core.model.network.NetworkResponse
 import com.wenchen.yiyi.core.result.ResultHandler
 import com.wenchen.yiyi.core.result.asResult
-import com.wenchen.yiyi.core.util.LimitMutableList
-import com.wenchen.yiyi.core.util.limitMutableListOf
+import com.wenchen.yiyi.core.util.common.LimitMutableList
+import com.wenchen.yiyi.core.util.common.limitMutableListOf
 import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.core.state.UserState
-import com.wenchen.yiyi.core.util.toast.ToastUtils
+import com.wenchen.yiyi.core.util.ui.ToastUtils
 import com.wenchen.yiyi.navigation.AppNavigator
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
@@ -46,7 +46,6 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.io.File
-import kotlin.collections.toMutableList
 
 abstract class BaseChatViewModel(
     protected val conversationRepository: ConversationRepository,

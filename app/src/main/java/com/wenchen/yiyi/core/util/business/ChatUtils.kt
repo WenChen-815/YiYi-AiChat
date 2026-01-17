@@ -1,9 +1,9 @@
-package com.wenchen.yiyi.core.util
+package com.wenchen.yiyi.core.util.business
 
 import com.wenchen.yiyi.core.database.entity.ChatMessage
 import com.wenchen.yiyi.core.database.entity.TempChatMessage
 
-object ChatUtil {
+object ChatUtils {
     data class ParsedMessage(
         val cleanedContent: String,
         val extractedDate: String? = null,

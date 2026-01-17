@@ -1,11 +1,14 @@
-package com.wenchen.yiyi.core.util
+package com.wenchen.yiyi.core.util.ui
 
 import android.graphics.Bitmap
-import android.graphics.Color as AndroidColor
 import androidx.compose.ui.graphics.Color
-import kotlin.math.*
-import androidx.core.graphics.scale
 import androidx.core.graphics.get
+import androidx.core.graphics.scale
+import kotlin.math.abs
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 object ThemeColorExtractor {
 
@@ -48,7 +51,7 @@ object ThemeColorExtractor {
         )
 
         if (pixels.isEmpty()) {
-            return listOf(Color.White)
+            return listOf(Color.Companion.White)
         }
 
         val clusters = kMeansHsv(pixels, maxColors.coerceAtMost(pixels.size))
@@ -93,7 +96,7 @@ object ThemeColorExtractor {
         for (y in 0 until height step sampleSize) {
             for (x in 0 until width step sampleSize) {
                 val pixel = bitmap[x, y]
-                AndroidColor.colorToHSV(pixel, hsv)
+                android.graphics.Color.colorToHSV(pixel, hsv)
 
                 if (hsv[1] >= minSaturation && hsv[2] >= minValue && hsv[2] <= maxValue) {
                     hsvPixels.add(hsv.copyOf())
@@ -105,7 +108,7 @@ object ThemeColorExtractor {
             for (y in 0 until height step sampleSize) {
                 for (x in 0 until width step sampleSize) {
                     val pixel = bitmap[x, y]
-                    AndroidColor.colorToHSV(pixel, hsv)
+                    android.graphics.Color.colorToHSV(pixel, hsv)
                     hsvPixels.add(hsv.copyOf())
                 }
             }
@@ -285,11 +288,11 @@ object ThemeColorExtractor {
      * 将HSV颜色转换为Compose的Color对象
      */
     private fun hsvToComposeColor(hsv: FloatArray): Color {
-        val rgb = AndroidColor.HSVToColor(hsv)
+        val rgb = android.graphics.Color.HSVToColor(hsv)
         return Color(
-            red = AndroidColor.red(rgb) / 255f,
-            green = AndroidColor.green(rgb) / 255f,
-            blue = AndroidColor.blue(rgb) / 255f,
+            red = android.graphics.Color.red(rgb) / 255f,
+            green = android.graphics.Color.green(rgb) / 255f,
+            blue = android.graphics.Color.blue(rgb) / 255f,
             alpha = 1f
         )
     }

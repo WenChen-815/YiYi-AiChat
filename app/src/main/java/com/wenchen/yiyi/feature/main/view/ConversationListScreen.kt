@@ -29,7 +29,7 @@ import com.wenchen.yiyi.feature.main.viewmodel.ConversationListViewModel
 import com.wenchen.yiyi.Application
 import com.wenchen.yiyi.core.common.theme.BlackBg
 import com.wenchen.yiyi.core.common.theme.WhiteBg
-import com.wenchen.yiyi.core.util.ChatUtil
+import com.wenchen.yiyi.core.util.business.ChatUtils
 import com.wenchen.yiyi.navigation.routes.AiChatRoutes
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -79,7 +79,7 @@ fun ConversationListScreen(
                     LaunchedEffect(conversation.id) {
                         try {
                             val message = chatMessageDao.getLastMessageByConversationId(conversation.id)
-                            lastMessage = ChatUtil.parseMessage(message).cleanedContent
+                            lastMessage = ChatUtils.parseMessage(message).cleanedContent
                         } catch (e: Exception) {
                             lastMessage = ""
                         }

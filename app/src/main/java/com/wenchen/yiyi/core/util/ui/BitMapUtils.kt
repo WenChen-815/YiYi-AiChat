@@ -1,4 +1,4 @@
-package com.wenchen.yiyi.core.util
+package com.wenchen.yiyi.core.util.ui
 
 import android.app.Activity
 import android.content.ContentValues
@@ -18,6 +18,7 @@ import android.widget.FrameLayout
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.core.graphics.createBitmap
 import androidx.core.graphics.scale
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModelStoreOwner
@@ -28,9 +29,8 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import timber.log.Timber
 import java.io.ByteArrayOutputStream
 import java.io.OutputStream
-import androidx.core.graphics.createBitmap
 
-object BitMapUtil {
+object BitMapUtils {
 
     // --- 1. 捕获与加载 ---
 
@@ -67,7 +67,11 @@ object BitMapUtil {
             composeView.measure(widthSpec, heightSpec)
             composeView.layout(0, 0, composeView.measuredWidth, composeView.measuredHeight)
 
-            val bitmap = createBitmap(composeView.measuredWidth, composeView.measuredHeight, Bitmap.Config.ARGB_8888)
+            val bitmap = createBitmap(
+                composeView.measuredWidth,
+                composeView.measuredHeight,
+                Bitmap.Config.ARGB_8888
+            )
             val canvas = Canvas(bitmap)
             composeView.draw(canvas)
 
@@ -153,7 +157,7 @@ object BitMapUtil {
                 return it
             } catch (e: Exception) {
                 resolver.delete(it, null, null)
-                Timber.e(e, "Failed to save bytes to gallery")
+                Timber.Forest.e(e, "Failed to save bytes to gallery")
             }
         }
         return null
@@ -294,7 +298,7 @@ object BitMapUtil {
                 return it
             } catch (e: Exception) {
                 resolver.delete(it, null, null)
-                Timber.e(e, "Failed to save bitmap to gallery internal")
+                Timber.Forest.e(e, "Failed to save bitmap to gallery internal")
             }
         }
         return null

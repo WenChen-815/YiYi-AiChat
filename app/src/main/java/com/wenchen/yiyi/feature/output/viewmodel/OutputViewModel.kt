@@ -10,9 +10,9 @@ import com.wenchen.yiyi.core.data.repository.AIChatMemoryRepository
 import com.wenchen.yiyi.core.database.entity.AICharacter
 import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.core.state.UserState
-import com.wenchen.yiyi.core.util.BitMapUtil
-import com.wenchen.yiyi.core.util.CharaCardParser
-import com.wenchen.yiyi.core.util.toast.ToastUtils
+import com.wenchen.yiyi.core.util.ui.BitMapUtils
+import com.wenchen.yiyi.core.util.business.CharaCardParser
+import com.wenchen.yiyi.core.util.ui.ToastUtils
 import com.wenchen.yiyi.feature.output.component.OutputCharacterView
 import com.wenchen.yiyi.feature.output.model.CharaCardV3
 import com.wenchen.yiyi.feature.output.model.CharaExtensionModel
@@ -89,15 +89,15 @@ class OutputViewModel @Inject constructor(
                     conversationId = "${userState.userId.value}_${character.id}",
                 )
                 // 加载角色头像 (IO线程)
-                val avatar = BitMapUtil.loadBitmapFromUri(context, character.avatar?.toUri(), false)
-                val background = BitMapUtil.loadBitmapFromUri(context, character.background?.toUri(), false)
+                val avatar = BitMapUtils.loadBitmapFromUri(context, character.avatar?.toUri(), false)
+                val background = BitMapUtils.loadBitmapFromUri(context, character.background?.toUri(), false)
                 
                 // 转换头像和背景为 ByteArray
                 val avatarByte = avatar?.let {
-                    BitMapUtil.bitmapToByteArray(it, Bitmap.CompressFormat.PNG)
+                    BitMapUtils.bitmapToByteArray(it, Bitmap.CompressFormat.PNG)
                 }
                 val backgroundByte = background?.let {
-                    BitMapUtil.bitmapToByteArray(it, Bitmap.CompressFormat.PNG)
+                    BitMapUtils.bitmapToByteArray(it, Bitmap.CompressFormat.PNG)
                 }
 
                 // 构建符合 CharaCardV3 格式的对象，并将头像和背景存入特定字段
@@ -130,7 +130,7 @@ class OutputViewModel @Inject constructor(
                  由于协程的机制，withContext 是一个挂起（suspend）操作，它会保证代码的顺序执行
                  */
                 val bitmap = withContext(Dispatchers.Main) {
-                    BitMapUtil.captureComposableAsBitmap(
+                    BitMapUtils.captureComposableAsBitmap(
                         context = context,
                         content = {
                             OutputCharacterView(

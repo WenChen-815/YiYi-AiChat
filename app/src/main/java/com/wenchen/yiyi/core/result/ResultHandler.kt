@@ -1,7 +1,7 @@
 package com.wenchen.yiyi.core.result
 
 import com.wenchen.yiyi.core.model.network.NetworkResponse
-import com.wenchen.yiyi.core.util.toast.ToastUtils
+import com.wenchen.yiyi.core.util.ui.ToastUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest

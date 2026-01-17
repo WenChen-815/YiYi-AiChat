@@ -55,7 +55,7 @@ import com.wenchen.yiyi.core.common.theme.GrayText
 import com.wenchen.yiyi.core.common.theme.Pink
 import com.wenchen.yiyi.core.common.theme.WhiteBg
 import com.wenchen.yiyi.core.common.theme.WhiteText
-import com.wenchen.yiyi.core.util.StatusBarUtil
+import com.wenchen.yiyi.core.util.ui.StatusBarUtils
 import com.wenchen.yiyi.feature.main.viewmodel.MainViewModel
 import com.wenchen.yiyi.navigation.routes.AiChatRoutes
 import com.wenchen.yiyi.navigation.routes.ConfigRoutes
@@ -98,9 +98,9 @@ private fun MainScreenContent(
 ) {
     val activity = LocalActivity.current
     if (isSystemInDarkTheme()) {
-        StatusBarUtil.setStatusBarTextColor(activity as ComponentActivity, false)
+        StatusBarUtils.setStatusBarTextColor(activity as ComponentActivity, false)
     } else {
-        StatusBarUtil.setStatusBarTextColor(activity as ComponentActivity, true)
+        StatusBarUtils.setStatusBarTextColor(activity as ComponentActivity, true)
     }
     var showAddPopup by remember { mutableStateOf(false) }
     var currentPosition by remember { mutableIntStateOf(0) }

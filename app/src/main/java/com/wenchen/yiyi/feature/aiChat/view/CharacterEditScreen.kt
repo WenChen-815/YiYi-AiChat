@@ -24,7 +24,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -54,13 +53,13 @@ import com.wenchen.yiyi.core.common.theme.DarkGray
 import com.wenchen.yiyi.core.common.theme.Gold
 import com.wenchen.yiyi.core.common.theme.LightGray
 import com.wenchen.yiyi.core.common.theme.WhiteText
-import com.wenchen.yiyi.core.util.storage.FilesUtil
-import com.wenchen.yiyi.core.util.StatusBarUtil
+import com.wenchen.yiyi.core.util.storage.FilesUtils
+import com.wenchen.yiyi.core.util.ui.StatusBarUtils
 import com.wenchen.yiyi.core.designSystem.component.SwitchWithText
 import com.wenchen.yiyi.feature.worldBook.model.WorldBook
 import timber.log.Timber
 import androidx.compose.runtime.collectAsState
-import com.wenchen.yiyi.core.util.toast.ToastUtils
+import com.wenchen.yiyi.core.util.ui.ToastUtils
 
 @Composable
 internal fun CharacterEditRoute(
@@ -188,9 +187,9 @@ private fun CharacterEditScreenContent(
     viewModel: CharacterEditViewModel = viewModel()
 ) {
     if (isSystemInDarkTheme()) {
-        StatusBarUtil.setStatusBarTextColor(activity, false)
+        StatusBarUtils.setStatusBarTextColor(activity, false)
     } else {
-        StatusBarUtil.setStatusBarTextColor(activity, true)
+        StatusBarUtils.setStatusBarTextColor(activity, true)
     }
     val parsedCharacter = viewModel.parsedCharacter.collectAsState().value
     val parsedMemory = viewModel.parsedMemory.collectAsState().value
@@ -661,13 +660,13 @@ private suspend fun loadWorldBooks(
     adapter: JsonAdapter<WorldBook>,
     onLoaded: (List<WorldBook>) -> Unit
 ) = withContext(Dispatchers.IO) {
-    val worldBookFiles = FilesUtil.listFileNames("world_book")
+    val worldBookFiles = FilesUtils.listFileNames("world_book")
     Timber.tag("WorldBookListActivity").d("loadWorldBooks: $worldBookFiles")
     val worldBooks = mutableListOf(WorldBook("", "未选择世界"))
 
     worldBookFiles.forEach { fileName ->
         try {
-            val json = FilesUtil.readFile("world_book/$fileName")
+            val json = FilesUtils.readFile("world_book/$fileName")
             val worldBook = adapter.fromJson(json)
             worldBook?.let { worldBooks.add(it) }
         } catch (e: Exception) {

@@ -51,7 +51,7 @@ import com.wenchen.yiyi.core.common.theme.Gold
 import com.wenchen.yiyi.core.common.theme.Pink
 import com.wenchen.yiyi.core.common.theme.WhiteBg
 import com.wenchen.yiyi.core.common.theme.WhiteText
-import com.wenchen.yiyi.core.util.StatusBarUtil
+import com.wenchen.yiyi.core.util.ui.StatusBarUtils
 import com.wenchen.yiyi.core.designSystem.component.SettingTextFieldItem
 import com.wenchen.yiyi.core.common.theme.BlackText
 import com.wenchen.yiyi.core.common.theme.DarkGray
@@ -98,9 +98,9 @@ fun ChatConfigScreenContent(
 ){
     val activity = LocalActivity.current
     if (isSystemInDarkTheme()) {
-        StatusBarUtil.setStatusBarTextColor(activity as ComponentActivity, false)
+        StatusBarUtils.setStatusBarTextColor(activity as ComponentActivity, false)
     } else {
-        StatusBarUtil.setStatusBarTextColor(activity as ComponentActivity, true)
+        StatusBarUtils.setStatusBarTextColor(activity as ComponentActivity, true)
     }
     val context = LocalContext.current
 

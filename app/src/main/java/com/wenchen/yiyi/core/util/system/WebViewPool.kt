@@ -1,9 +1,11 @@
-package com.wenchen.yiyi.core.util
+package com.wenchen.yiyi.core.util.system
 
 import android.annotation.SuppressLint
 import android.app.ActivityManager
 import android.content.Context
+import android.view.View
 import android.view.ViewGroup
+import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import java.util.Stack
@@ -66,7 +68,7 @@ object WebViewPool {
     fun release(webView: WebView) {
         // 将 WebView 从父容器移除
         (webView.parent as? ViewGroup)?.removeView(webView)
-        
+
         // 重置状态
         webView.apply {
             stopLoading()
@@ -96,13 +98,13 @@ object WebViewPool {
                 javaScriptEnabled = true
                 domStorageEnabled = true
                 loadsImagesAutomatically = true
-                cacheMode = android.webkit.WebSettings.LOAD_DEFAULT
+                cacheMode = WebSettings.LOAD_DEFAULT
             }
             setBackgroundColor(0)
             // 禁用一切滚动，由 Compose 外部容器负责滚动
             isVerticalScrollBarEnabled = false
             isHorizontalScrollBarEnabled = false
-            overScrollMode = android.view.View.OVER_SCROLL_NEVER
+            overScrollMode = View.OVER_SCROLL_NEVER
         }
     }
 }

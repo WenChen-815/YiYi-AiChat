@@ -12,7 +12,7 @@ import com.wenchen.yiyi.core.result.ResultHandler
 import com.wenchen.yiyi.core.result.asResult
 import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.core.state.UserState
-import com.wenchen.yiyi.core.util.toast.ToastUtils
+import com.wenchen.yiyi.core.util.ui.ToastUtils
 import com.wenchen.yiyi.navigation.AppNavigator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow

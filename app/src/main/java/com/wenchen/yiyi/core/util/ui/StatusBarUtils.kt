@@ -1,18 +1,18 @@
-package com.wenchen.yiyi.core.util
+package com.wenchen.yiyi.core.util.ui
 
 import android.app.Activity
+import android.graphics.Color
 import android.os.Build
 import android.view.View
 import android.view.Window
 import android.view.WindowManager
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-object StatusBarUtil {
+object StatusBarUtils {
     fun transparentNavBar(activity: Activity) {
         val window = activity.window
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) return
@@ -22,7 +22,7 @@ object StatusBarUtil {
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            window.navigationBarColor = android.graphics.Color.TRANSPARENT
+            window.navigationBarColor = Color.TRANSPARENT
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             if (window.attributes.flags and WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION == 0) {
                 window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
@@ -44,7 +44,7 @@ object StatusBarUtil {
         systemUiVisibility =
             systemUiVisibility or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
         window.decorView.systemUiVisibility = systemUiVisibility
-        window.statusBarColor = android.graphics.Color.TRANSPARENT
+        window.statusBarColor = Color.TRANSPARENT
 
     }
 
@@ -58,7 +58,7 @@ object StatusBarUtil {
     fun setStatusBarTextColor(
         activity: Activity,
         isDarkText: Boolean,
-        statusBarColor: Color = Color.Transparent
+        statusBarColor: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Companion.Transparent
     ) {
         val window = activity.window
         val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
@@ -78,7 +78,7 @@ object StatusBarUtil {
     @Composable
     fun ConfigureStatusBar(
         isDarkText: Boolean,
-        statusBarColor: Color = Color.Black
+        statusBarColor: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Companion.Black
     ) {
         val view = LocalView.current
         if (!view.isInEditMode) {

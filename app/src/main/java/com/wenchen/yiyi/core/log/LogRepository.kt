@@ -3,7 +3,7 @@ package com.wenchen.yiyi.core.log
 import android.os.Build
 import androidx.annotation.RequiresApi
 import com.wenchen.yiyi.Application
-import com.wenchen.yiyi.core.util.storage.FilesUtil
+import com.wenchen.yiyi.core.util.storage.FilesUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -64,7 +64,7 @@ object LogRepository {
         val logLine = "$timestamp $priorityChar/${logEntry.tag ?: "Unknown"}: ${logEntry.message}"
 
         // 使用 FilesUtil 追加到文件
-        FilesUtil.appendToFile(logLine, LOG_FILE_NAME)
+        FilesUtils.appendToFile(logLine, LOG_FILE_NAME)
     }
 
     fun logThrowable(t: Throwable) {
@@ -77,12 +77,12 @@ object LogRepository {
     */
     fun exportLogs(): Boolean {
         // 导出当前日志
-        val currentResult = FilesUtil.exportLogFile(LOG_FILE_NAME, "YiYi")
+        val currentResult = FilesUtils.exportLogFile(LOG_FILE_NAME, "YiYi")
 
         // 检查并导出备份日志（如果存在）
         val backupFile = File(Application.instance.filesDir, BACKUP_FILE_NAME)
         val backupResult = if (backupFile.exists()) {
-            FilesUtil.exportLogFile(BACKUP_FILE_NAME, "YiYi")
+            FilesUtils.exportLogFile(BACKUP_FILE_NAME, "YiYi")
         } else {
             true // 不存在备份文件视作“导出成功”
         }

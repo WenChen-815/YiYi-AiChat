@@ -1,7 +1,7 @@
 package com.wenchen.yiyi.core.util.storage
 
 import com.tencent.mmkv.MMKV
-import com.wenchen.yiyi.core.util.AppJson
+import com.wenchen.yiyi.core.util.common.AppJson
 import timber.log.Timber
 
 inline fun <reified T> MMKV.putObject(key: String, value: T) {

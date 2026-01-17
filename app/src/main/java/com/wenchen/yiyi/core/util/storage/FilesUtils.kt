@@ -10,7 +10,7 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.FileWriter
 
-object FilesUtil {
+object FilesUtils {
     private val app = Application.instance
     fun exportLogFile(fileName: String, targetDirName: String): Boolean {
         return try {

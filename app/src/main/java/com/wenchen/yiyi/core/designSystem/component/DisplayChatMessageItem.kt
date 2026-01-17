@@ -66,7 +66,7 @@ import com.wenchen.yiyi.core.common.theme.Gold
 import com.wenchen.yiyi.core.common.theme.HalfTransparentBlack
 import com.wenchen.yiyi.core.common.theme.IconBg
 import com.wenchen.yiyi.core.common.theme.WhiteText
-import com.wenchen.yiyi.core.util.ChatUtil
+import com.wenchen.yiyi.core.util.business.ChatUtils
 import com.wenchen.yiyi.feature.aiChat.viewmodel.BaseChatViewModel
 import kotlinx.coroutines.launch
 
@@ -77,7 +77,7 @@ fun DisplayChatMessageItem(
     chatWindowHazeState: HazeState,
 ) {
     // 解析AI回复中的日期和角色名称
-    val parseMessage = ChatUtil.parseMessage(message)
+    val parseMessage = ChatUtils.parseMessage(message)
     val chatUiState by viewModel.chatUiState.collectAsState()
     val conversation by viewModel.conversation.collectAsState()
     val userConfig by viewModel.userConfigState.userConfig.collectAsState()
@@ -148,7 +148,7 @@ fun ChatMessageItem(
     avatarUrl: String?,
     messageType: MessageType,
     contentType: MessageContentType,
-    parsedMessage: ChatUtil.ParsedMessage? = null,
+    parsedMessage: ChatUtils.ParsedMessage? = null,
     chatWindowHazeState: HazeState
 ) {
     val visibilityAlpha = remember { mutableFloatStateOf(1f) }

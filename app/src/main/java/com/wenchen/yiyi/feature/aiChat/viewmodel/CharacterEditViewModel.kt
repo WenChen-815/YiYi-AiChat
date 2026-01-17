@@ -23,13 +23,13 @@ import com.wenchen.yiyi.core.data.repository.ConversationRepository
 import com.wenchen.yiyi.core.database.entity.AICharacter
 import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.core.state.UserState
-import com.wenchen.yiyi.core.util.toast.ToastUtils
+import com.wenchen.yiyi.core.util.ui.ToastUtils
 import com.wenchen.yiyi.core.datastore.storage.ImageManager
 import com.wenchen.yiyi.core.database.entity.AIChatMemory
 import com.wenchen.yiyi.core.database.entity.Conversation
 import com.wenchen.yiyi.core.database.entity.ConversationType
 import com.wenchen.yiyi.feature.output.model.CharaCardV3
-import com.wenchen.yiyi.core.util.CharaCardParser
+import com.wenchen.yiyi.core.util.business.CharaCardParser
 import com.wenchen.yiyi.navigation.AppNavigator
 import com.wenchen.yiyi.navigation.routes.AiChatRoutes
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -41,11 +41,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import com.aventrix.jnanoid.jnanoid.NanoIdUtils
-import com.wenchen.yiyi.core.util.AppJson
-import com.wenchen.yiyi.core.util.BitMapUtil
+import com.wenchen.yiyi.core.util.ui.BitMapUtils
 import com.wenchen.yiyi.feature.output.model.CharaExtensionModel
 import com.wenchen.yiyi.feature.output.model.CharacterData
-import kotlinx.serialization.json.Json
 import javax.inject.Inject
 
 @HiltViewModel
@@ -189,8 +187,8 @@ class CharacterEditViewModel @Inject constructor(
                         }
 
                         // 优先从扩展数据中恢复位图，如果没有则使用原图补偿
-                        avatarBitmap = extension?.avatarByte?.let { BitMapUtil.byteArrayToBitmap(it) } ?: originalBitmap
-                        backgroundBitmap = extension?.backgroundByte?.let { BitMapUtil.byteArrayToBitmap(it) } ?: originalBitmap
+                        avatarBitmap = extension?.avatarByte?.let { BitMapUtils.byteArrayToBitmap(it) } ?: originalBitmap
+                        backgroundBitmap = extension?.backgroundByte?.let { BitMapUtils.byteArrayToBitmap(it) } ?: originalBitmap
                         hasNewBackground = true
                         hasNewAvatar = true
 

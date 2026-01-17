@@ -43,8 +43,8 @@ import com.wenchen.yiyi.core.common.theme.AIChatTheme
 import com.wenchen.yiyi.core.common.theme.BlackBg
 import com.wenchen.yiyi.core.common.theme.HalfTransparentBlack
 import com.wenchen.yiyi.core.common.theme.WhiteBg
-import com.wenchen.yiyi.core.util.ThemeColorExtractor
-import com.wenchen.yiyi.core.util.toast.ToastUtils
+import com.wenchen.yiyi.core.util.ui.ThemeColorExtractor
+import com.wenchen.yiyi.core.util.ui.ToastUtils
 import com.wenchen.yiyi.feature.aiChat.viewmodel.SingleChatViewModel
 import com.wenchen.yiyi.navigation.routes.AiChatRoutes
 import dev.chrisbanes.haze.HazeProgressive

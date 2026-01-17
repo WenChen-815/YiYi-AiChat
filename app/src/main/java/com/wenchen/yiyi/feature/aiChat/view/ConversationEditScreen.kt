@@ -61,7 +61,7 @@ import com.wenchen.yiyi.core.common.theme.GrayText
 import com.wenchen.yiyi.core.common.theme.LightGold
 import com.wenchen.yiyi.core.common.theme.LightGray
 import com.wenchen.yiyi.core.common.theme.WhiteText
-import com.wenchen.yiyi.core.util.StatusBarUtil
+import com.wenchen.yiyi.core.util.ui.StatusBarUtils
 import com.wenchen.yiyi.feature.aiChat.viewmodel.ConversationEditViewModel
 import com.wenchen.yiyi.feature.worldBook.model.WorldBook
 import kotlinx.coroutines.Dispatchers
@@ -69,7 +69,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.compose.runtime.collectAsState
 import com.aventrix.jnanoid.jnanoid.NanoIdUtils
-import com.wenchen.yiyi.core.util.toast.ToastUtils
+import com.wenchen.yiyi.core.util.ui.ToastUtils
 import com.wenchen.yiyi.feature.aiChat.viewmodel.ConversationEditUiState
 
 @Composable
@@ -191,9 +191,9 @@ fun ConversationEditScreenContent(
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
 ) {
     if (isSystemInDarkTheme()) {
-        StatusBarUtil.setStatusBarTextColor(activity, false)
+        StatusBarUtils.setStatusBarTextColor(activity, false)
     } else {
-        StatusBarUtil.setStatusBarTextColor(activity, true)
+        StatusBarUtils.setStatusBarTextColor(activity, true)
     }
     val userConfig by viewModel.userConfigState.userConfig.collectAsState()
     val coroutineScope = rememberCoroutineScope()

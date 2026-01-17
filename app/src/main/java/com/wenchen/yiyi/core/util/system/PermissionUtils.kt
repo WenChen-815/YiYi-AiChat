@@ -1,4 +1,4 @@
-package com.wenchen.yiyi.core.util.permission
+package com.wenchen.yiyi.core.util.system
 
 import android.app.Activity
 import android.content.Context
@@ -6,7 +6,7 @@ import android.content.ContextWrapper
 import com.hjq.permissions.XXPermissions
 import com.hjq.permissions.permission.PermissionLists
 import com.hjq.permissions.permission.base.IPermission
-import com.wenchen.yiyi.core.util.toast.ToastUtils
+import com.wenchen.yiyi.core.util.ui.ToastUtils
 
 /**
  * 权限工具类，基于 XXPermissions 框架封装
