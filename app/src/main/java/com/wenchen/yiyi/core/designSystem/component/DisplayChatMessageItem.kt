@@ -554,7 +554,8 @@ fun EditMessageDialog(
 private fun splitMessageContent(content: String): List<MessageSegment> {
     val segments = mutableListOf<MessageSegment>()
     // 识别 HTML 标签的正则，忽略大小写
-    val tagRegex = Regex("""<(/?)([a-zA-Z1-6]+)[^>]*>""", RegexOption.IGNORE_CASE)
+    // 使用 [\s\S]*? 来匹配包括换行在内的所有字符以捕获多行注释
+    val tagRegex = Regex("""<!--[\s\S]*?-->|<(/?)([a-zA-Z1-6]+)[^>]*>""", RegexOption.IGNORE_CASE)
     val matches = tagRegex.findAll(content).toList()
 
     if (matches.isEmpty()) {
@@ -572,9 +573,26 @@ private fun splitMessageContent(content: String): List<MessageSegment> {
             if (text.isNotBlank()) segments.add(MessageSegment.Text(text))
         }
 
+        // 处理 HTML 注释：注释直接作为 HTML 片段
+        if (match.value.startsWith("<!--")) {
+            segments.add(MessageSegment.Html(match.value))
+            lastIndex = match.range.last + 1
+            i++
+            continue
+        }
+
+        // 获取标签信息，索引 1 为 (/?), 索引 2 为 ([a-zA-Z1-6]+)
         val isClosing = match.groupValues[1] == "/"
         val tagName = match.groupValues[2]
         val isSelfClosing = match.value.endsWith("/>")
+
+        if (tagName.isEmpty()) {
+            // 如果由于某种原因 tagName 为空且不是注释，则作为普通 HTML 处理
+            segments.add(MessageSegment.Html(match.value))
+            lastIndex = match.range.last + 1
+            i++
+            continue
+        }
 
         if (isClosing || isSelfClosing) {
             // 孤立的闭合标签或自闭合标签，直接作为 HTML 片段
@@ -590,6 +608,13 @@ private fun splitMessageContent(content: String): List<MessageSegment> {
 
             while (j < matches.size) {
                 val nextMatch = matches[j]
+
+                // 跳过注释，注释不参与标签嵌套计算
+                if (nextMatch.value.startsWith("<!--")) {
+                    j++
+                    continue
+                }
+
                 val nextIsClosing = nextMatch.groupValues[1] == "/"
                 val nextTagName = nextMatch.groupValues[2]
 
