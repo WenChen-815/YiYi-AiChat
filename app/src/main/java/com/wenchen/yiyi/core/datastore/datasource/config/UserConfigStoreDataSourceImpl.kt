@@ -24,8 +24,15 @@ class UserConfigStoreDataSourceImpl @Inject constructor(
         getUserConfigMMKV().putObject(UserConfigStoreDataSource.USER_CONFIG_KEY, userConfig)
     }
 
-    override suspend fun getUserConfig(): UserConfig? {
-        return getUserConfigMMKV().getObject<UserConfig>(UserConfigStoreDataSource.USER_CONFIG_KEY)
+    override suspend fun getUserConfig(): UserConfig {
+        var userConfig = getUserConfigMMKV().getObject<UserConfig>(UserConfigStoreDataSource.USER_CONFIG_KEY)
+        if (userConfig == null) {
+            userConfig = UserConfig(
+                userState.userId.value
+            )
+            saveUserConfig(userConfig)
+        }
+        return userConfig
     }
 
     override suspend fun clearUserConfig() {

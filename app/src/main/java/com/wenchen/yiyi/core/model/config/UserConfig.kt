@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class UserConfig(
     // ======用户相关配置====================
-    val userId: String? = null,
+    val userId: String,
     var userName: String? = null,
     var userAvatarPath: String? = null,
 

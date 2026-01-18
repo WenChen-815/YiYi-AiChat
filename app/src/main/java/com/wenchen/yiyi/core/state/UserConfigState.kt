@@ -40,14 +40,7 @@ class UserConfigState @Inject constructor(
     private suspend fun initializeState() {
         val userConfig = userConfigStoreRepository.getUserConfig()
         _userConfig.value = userConfig
-        if (userConfig != null &&
-            userConfig.userName?.isNotEmpty() == true &&
-            userConfig.baseUrl?.isNotEmpty() == true &&
-            userConfig.baseApiKey?.isNotEmpty() == true &&
-            userConfig.selectedModel?.isNotEmpty() == true)
-        {
-            _allowBasicUsage.value = true
-        }
+        updateAllowBasicUsage()
     }
 
     /**
@@ -59,5 +52,14 @@ class UserConfigState @Inject constructor(
 
         // 更新内存中的状态
         _userConfig.value = userConfig
+        updateAllowBasicUsage()
+    }
+
+    private fun updateAllowBasicUsage() {
+        val userConfig = _userConfig.value ?: return
+        _allowBasicUsage.value = userConfig.userName?.isNotEmpty() == true &&
+                userConfig.baseUrl?.isNotEmpty() == true &&
+                userConfig.baseApiKey?.isNotEmpty() == true &&
+                userConfig.selectedModel?.isNotEmpty() == true
     }
 }
