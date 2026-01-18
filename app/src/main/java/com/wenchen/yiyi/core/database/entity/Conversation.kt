@@ -2,11 +2,13 @@ package com.wenchen.yiyi.core.database.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import kotlinx.serialization.Serializable
 
 enum class ConversationType {
     SINGLE, GROUP
 }
 
+@Serializable
 @Entity(tableName = "conversations")
 data class Conversation(
     @PrimaryKey val id: String,
