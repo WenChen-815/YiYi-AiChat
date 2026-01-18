@@ -13,8 +13,12 @@ import com.wenchen.yiyi.core.database.dao.ConversationDao
 import com.wenchen.yiyi.core.database.dao.TempChatMessageDao
 import com.wenchen.yiyi.core.database.dao.AICharacterDao
 import com.wenchen.yiyi.core.database.dao.AIChatMemoryDao
+import com.wenchen.yiyi.core.database.dao.YiYiRegexGroupDao
+import com.wenchen.yiyi.core.database.dao.YiYiRegexScriptDao
 import com.wenchen.yiyi.core.database.entity.AICharacter
 import com.wenchen.yiyi.core.database.entity.AIChatMemory
+import com.wenchen.yiyi.core.database.entity.YiYiRegexGroup
+import com.wenchen.yiyi.core.database.entity.YiYiRegexScript
 
 /**
  * 应用数据库
@@ -26,8 +30,10 @@ import com.wenchen.yiyi.core.database.entity.AIChatMemory
         TempChatMessage::class,
         AIChatMemory::class,
         Conversation::class,
+        YiYiRegexScript::class,
+        YiYiRegexGroup::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -37,10 +43,49 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun aiChatMemoryDao(): AIChatMemoryDao
     abstract fun tempChatMessageDao(): TempChatMessageDao
     abstract fun conversationDao(): ConversationDao
+    abstract fun yiYiRegexGroupDao(): YiYiRegexGroupDao
+    abstract fun yiYiRegexScriptDao(): YiYiRegexScriptDao
 
     companion object {
         const val DATABASE_NAME = "ai_chat_database"
 
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // 创建 yiyi_regex_scripts 表
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `yiyi_regex_scripts` (
+                        `id` TEXT NOT NULL, 
+                        `groupId` TEXT NOT NULL, 
+                        `scriptName` TEXT, 
+                        `findRegex` TEXT, 
+                        `replaceString` TEXT, 
+                        `trimStrings` TEXT, 
+                        `placement` TEXT, 
+                        `disabled` INTEGER, 
+                        `markdownOnly` INTEGER, 
+                        `promptOnly` INTEGER, 
+                        `runOnEdit` INTEGER, 
+                        `substituteRegex` INTEGER, 
+                        `minDepth` INTEGER, 
+                        `maxDepth` INTEGER, 
+                        PRIMARY KEY(`id`)
+                    )
+                """.trimIndent())
+
+                // 创建 yiyi_regex_groups 表
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `yiyi_regex_groups` (
+                        `id` TEXT NOT NULL, 
+                        `name` TEXT, 
+                        `description` TEXT, 
+                        `source_owner` TEXT, 
+                        `createTime` INTEGER, 
+                        `updateTime` INTEGER, 
+                        PRIMARY KEY(`id`)
+                    )
+                """.trimIndent())
+            }
+        }
         val MIGRATION_3_4 = object : Migration(3, 4) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 // 1. 创建新结构的临时表
@@ -89,7 +134,6 @@ abstract class AppDatabase : RoomDatabase() {
                 db.execSQL("ALTER TABLE ai_characters_new RENAME TO ai_characters")
             }
         }
-
         val MIGRATION_2_3 = object : Migration(2, 3) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 // 为 conversations 表添加 characterKeywords 列

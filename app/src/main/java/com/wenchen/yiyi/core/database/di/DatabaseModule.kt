@@ -8,6 +8,8 @@ import com.wenchen.yiyi.core.database.dao.AIChatMemoryDao
 import com.wenchen.yiyi.core.database.dao.ChatMessageDao
 import com.wenchen.yiyi.core.database.dao.ConversationDao
 import com.wenchen.yiyi.core.database.dao.TempChatMessageDao
+import com.wenchen.yiyi.core.database.dao.YiYiRegexGroupDao
+import com.wenchen.yiyi.core.database.dao.YiYiRegexScriptDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -42,7 +44,9 @@ object DatabaseModule {
             .addMigrations(
                 AppDatabase.MIGRATION_1_2,
                 AppDatabase.MIGRATION_2_3,
-                AppDatabase.MIGRATION_3_4)
+                AppDatabase.MIGRATION_3_4,
+                AppDatabase.MIGRATION_4_5
+            )
             .build()
     }
 
@@ -114,5 +118,33 @@ object DatabaseModule {
         database: AppDatabase
     ): ConversationDao {
         return database.conversationDao()
+    }
+
+    /**
+     * 提供正则脚本组别DAO实例
+     *
+     * @param database 应用数据库实例
+     * @return 正则脚本组别DAO实例
+     */
+    @Provides
+    @Singleton
+    fun provideYiYiRegexGroupDao(
+        database: AppDatabase
+    ): YiYiRegexGroupDao {
+        return database.yiYiRegexGroupDao()
+    }
+
+    /**
+     * 提供正则脚本条目DAO实例
+     *
+     * @param database 应用数据库实例
+     * @return 正则脚本条目DAO实例
+     */
+    @Provides
+    @Singleton
+    fun provideYiYiRegexScriptDao(
+        database: AppDatabase
+    ): YiYiRegexScriptDao {
+        return database.yiYiRegexScriptDao()
     }
 }

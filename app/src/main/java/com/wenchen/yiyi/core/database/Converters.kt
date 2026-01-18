@@ -48,6 +48,19 @@ class Converters {
     }
 
     @TypeConverter
+    fun fromIntList(value: List<Int>?): String? {
+        return value?.let { Gson().toJson(it) }
+    }
+
+    @TypeConverter
+    fun toIntList(value: String?): List<Int>? {
+        return value?.let {
+            val listType = object : TypeToken<List<Int>>() {}.type
+            Gson().fromJson(it, listType)
+        }
+    }
+
+    @TypeConverter
     fun fromConversationType(type: ConversationType): String {
         return type.name
     }
