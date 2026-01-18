@@ -57,10 +57,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             AIChatTheme {
                 val userConfig by userConfigState.userConfig.collectAsState()
-                val showLogcatView by remember{ mutableStateOf(userConfig?.showLogcatView ?: false) }
 
                 AppNavHost(navigator = navigator)
-                if (showLogcatView) {
+                if (userConfig?.showLogcatView ?: false) {
                     FloatingLogcatView()
                 }
                 val currentVersion = BuildConfig.VERSION_NAME
