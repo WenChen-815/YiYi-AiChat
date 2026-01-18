@@ -636,23 +636,21 @@ class AIChatManager @Inject constructor(
                 你现在是 ${aiCharacter.name}
                 # [任务目标] 
                 请以${aiCharacter.name}的第一人称（“我”）视角，结合角色的性格特点，将提供的[对话片段]提炼成一段深刻的心里话或回忆。
-                # [当前时间] [$currentDate]""".trimIndent()
+                # [当前时间] [$currentDate]
+                # [总结要求]
+                【深度执行】直接回复一段话，请勿回复多余内容
+                """.trimIndent()
             )
             if (conversation.additionalSummaryRequirement?.isNotBlank() == true) {
                 summaryRequest.append("""
-                    # [总结要求]
                     ${conversation.additionalSummaryRequirement}
                     """.trimIndent())
             }
-            summaryRequest.append("\n# [对话片段]".trimIndent())
+            summaryRequest.append("\n# 以下为需要总结的对话片段：".trimIndent())
             // 添加历史消息
             for (message in summaryMessages) {
                 summaryRequest.append("\n${message.content}")
             }
-            summaryRequest.append("""
-                
-                【深度执行】直接回复一段话，请勿回复多余内容
-            """.trimIndent())
             messages.add(Message("system", summaryRequest.toString()))
             // 使用CompletableDeferred来等待API调用完成
             val apiCompleted = CompletableDeferred<Boolean>()
