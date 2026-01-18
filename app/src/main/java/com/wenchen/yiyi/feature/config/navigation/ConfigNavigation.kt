@@ -5,7 +5,9 @@ import androidx.compose.animation.SharedTransitionScope
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
+import com.wenchen.yiyi.feature.config.view.ApiConfigRoute
 import com.wenchen.yiyi.feature.config.view.ChatConfigRoute
+import com.wenchen.yiyi.feature.config.view.SettingsRoute
 import com.wenchen.yiyi.navigation.routes.ConfigRoutes
 
 /**
@@ -19,7 +21,15 @@ fun NavGraphBuilder.configScreen(
     navController: NavHostController,
     sharedTransitionScope: SharedTransitionScope
 ) {
+    composable<ConfigRoutes.Settings> {
+        SettingsRoute()
+    }
+
     composable<ConfigRoutes.ChatConfig> {
         ChatConfigRoute(navController = navController)
+    }
+
+    composable<ConfigRoutes.ApiConfig> {
+        ApiConfigRoute(navController = navController)
     }
 }

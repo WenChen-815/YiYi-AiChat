@@ -1,26 +1,19 @@
 package com.wenchen.yiyi.feature.config.viewmodel
 
+import android.graphics.Bitmap
 import androidx.lifecycle.viewModelScope
-import com.wenchen.yiyi.core.base.state.BaseNetWorkUiState
 import com.wenchen.yiyi.core.base.viewmodel.BaseNetWorkViewModel
-import com.wenchen.yiyi.core.model.network.Model
+import com.wenchen.yiyi.core.datastore.storage.ImageManager
 import com.wenchen.yiyi.core.model.network.ModelsResponse
-import com.wenchen.yiyi.core.data.repository.AiHubRepository
-import com.wenchen.yiyi.core.model.config.UserConfig
 import com.wenchen.yiyi.core.model.network.NetworkResponse
-import com.wenchen.yiyi.core.result.ResultHandler
-import com.wenchen.yiyi.core.result.asResult
 import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.core.state.UserState
-import com.wenchen.yiyi.core.util.ui.ToastUtils
 import com.wenchen.yiyi.navigation.AppNavigator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.launch
-import timber.log.Timber
+import java.io.File
 import javax.inject.Inject
 
 @HiltViewModel
@@ -28,69 +21,67 @@ class ChatConfigViewModel @Inject constructor(
     navigator: AppNavigator,
     userState: UserState,
     userConfigState: UserConfigState,
-    private val aiHubRepository: AiHubRepository
 ) : BaseNetWorkViewModel<ModelsResponse>(
     navigator = navigator,
     userState = userState,
     userConfigState = userConfigState
-){
+) {
     val userConfig = userConfigState.userConfig.value
-    private val _models = MutableStateFlow<List<Model>>(emptyList())
-    val models: StateFlow<List<Model>> = _models.asStateFlow()
-
-    private val _imgModels = MutableStateFlow<List<Model>>(emptyList())
-    val imgModels: StateFlow<List<Model>> = _imgModels.asStateFlow()
 
     override fun requestApiFlow(): Flow<NetworkResponse<ModelsResponse>> {
-        return aiHubRepository.getModels()
+        return emptyFlow()
     }
-    fun executeGetModels(
-        apiKey: String,
-        baseUrl: String,
-        type: Int,
-        setLoading: (Boolean) -> Unit,
-        setSelectedModel: (String) -> Unit
-    ) {
-        ResultHandler.handleResultWithData(
-            scope = viewModelScope,
-            flow = aiHubRepository.getModels(baseUrl, apiKey).asResult(),
-            onData = { modelsResponse ->
-                setLoading(false)
-                _uiState.value = BaseNetWorkUiState.Success(modelsResponse)
-                // 默认选中第一个模型
-                val defaultModel = modelsResponse.data.firstOrNull()?.id ?: "未选择模型"
 
-                when(type) {
-                    0 -> {
-                        _models.value = modelsResponse.data.sortedBy { it.id }
-                        val position = models.value.indexOfFirst { it.id == userConfig?.selectedModel }
-                        setSelectedModel(models.value.getOrNull(position)?.id ?: defaultModel)
-                    }
-                    1 -> {
-                        _imgModels.value = modelsResponse.data.sortedBy { it.id }
-                        val position = imgModels.value.indexOfFirst { it.id == userConfig?.selectedImgModel }
-                        setSelectedModel(imgModels.value.getOrNull(position)?.id ?: defaultModel)
-                    }
-                }
-                ToastUtils.showToast("成功获取${modelsResponse.data.size}个模型")
-            },
-            onError = { message, exception ->
-                Timber.tag("ChatConfigViewModel").d("Error: $message Exception: $exception")
-                // 更新 uiState 为错误状态
-                _uiState.value = BaseNetWorkUiState.Error(message, exception)
-                setLoading(false)
-                ToastUtils.showToast( message)
-            },
-            onLoading = {
-                // 更新 uiState 为加载状态
-                _uiState.value = BaseNetWorkUiState.Loading
-                setLoading(true)
-            }
-        )
-    }
-    fun updateUserConfig(userConfig: UserConfig) {
+    fun updateUserConfig(
+        userId: String,
+        userName: String,
+        userAvatarPath: String?,
+        maxContextCount: String,
+        summarizeCount: String,
+        maxSummarizeCount: String,
+        enableSeparator: Boolean,
+        enableTimePrefix: Boolean,
+        enableStreamOutput: Boolean,
+        showLogcatView: Boolean
+    ) {
         viewModelScope.launch {
-            userConfigState.updateUserConfig(userConfig)
+            val newUserConfig = userConfig?.copy(
+                userId = userId,
+                userName = userName,
+                userAvatarPath = userAvatarPath,
+                maxContextMessageSize = maxContextCount.toIntOrNull() ?: 15,
+                summarizeTriggerCount = summarizeCount.toIntOrNull() ?: 20,
+                maxSummarizeCount = maxSummarizeCount.toIntOrNull() ?: 20,
+                enableSeparator = enableSeparator,
+                enableTimePrefix = enableTimePrefix,
+                enableStreamOutput = enableStreamOutput,
+                showLogcatView = showLogcatView
+            ) ?: return@launch
+            userConfigState.updateUserConfig(newUserConfig)
+            navigator.navigateBack()
         }
+    }
+
+    fun saveUserAvatar(hasNewUserAvatar: Boolean, userAvatarBitmap: Bitmap?): String? {
+        if (hasNewUserAvatar && userAvatarBitmap != null) {
+            // 删除旧头像文件
+            val oldAvatarPath = userConfig?.userAvatarPath
+            if (!oldAvatarPath.isNullOrEmpty()) {
+                try {
+                    val oldFile = File(oldAvatarPath)
+                    if (oldFile.exists()) {
+                        oldFile.delete()
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+
+            // 保存新头像
+            val userId = userConfig?.userId ?: "123123"
+            val savedFile = ImageManager().saveAvatarImage("user_$userId", userAvatarBitmap)
+            return savedFile?.absolutePath
+        }
+        return userConfig?.userAvatarPath
     }
 }

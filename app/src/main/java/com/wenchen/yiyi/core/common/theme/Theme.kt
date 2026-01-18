@@ -50,12 +50,14 @@ private val DarkColorScheme = darkColorScheme(
     primary = Gold,
     secondary = Pink,
     background = BlackBg,
+    surface = BlackBg
 )
 
 private val LightColorScheme = lightColorScheme(
     primary = Gold,
     secondary = Pink,
     background = WhiteBg,
+    surface = WhiteBg
 )
 
 @Composable
@@ -76,6 +78,7 @@ fun AIChatTheme(
                 secondary = Pink,
                 background = if (darkTheme) BlackBg else WhiteBg,
                 onBackground = if (darkTheme) WhiteText else BlackText,
+                surface = if (darkTheme) BlackBg else WhiteBg,
             )
         }
 

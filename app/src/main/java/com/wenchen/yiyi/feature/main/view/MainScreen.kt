@@ -150,7 +150,7 @@ private fun MainScreenContent(
                                 text = "设置",
                                 modifier = Modifier
                                     .clickable {
-                                        viewModel.navigate(ConfigRoutes.ChatConfig)
+                                        viewModel.navigate(ConfigRoutes.Settings)
                                     }
                                     .padding(horizontal = 8.dp),
                                 iconModifier = Modifier.size(24.dp),
