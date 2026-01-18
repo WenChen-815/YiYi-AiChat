@@ -84,7 +84,7 @@ abstract class BaseChatViewModel(
 
     private var isInitialLoading = false
 
-    private val PAGE_SIZE = 15
+    private val PAGE_SIZE = 5
     private var currentPage = 0
     var chatContext: LimitMutableList<TempChatMessage> =
         limitMutableListOf(15)

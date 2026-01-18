@@ -22,18 +22,21 @@ import kotlin.math.abs
 @SuppressLint("SetJavaScriptEnabled", "ClickableViewAccessibility")
 @Composable
 fun HtmlWebView(
+    modifier: Modifier = Modifier,
     id: String,
     html: String,
     height: Int? = null,
-    modifier: Modifier = Modifier,
     textColor: Color = Color.White,
     onHeight: (Int) -> Unit = {},
     onLongClick: (Offset) -> Unit = {}
 ) {
-    val isNew = height == null
-    // 使用 id 作为 key，确保新消息能重置高度，但同一条消息切换 Tab 时保持最大高度
-    val heightValue = height ?: 50
-    var webViewHeight by remember(id) { mutableIntStateOf(heightValue) }
+    // 如果有缓存(height)，初始值就用缓存值，避免由0展开的闪烁；
+    // 如果无缓存，给一个默认最小高度(50)，等待 JS 回调撑开。
+    // 使用 mutableIntStateOf 避免拆箱装箱开销
+    var webViewHeight by remember(id) { mutableIntStateOf(height ?: 50) }
+
+    // 标记是否已有缓存数据，用于后续判断是否需要激进更新
+    val hasCachedHeight = remember(id) { height != null }
     // 增加一个标记，确保在 Composable 被销毁后不再更新高度状态
     var isDisposed by remember { mutableStateOf(false) }
     DisposableEffect(id) {
@@ -136,23 +139,32 @@ fun HtmlWebView(
 
                 webViewClient = object : WebViewClient() {
                     override fun onPageFinished(view: WebView?, url: String?) {
+                        // 页面加载完立即触发一次高度检测
                         view?.evaluateJavascript("reportHeight()") {}
                     }
                 }
 
                 addJavascriptInterface(object {
                     @JavascriptInterface
-                    fun onHeight(height: Int) {
-                        // 1. 检查高度是否有效
-                        // 2. 检查当前 View 是否还挂载在窗口上
-                        // 3. 检查 Composable 是否已被销毁
-                        // 增加阈值判断，避免微小抖动导致无限重绘
-                        if (height > 0 && abs(height - webViewHeight) > 5 && !isDisposed) {
-                            // 主线程更新 Compose 状态
+                    fun onHeight(reportedHeight: Int) {
+                        if (isDisposed) return
+
+                        // 3. 核心高度修正逻辑：
+                        // 计算新旧高度的差值绝对值
+                        val diff = abs(reportedHeight - webViewHeight)
+
+                        // 阈值设定：
+                        // 如果当前是默认高度(无缓存情况)，任何大于0的高度都应该更新。
+                        // 如果已有缓存高度，只有当差异超过一定阈值(例如 10dp)才更新，
+                        // 这样可以避免因为字体渲染微小差异导致的界面抖动。
+                        val threshold = if (hasCachedHeight) 10 else 0
+
+                        if (reportedHeight > 0 && diff > threshold) {
                             post {
-                                if (!isDisposed && isNew) {
-                                    webViewHeight = height
-                                    onHeight(height)
+                                if (!isDisposed) {
+                                    webViewHeight = reportedHeight
+                                    // 总是回调给上层，让上层有机会更新缓存
+                                    onHeight(reportedHeight)
                                 }
                             }
                         }

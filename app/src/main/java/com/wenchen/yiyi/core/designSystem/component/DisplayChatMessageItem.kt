@@ -285,11 +285,11 @@ fun ChatMessageItem(
                                     }
                                     is MessageSegment.Html -> {
                                         HtmlWebView(
+                                            modifier = Modifier.fillMaxWidth(),
                                             id = "${messageId}_$index", // 使用唯一片段ID
                                             html = segment.content,
                                             textColor = color,
                                             height = viewModel.findSegmentHeight(messageId, index),
-                                            modifier = Modifier.fillMaxWidth(),
                                             onHeight = { height ->
                                                 viewModel.rememberSegmentHeight(messageId, index, height)
                                             },
