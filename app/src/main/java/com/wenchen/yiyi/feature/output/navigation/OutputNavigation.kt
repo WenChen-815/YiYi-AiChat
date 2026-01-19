@@ -5,6 +5,7 @@ import androidx.compose.animation.SharedTransitionScope
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
+import com.wenchen.yiyi.feature.output.view.CardParserScreen
 import com.wenchen.yiyi.feature.output.view.OutputRoute
 import com.wenchen.yiyi.navigation.routes.OutputRoutes
 
@@ -21,5 +22,9 @@ fun NavGraphBuilder.outputScreen(
 ) {
     composable<OutputRoutes.Output> {
         OutputRoute(navController = navController)
+    }
+
+    composable<OutputRoutes.CardParser> {
+        CardParserScreen(navController = navController)
     }
 }

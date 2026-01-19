@@ -8,4 +8,7 @@ import kotlinx.serialization.Serializable
 object OutputRoutes {
     @Serializable
     data object Output
+
+    @Serializable
+    data object CardParser
 }
