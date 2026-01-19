@@ -34,4 +34,6 @@ data class Conversation(
 
     val avatarPath: String?,
     val backgroundPath: String?,
+
+    val enabledRegexGroups: List<String>? = null,
 )

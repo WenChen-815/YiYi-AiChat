@@ -51,6 +51,10 @@ abstract class AppDatabase : RoomDatabase() {
 
         val MIGRATION_4_5 = object : Migration(4, 5) {
             override fun migrate(db: SupportSQLiteDatabase) {
+                // 为 conversations 表添加 enabledRegexGroups 列
+                db.execSQL(
+                    "ALTER TABLE conversations ADD COLUMN enabledRegexGroups TEXT"
+                )
                 // 创建 yiyi_regex_scripts 表
                 db.execSQL("""
                     CREATE TABLE IF NOT EXISTS `yiyi_regex_scripts` (
