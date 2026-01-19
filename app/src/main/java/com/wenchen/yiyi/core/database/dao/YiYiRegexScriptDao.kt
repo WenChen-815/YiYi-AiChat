@@ -32,6 +32,9 @@ interface YiYiRegexScriptDao {
     @Query("SELECT * FROM yiyi_regex_scripts WHERE groupId = :groupId")
     suspend fun getScriptsByGroupId(groupId: String): List<YiYiRegexScript>
 
+    @Query("SELECT * FROM yiyi_regex_scripts WHERE groupId IN (:groupIds)")
+    suspend fun getScriptsByGroupIds(groupIds: List<String>): List<YiYiRegexScript>
+
     @Query("DELETE FROM yiyi_regex_scripts WHERE groupId = :groupId")
     suspend fun deleteScriptsByGroupId(groupId: String): Int
 }

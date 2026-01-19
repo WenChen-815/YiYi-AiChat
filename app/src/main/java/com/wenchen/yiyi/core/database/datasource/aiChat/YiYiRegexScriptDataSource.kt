@@ -38,6 +38,10 @@ class YiYiRegexScriptDataSource @Inject constructor(
         return yiYiRegexScriptDao.getScriptsByGroupId(groupId)
     }
 
+    suspend fun getScriptsByGroupIds(groupIds: List<String>): List<YiYiRegexScript> {
+        return yiYiRegexScriptDao.getScriptsByGroupIds(groupIds)
+    }
+
     suspend fun deleteScriptsByGroupId(groupId: String): Int {
         return yiYiRegexScriptDao.deleteScriptsByGroupId(groupId)
     }
