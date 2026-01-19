@@ -24,4 +24,17 @@ object ConfigRoutes {
      */
     @Serializable
     data object ApiConfig
+
+    /**
+     * 正则表达式分组配置页
+     */
+    @Serializable
+    data object RegexConfig
+
+    /**
+     * 正则表达式详情页
+     * @param groupId 分组 ID
+     */
+    @Serializable
+    data class RegexDetail(val groupId: String)
 }

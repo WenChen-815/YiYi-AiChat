@@ -137,6 +137,7 @@ private fun ConversationEditScreen(
                 additionalSummaryRequirement,
                 chooseCharacterMap,
                 characterKeywordsMap,
+                enabledRegexGroups,
             ->
             viewModel.saveConversation(
                 name,
@@ -148,6 +149,7 @@ private fun ConversationEditScreen(
                 additionalSummaryRequirement,
                 chooseCharacterMap,
                 characterKeywordsMap,
+                enabledRegexGroups,
             )
         },
         onCancelClick = { viewModel.navigateBack() },
@@ -180,7 +182,7 @@ fun ConversationEditScreenContent(
     uiState: ConversationEditUiState,
     isCreateNew: Boolean,
     conversationId: String,
-    onSaveClick: (String, String, String, String, String, String, String, Map<String, Float>, Map<String, List<String>>) -> Unit,
+    onSaveClick: (String, String, String, String, String, String, String, Map<String, Float>, Map<String, List<String>>, List<String>) -> Unit,
     onCancelClick: () -> Unit,
     onAvatarClick: () -> Unit,
     onBackgroundClick: () -> Unit,
@@ -206,6 +208,7 @@ fun ConversationEditScreenContent(
     var additionalSummaryRequirement by remember { mutableStateOf("") }
     var chooseCharacterMap by remember { mutableStateOf<Map<String, Float>>(emptyMap()) }
     var characterKeywordsMap by remember { mutableStateOf<Map<String, List<String>>>(emptyMap()) }
+    var enabledRegexGroups by remember { mutableStateOf<List<String>>(emptyList()) }
     var allWorldBook by remember { mutableStateOf<List<WorldBook>>(emptyList()) }
     val moshi: Moshi = Moshi.Builder().build()
     val worldBookAdapter: JsonAdapter<WorldBook> = moshi.adapter(WorldBook::class.java)
@@ -237,6 +240,7 @@ fun ConversationEditScreenContent(
             backgroundPath = conversation.backgroundPath.toString()
             chooseCharacterMap = conversation.characterIds
             characterKeywordsMap = conversation.characterKeywords ?: emptyMap()
+            enabledRegexGroups = conversation.enabledRegexGroups ?: emptyList()
         }
     }
     DisposableEffect(lifecycleOwner) {
@@ -310,6 +314,7 @@ fun ConversationEditScreenContent(
                             additionalSummaryRequirement,
                             chooseCharacterMap,
                             characterKeywordsMap,
+                            enabledRegexGroups,
                         )
                     },
                     modifier = Modifier.weight(1f),
@@ -822,6 +827,51 @@ fun ConversationEditScreenContent(
                 }
             }
 
+            Text(
+                text = "正则过滤",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
+            )
+            uiState.allRegexGroups.forEach { group ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            enabledRegexGroups = if (enabledRegexGroups.contains(group.id)) {
+                                enabledRegexGroups - group.id
+                            } else {
+                                enabledRegexGroups + group.id
+                            }
+                        }
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = enabledRegexGroups.contains(group.id),
+                        onCheckedChange = { checked ->
+                            enabledRegexGroups = if (checked) {
+                                enabledRegexGroups + group.id
+                            } else {
+                                enabledRegexGroups - group.id
+                            }
+                        }
+                    )
+                    Column {
+                        Text(
+                            text = group.name ?: "未命名分组",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        if (!group.description.isNullOrEmpty()) {
+                            Text(
+                                text = group.description!!,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = GrayText
+                            )
+                        }
+                    }
+                }
+            }
+
             SettingTextFieldItem(
                 modifier =
                     Modifier
@@ -932,7 +982,7 @@ fun ShowMemoryDialog(
     conversationId: String,
 ) {
     var memoryContent by remember { mutableStateOf("") }
-    var memoryCount by remember { mutableStateOf(0) }
+    var memoryCount by remember { mutableIntStateOf(0) }
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 

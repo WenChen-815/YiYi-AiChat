@@ -1,7 +1,6 @@
 package com.wenchen.yiyi.feature.config.view
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -73,6 +72,14 @@ fun SettingsScreen(
                 title = "API 线路与模型配置",
                 description = "配置 API Key、中转地址及对话模型",
                 onClick = { viewModel.navigate(ConfigRoutes.ApiConfig) }
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            SettingNavigationCard(
+                title = "正则脚本配置",
+                description = "管理正则表达式分组及替换规则",
+                onClick = { viewModel.navigate(ConfigRoutes.RegexConfig) }
             )
         }
     }

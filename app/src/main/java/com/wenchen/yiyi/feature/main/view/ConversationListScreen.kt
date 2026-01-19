@@ -79,7 +79,7 @@ fun ConversationListScreen(
                     LaunchedEffect(conversation.id) {
                         try {
                             val message = chatMessageDao.getLastMessageByConversationId(conversation.id)
-                            lastMessage = ChatUtils.parseMessage(message).cleanedContent
+                            lastMessage = ChatUtils().parseMessage(message).cleanedContent
                         } catch (e: Exception) {
                             lastMessage = ""
                         }

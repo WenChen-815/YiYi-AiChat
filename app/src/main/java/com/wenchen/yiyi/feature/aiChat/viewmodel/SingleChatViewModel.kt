@@ -9,6 +9,7 @@ import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.core.state.UserState
 import com.wenchen.yiyi.core.database.entity.Conversation
 import com.wenchen.yiyi.core.database.entity.ConversationType
+import com.wenchen.yiyi.core.util.business.ChatUtils
 import com.wenchen.yiyi.core.util.ui.ToastUtils
 import com.wenchen.yiyi.feature.aiChat.common.AIChatManager
 import com.wenchen.yiyi.navigation.AppNavigator
@@ -28,6 +29,8 @@ class SingleChatViewModel @Inject constructor(
     aiCharacterRepository: AICharacterRepository,
     aiChatMemoryRepository: AIChatMemoryRepository,
     aiHubRepository: AiHubRepository,
+    regexScriptRepository: YiYiRegexScriptRepository,
+    chatUtils: ChatUtils,
     aiChatManager: AIChatManager,
     navigator: AppNavigator,
     userState: UserState,
@@ -40,6 +43,8 @@ class SingleChatViewModel @Inject constructor(
     aiCharacterRepository = aiCharacterRepository,
     aiChatMemoryRepository = aiChatMemoryRepository,
     aiHubRepository = aiHubRepository,
+    regexScriptRepository = regexScriptRepository,
+    chatUtils = chatUtils,
     aiChatManager = aiChatManager,
     navigator = navigator,
     userState = userState,
@@ -84,6 +89,7 @@ class SingleChatViewModel @Inject constructor(
                                 avatarPath = currentAICharacter?.avatar,
                                 backgroundPath = currentAICharacter?.background,
                             )
+                        _regexList.value = regexScriptRepository.getScriptsByGroupIds(conversation.enabledRegexGroups ?: emptyList())
                         withContext(Dispatchers.Main) {
                             _conversation.value = conversation
                             updateCharacterDisplay()

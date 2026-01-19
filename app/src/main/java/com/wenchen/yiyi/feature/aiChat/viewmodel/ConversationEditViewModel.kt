@@ -19,6 +19,7 @@ import com.wenchen.yiyi.core.base.viewmodel.BaseViewModel
 import com.wenchen.yiyi.core.data.repository.AICharacterRepository
 import com.wenchen.yiyi.core.data.repository.AIChatMemoryRepository
 import com.wenchen.yiyi.core.data.repository.ConversationRepository
+import com.wenchen.yiyi.core.data.repository.YiYiRegexGroupRepository
 import com.wenchen.yiyi.core.database.entity.AICharacter
 import com.wenchen.yiyi.core.database.entity.AIChatMemory
 import com.wenchen.yiyi.core.util.storage.FilesUtils
@@ -28,6 +29,7 @@ import com.wenchen.yiyi.core.util.ui.ToastUtils
 import com.wenchen.yiyi.core.datastore.storage.ImageManager
 import com.wenchen.yiyi.core.database.entity.Conversation
 import com.wenchen.yiyi.core.database.entity.ConversationType
+import com.wenchen.yiyi.core.database.entity.YiYiRegexGroup
 import com.wenchen.yiyi.feature.worldBook.model.WorldBook
 import com.wenchen.yiyi.navigation.AppNavigator
 import com.wenchen.yiyi.navigation.routes.AiChatRoutes
@@ -46,6 +48,7 @@ class ConversationEditViewModel @Inject constructor(
     private val conversationRepository: ConversationRepository,
     private val aiCharacterRepository: AICharacterRepository,
     private val aiChatMemoryRepository: AIChatMemoryRepository,
+    private val regexGroupRepository: YiYiRegexGroupRepository,
     navigator: AppNavigator,
     userState: UserState,
     userConfigState: UserConfigState,
@@ -81,8 +84,13 @@ class ConversationEditViewModel @Inject constructor(
     private fun loadInitialData() {
         viewModelScope.launch(Dispatchers.IO) {
             val allCharacters = aiCharacterRepository.getAllCharacters()
+            val allRegexGroups = regexGroupRepository.getAllGroups()
             val conversation = if (!isNewConversation.value) conversationRepository.getById(conversationId.value) else null
-            _uiState.value = _uiState.value.copy(allCharacters = allCharacters, conversation = conversation)
+            _uiState.value = _uiState.value.copy(
+                allCharacters = allCharacters,
+                allRegexGroups = allRegexGroups,
+                conversation = conversation
+            )
         }
     }
 
@@ -152,6 +160,7 @@ class ConversationEditViewModel @Inject constructor(
         additionalSummaryRequirement: String,
         chooseCharacterMap: Map<String, Float>,
         characterKeywordsMap: Map<String, List<String>>,
+        enabledRegexGroups: List<String>,
     ) {
         viewModelScope.launch {
             if (name.isEmpty()) {
@@ -190,6 +199,7 @@ class ConversationEditViewModel @Inject constructor(
                             additionalSummaryRequirement = additionalSummaryRequirement,
                             characterIds = chooseCharacterMap,
                             characterKeywords = characterKeywordsMap,
+                            enabledRegexGroups = enabledRegexGroups,
                             avatarPath =
                                 if (hasNewAvatar) {
                                     imageManager.getAvatarImagePath(
@@ -231,6 +241,7 @@ class ConversationEditViewModel @Inject constructor(
                             chatWorldId = chatWorldId,
                             chatSceneDescription = chatSceneDescription,
                             additionalSummaryRequirement = additionalSummaryRequirement,
+                            enabledRegexGroups = enabledRegexGroups,
                             avatarPath =
                                 if (hasNewAvatar) {
                                     imageManager.getAvatarImagePath(
@@ -285,5 +296,6 @@ class ConversationEditViewModel @Inject constructor(
 
 data class ConversationEditUiState(
     val allCharacters: List<AICharacter> = emptyList(),
+    val allRegexGroups: List<YiYiRegexGroup> = emptyList(),
     val conversation: Conversation? = null
 )

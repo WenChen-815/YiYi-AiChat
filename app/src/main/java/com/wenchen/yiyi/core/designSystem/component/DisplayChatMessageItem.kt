@@ -77,7 +77,7 @@ fun DisplayChatMessageItem(
     chatWindowHazeState: HazeState,
 ) {
     // 解析AI回复中的日期和角色名称
-    val parseMessage = ChatUtils.parseMessage(message)
+    val parseMessage = viewModel.paseMessage(message)
     val chatUiState by viewModel.chatUiState.collectAsState()
     val conversation by viewModel.conversation.collectAsState()
     val userConfig by viewModel.userConfigState.userConfig.collectAsState()
@@ -116,7 +116,7 @@ fun DisplayChatMessageItem(
                 for (i in parts.indices) {
                     ChatMessageItem(
                         viewModel = viewModel,
-                        messageId = message.id,
+                        messageId = "${message.id}_$i",
                         content = parts[i],
                         avatarUrl = avatarUrl,
                         messageType = message.type,
@@ -267,8 +267,9 @@ fun ChatMessageItem(
                             MessageType.ASSISTANT -> Color.LightGray
                             MessageType.SYSTEM -> WhiteText
                         }
+                        val regexReplace = viewModel.regexReplace(content)
                         // 拆分内容
-                        val segments = remember(content) { splitMessageContent(content) }
+                        val segments = remember(regexReplace) { splitMessageContent(regexReplace) }
 
                         Column {
                             segments.forEachIndexed { index, segment ->

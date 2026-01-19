@@ -24,6 +24,7 @@ import com.wenchen.yiyi.feature.aiChat.common.AIChatManager
 import com.wenchen.yiyi.core.datastore.storage.ImageManager
 import com.wenchen.yiyi.core.database.entity.Conversation
 import com.wenchen.yiyi.core.database.entity.ConversationType
+import com.wenchen.yiyi.core.database.entity.YiYiRegexScript
 import com.wenchen.yiyi.core.model.network.Model
 import com.wenchen.yiyi.core.model.network.ModelsResponse
 import com.wenchen.yiyi.core.model.network.NetworkResponse
@@ -33,6 +34,7 @@ import com.wenchen.yiyi.core.util.common.LimitMutableList
 import com.wenchen.yiyi.core.util.common.limitMutableListOf
 import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.core.state.UserState
+import com.wenchen.yiyi.core.util.business.ChatUtils
 import com.wenchen.yiyi.core.util.ui.ToastUtils
 import com.wenchen.yiyi.navigation.AppNavigator
 import kotlinx.coroutines.*
@@ -54,6 +56,8 @@ abstract class BaseChatViewModel(
     protected val aiCharacterRepository: AICharacterRepository,
     protected val aiChatMemoryRepository: AIChatMemoryRepository,
     private val aiHubRepository: AiHubRepository,
+    protected val regexScriptRepository: YiYiRegexScriptRepository,
+    protected val chatUtils: ChatUtils,
     private val aiChatManager: AIChatManager,
     navigator: AppNavigator,
     userState: UserState,
@@ -69,6 +73,9 @@ abstract class BaseChatViewModel(
 
     val _messages = MutableStateFlow<List<ChatMessage>>(emptyList())
     val messages: StateFlow<List<ChatMessage>> = _messages.asStateFlow()
+
+    val _regexList = MutableStateFlow<List<YiYiRegexScript>>(emptyList())
+    val regexList: StateFlow<List<YiYiRegexScript>> = _regexList.asStateFlow()
 
 //    val _messageItemHeights = MutableStateFlow<Map<String, Int>>(emptyMap())
 //    val messageItemHeights: StateFlow<Map<String, Int>> = _messageItemHeights.asStateFlow()
@@ -649,6 +656,18 @@ abstract class BaseChatViewModel(
                 Timber.tag("BaseChatViewModel").e(e, "删除消息失败: ${e.message}")
             }
         }
+    }
+
+    fun paseMessage(message: ChatMessage): ChatUtils.ParsedMessage {
+        return chatUtils.parseMessage(message)
+    }
+
+    fun paseMessage(message: TempChatMessage): ChatUtils.ParsedMessage {
+        return chatUtils.parseMessage(message)
+    }
+
+    fun regexReplace(content: String): String {
+        return chatUtils.regexReplace(content, regexList.value)
     }
 }
 

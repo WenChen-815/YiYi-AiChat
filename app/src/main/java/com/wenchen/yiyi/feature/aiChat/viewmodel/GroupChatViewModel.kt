@@ -8,6 +8,7 @@ import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.core.state.UserState
 import com.wenchen.yiyi.core.database.entity.Conversation
 import com.wenchen.yiyi.core.database.entity.ConversationType
+import com.wenchen.yiyi.core.util.business.ChatUtils
 import com.wenchen.yiyi.feature.aiChat.common.AIChatManager
 import com.wenchen.yiyi.navigation.AppNavigator
 import com.wenchen.yiyi.navigation.routes.AiChatRoutes
@@ -28,6 +29,8 @@ class GroupChatViewModel @Inject constructor(
     aiCharacterRepository: AICharacterRepository,
     aiChatMemoryRepository: AIChatMemoryRepository,
     aiHubRepository: AiHubRepository,
+    regexScriptRepository: YiYiRegexScriptRepository,
+    chatUtils: ChatUtils,
     aiChatManager: AIChatManager,
     navigator: AppNavigator,
     userState: UserState,
@@ -40,6 +43,8 @@ class GroupChatViewModel @Inject constructor(
     aiCharacterRepository = aiCharacterRepository,
     aiChatMemoryRepository = aiChatMemoryRepository,
     aiHubRepository = aiHubRepository,
+    regexScriptRepository = regexScriptRepository,
+    chatUtils = chatUtils,
     aiChatManager = aiChatManager,
     navigator = navigator,
     userState = userState,
@@ -58,7 +63,6 @@ class GroupChatViewModel @Inject constructor(
     }
 
     fun initGroupChat(conversationId: String) {
-
         try {
             viewModelScope.launch(Dispatchers.IO) {
                 val conversation = conversationRepository.getById(conversationId)
@@ -82,6 +86,7 @@ class GroupChatViewModel @Inject constructor(
                 val currentCharacters = conversation.characterIds.mapNotNull { (characterId, _) ->
                     aiCharacterRepository.getCharacterById(characterId)
                 }
+                _regexList.value = regexScriptRepository.getScriptsByGroupIds(conversation.enabledRegexGroups ?: emptyList())
                 withContext(Dispatchers.Main) {
                     _chatUiState.value = _chatUiState.value.copy(
                         currentCharacters = currentCharacters

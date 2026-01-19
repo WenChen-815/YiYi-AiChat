@@ -54,7 +54,8 @@ class AIChatManager @Inject constructor(
     val chatMessageRepository: ChatMessageRepository,
     val tempChatMessageRepository: TempChatMessageRepository,
     val aiChatMemoryRepository: AIChatMemoryRepository,
-    val aiHubRepository: AiHubRepository
+    val aiHubRepository: AiHubRepository,
+    val chatUtils: ChatUtils
 ) {
     // 基础配置
     private val TAG = "AIChatManager"
@@ -289,7 +290,7 @@ class AIChatManager @Inject constructor(
         // 添加历史消息
         for (message in oldMessages) {
             if (message.type == MessageType.ASSISTANT && message.characterId == aiCharacter.id) {
-                messages.add(Message("assistant", ChatUtils.parseMessage(message).cleanedContent))
+                messages.add(Message("assistant", chatUtils.parseMessage(message).cleanedContent))
             } else {
                 messages.add(Message("user", message.content))
             }
