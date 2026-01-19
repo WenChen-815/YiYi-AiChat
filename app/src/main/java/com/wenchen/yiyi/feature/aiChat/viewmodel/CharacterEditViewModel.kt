@@ -41,9 +41,17 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import com.aventrix.jnanoid.jnanoid.NanoIdUtils
+import com.wenchen.yiyi.core.data.repository.YiYiRegexGroupRepository
+import com.wenchen.yiyi.core.data.repository.YiYiRegexScriptRepository
+import com.wenchen.yiyi.core.database.entity.YiYiRegexGroup
+import com.wenchen.yiyi.core.database.entity.YiYiRegexScript
+import com.wenchen.yiyi.core.util.common.AppJson
 import com.wenchen.yiyi.core.util.ui.BitMapUtils
 import com.wenchen.yiyi.feature.output.model.CharaExtensionModel
 import com.wenchen.yiyi.feature.output.model.CharacterData
+import com.wenchen.yiyi.feature.output.model.CharacterExtensions
+import com.wenchen.yiyi.feature.output.model.RegexScript
+import kotlinx.serialization.decodeFromString
 import javax.inject.Inject
 
 @HiltViewModel
@@ -51,6 +59,8 @@ class CharacterEditViewModel @Inject constructor(
     private val aiCharacterRepository: AICharacterRepository,
     private val aiChatMemoryRepository: AIChatMemoryRepository,
     private val conversationRepository: ConversationRepository,
+    private val yiyiRegexGroupRepository: YiYiRegexGroupRepository,
+    private val yiyiRegexScriptRepository: YiYiRegexScriptRepository,
     navigator: AppNavigator,
     userState: UserState,
     userConfigState: UserConfigState,
@@ -73,12 +83,21 @@ class CharacterEditViewModel @Inject constructor(
     private val _parsedCharacter = MutableStateFlow<CharacterData?>(null)
     val parsedCharacter: StateFlow<CharacterData?> = _parsedCharacter.asStateFlow()
 
+    private val _parsedRegexGroup = MutableStateFlow<YiYiRegexGroup?>(null)
+    val parsedRegexGroup: StateFlow<YiYiRegexGroup?> = _parsedRegexGroup.asStateFlow()
+
+    private val _saveRegexGroupFlag = MutableStateFlow<Boolean?>(null)
+    val saveRegexGroupFlag: StateFlow<Boolean?> = _saveRegexGroupFlag.asStateFlow()
+
+    private val _parsedRegexScripts = MutableStateFlow<List<YiYiRegexScript>>(emptyList())
+    val parsedRegexScripts: StateFlow<List<YiYiRegexScript>> = _parsedRegexScripts.asStateFlow()
+
     private val _parsedMemory = MutableStateFlow<String>("")
     val parsedMemory: StateFlow<String?> = _parsedMemory.asStateFlow()
 
     private val _selectedImageUri = MutableStateFlow<Uri?>(null)
     val selectedImageUri: StateFlow<Uri?> = _selectedImageUri.asStateFlow()
-    
+
     private val imageManager = ImageManager()
 
     // 用于存储选择的图片
@@ -194,6 +213,46 @@ class CharacterEditViewModel @Inject constructor(
 
                         // 恢复记忆
                         _parsedMemory.value = extension?.memory ?: ""
+
+                        // 尝试查找正则组
+                        if (parsedCharacter.value?.extensions != null) {
+                            try {
+                                val regexExtension = AppJson.decodeFromString<CharacterExtensions>(
+                                    parsedCharacter.value?.extensions.toString()
+                                )
+                                Timber.tag("CharacterEditViewModel").i("发现正则扩展！")
+                                val id = NanoIdUtils.randomNanoId()
+                                _parsedRegexGroup.value = YiYiRegexGroup(
+                                    id = id,
+                                    name = "${parsedCharacter.value?.name} 的正则",
+                                    description = "${parsedCharacter.value?.name} 的正则",
+                                    source_owner = regexExtension.source_owner,
+                                    createTime = System.currentTimeMillis(),
+                                    updateTime = System.currentTimeMillis(),
+                                )
+                                _parsedRegexScripts.value = regexExtension.regex_scripts?.map { script ->
+                                    YiYiRegexScript(
+                                        id = NanoIdUtils.randomNanoId(),
+                                        groupId = id,
+                                        scriptName = script.scriptName,
+                                        findRegex = script.findRegex,
+                                        replaceString = script.replaceString,
+                                        trimStrings = script.trimStrings,
+                                        placement = script.placement,
+                                        disabled = script.disabled,
+                                        markdownOnly = script.markdownOnly,
+                                        promptOnly = script.promptOnly,
+                                        runOnEdit = script.runOnEdit,
+                                        substituteRegex = script.substituteRegex,
+                                        minDepth = script.minDepth,
+                                        maxDepth = script.maxDepth
+                                    )
+                                } ?: emptyList()
+                                _saveRegexGroupFlag.value = true
+                            } catch (e: Exception) {
+                                Timber.tag("CharacterEditViewModel").e(e, "解析正则扩展失败")
+                            }
+                        }
                         ToastUtils.showToast("导入成功: ${cardV3.data.name}")
                     } catch (e: Exception) {
                         Timber.tag("CharacterEditViewModel").e(e, "解析角色卡失败")
@@ -215,6 +274,10 @@ class CharacterEditViewModel @Inject constructor(
         return Intent(Intent.ACTION_PICK).apply {
             type = "image/*"
         }
+    }
+
+    fun onSaveRegexGroupChange(enabled: Boolean) {
+        _saveRegexGroupFlag.value = enabled
     }
 
     // 保存角色数据
@@ -316,6 +379,24 @@ class CharacterEditViewModel @Inject constructor(
                         backgroundPath = character.background,
                     )
                     conversationRepository.insert(initialConversation)
+                    // 如果需要保存正则组和脚本
+                    if (saveRegexGroupFlag.value == true) {
+                        try {
+                            // 保存正则组
+                            val regexGroup = parsedRegexGroup.value
+                            if (regexGroup != null) {
+                                yiyiRegexGroupRepository.insertGroup(regexGroup)
+
+                                // 保存正则脚本
+                                val regexScripts = parsedRegexScripts.value
+                                if (regexScripts.isNotEmpty()) {
+                                    yiyiRegexScriptRepository.insertScripts(regexScripts)
+                                }
+                            }
+                        } catch (e: Exception) {
+                            Timber.tag("CharacterEditViewModel").e(e, "保存正则组和脚本失败")
+                        }
+                    }
 
                     withContext(Dispatchers.Main) {
                         if (result > 0) ToastUtils.show("保存成功") else ToastUtils.show("保存失败")
