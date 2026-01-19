@@ -4,7 +4,6 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -39,7 +38,7 @@ fun SettingTextFieldItem(
             value = value,
             enabled = enable,
             onValueChange = onValueChange,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxWidth(),
             singleLine = singleLine,
             shape = RoundedCornerShape(16.dp),
             contentPadding = PaddingValues(12.dp),
@@ -81,7 +80,7 @@ fun SettingTextFieldItem(
             value = value,
             enabled = enable,
             onValueChange = onValueChange,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxWidth(),
             singleLine = singleLine,
             shape = RoundedCornerShape(16.dp),
             contentPadding = PaddingValues(12.dp),

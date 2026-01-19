@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import com.aventrix.jnanoid.jnanoid.NanoIdUtils
 import com.wenchen.yiyi.core.base.viewmodel.BaseViewModel
 import com.wenchen.yiyi.core.data.repository.YiYiRegexGroupRepository
+import com.wenchen.yiyi.core.data.repository.YiYiRegexScriptRepository
 import com.wenchen.yiyi.core.database.entity.YiYiRegexGroup
 import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.core.state.UserState
@@ -21,7 +22,8 @@ class RegexConfigViewModel @Inject constructor(
     navigator: AppNavigator,
     userState: UserState,
     userConfigState: UserConfigState,
-    private val regexGroupRepository: YiYiRegexGroupRepository
+    private val regexGroupRepository: YiYiRegexGroupRepository,
+    private val regexScriptRepository: YiYiRegexScriptRepository
 ) : BaseViewModel(navigator, userState, userConfigState) {
 
     val regexGroups: StateFlow<List<YiYiRegexGroup>> = regexGroupRepository.getAllGroupsFlow()
@@ -47,10 +49,11 @@ class RegexConfigViewModel @Inject constructor(
     fun deleteGroup(group: YiYiRegexGroup) {
         viewModelScope.launch {
             regexGroupRepository.deleteGroup(group)
+            regexScriptRepository.deleteScriptsByGroupId(group.id)
         }
     }
 
-    fun navigateToDetail(groupId: String) {
+    fun navigateToDetail(groupId: String, groupName: String) {
         navigate(ConfigRoutes.RegexDetail(groupId))
     }
 }

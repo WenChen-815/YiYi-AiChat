@@ -1,7 +1,6 @@
 package com.wenchen.yiyi.feature.config.view
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -11,8 +10,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Draw
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -38,8 +37,10 @@ internal fun RegexDetailRoute(
 ) {
     RegexDetailScreen(
         groupId = viewModel.groupId,
+        groupName = viewModel.groupName.collectAsState().value,
         scripts = viewModel.regexScripts.collectAsState().value,
         onBack = { viewModel.navigateBack() },
+        onGroupNameChange = { viewModel.updateGroupName(it) },
         onAddOrUpdateScript = { viewModel.addOrUpdateScript(it) },
         onDeleteScript = { viewModel.deleteScript(it) }
     )
@@ -49,18 +50,21 @@ internal fun RegexDetailRoute(
 @Composable
 fun RegexDetailScreen(
     groupId: String,
+    groupName: String,
     scripts: List<YiYiRegexScript>,
     onBack: () -> Unit,
+    onGroupNameChange: (String) -> Unit,
     onAddOrUpdateScript: (YiYiRegexScript) -> Unit,
     onDeleteScript: (YiYiRegexScript) -> Unit
 ) {
     var editingScript by remember { mutableStateOf<YiYiRegexScript?>(null) }
     var showEditDialog by remember { mutableStateOf(false) }
+    var scriptToDelete by remember { mutableStateOf<YiYiRegexScript?>(null) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("正则详情") },
+                title = { Text("分组详情") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
@@ -95,6 +99,25 @@ fun RegexDetailScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            item {
+                SettingTextFieldItem(
+                    value = groupName,
+                    onValueChange = onGroupNameChange,
+                    label = "分组名称",
+                    placeholder = { Text("输入分组名称") },
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                HorizontalDivider(
+                    modifier = Modifier.padding(vertical = 8.dp),
+                    color = if (isSystemInDarkTheme()) GrayBorder else LightGray
+                )
+                Text(
+                    text = "规则列表",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+            }
+
             items(scripts, key = { it.id }) { script ->
                 RegexScriptItem(
                     script = script,
@@ -102,7 +125,7 @@ fun RegexDetailScreen(
                         editingScript = script
                         showEditDialog = true
                     },
-                    onDelete = { onDeleteScript(script) }
+                    onDelete = { scriptToDelete = script }
                 )
             }
         }
@@ -115,6 +138,29 @@ fun RegexDetailScreen(
             onConfirm = { updatedScript ->
                 onAddOrUpdateScript(updatedScript)
                 showEditDialog = false
+            }
+        )
+    }
+
+    if (scriptToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { scriptToDelete = null },
+            title = { Text("确认删除") },
+            text = { Text("确定要删除规则 \"${scriptToDelete?.scriptName ?: "未命名规则"}\" 吗？") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        scriptToDelete?.let(onDeleteScript)
+                        scriptToDelete = null
+                    }
+                ) {
+                    Text("删除", color = Color.Red)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { scriptToDelete = null }) {
+                    Text("取消")
+                }
             }
         )
     }
@@ -133,34 +179,56 @@ fun RegexScriptItem(
             containerColor = if (isSystemInDarkTheme()) DarkGray else LightGray
         )
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = script.scriptName ?: "未命名规则",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.weight(1f)
-                )
+                Row(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = script.scriptName ?: "未命名规则",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(end = 4.dp)
+                        )
+                    Text(
+                        text = if (script.disabled == true) "已禁用" else "已启用",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (script.disabled == true) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.background(
+                            shape = RoundedCornerShape(4.dp),
+                            color = if (script.disabled == true) MaterialTheme.colorScheme.error.copy(alpha = 0.2f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                        ).padding(2.dp)
+                    )
+                }
                 IconButton(onClick = onEdit) {
-                    Icon(Icons.Default.Edit, contentDescription = "编辑", modifier = Modifier.size(20.dp))
+                    Icon(
+                        Icons.Outlined.Draw,
+                        contentDescription = "编辑",
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
                 IconButton(onClick = onDelete) {
-                    Icon(Icons.Default.Delete, contentDescription = "删除", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
+                    Icon(
+                        Icons.Outlined.Delete,
+                        contentDescription = "删除",
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
-            Text(text = "查找: ${script.findRegex}", style = MaterialTheme.typography.bodySmall, color = GrayText)
-            Text(text = "替换: ${script.replaceString}", style = MaterialTheme.typography.bodySmall, color = GrayText)
-            
-            if (script.disabled == true) {
-                Text(
-                    text = "已禁用",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-            }
+
+            Text(
+                text = "查找: ${script.findRegex}",
+                style = MaterialTheme.typography.bodySmall,
+                color = GrayText,
+                maxLines = 1
+            )
+            Text(
+                text = "替换: ${script.replaceString}",
+                style = MaterialTheme.typography.bodySmall,
+                color = GrayText,
+                maxLines = 1
+            )
+
+
         }
     }
 }
@@ -240,13 +308,15 @@ fun RegexScriptEditDialog(
                     TextButton(onClick = onDismiss) { Text("取消", color = Color.Red) }
                     TextButton(
                         onClick = {
-                            onConfirm(script.copy(
-                                scriptName = name,
-                                findRegex = findRegex,
-                                replaceString = replaceString,
-                                disabled = disabled,
-                                markdownOnly = markdownOnly
-                            ))
+                            onConfirm(
+                                script.copy(
+                                    scriptName = name,
+                                    findRegex = findRegex,
+                                    replaceString = replaceString,
+                                    disabled = disabled,
+                                    markdownOnly = markdownOnly
+                                )
+                            )
                         },
                     ) {
                         Text("保存")
@@ -263,6 +333,7 @@ fun RegexDetailScreenPreview() {
     AIChatTheme {
         RegexDetailScreen(
             groupId = "1",
+            groupName = "正则分组",
             scripts = listOf(
                 YiYiRegexScript(
                     id = "1",
@@ -282,6 +353,7 @@ fun RegexDetailScreenPreview() {
                 )
             ),
             onBack = {},
+            onGroupNameChange = {},
             onAddOrUpdateScript = {},
             onDeleteScript = {}
         )

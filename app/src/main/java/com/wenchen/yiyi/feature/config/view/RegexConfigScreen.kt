@@ -9,12 +9,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -30,7 +31,7 @@ internal fun RegexConfigRoute(
     RegexConfigScreen(
         regexGroups = viewModel.regexGroups.collectAsState().value,
         onBack = { viewModel.navigateBack() },
-        onNavigateToDetail = { viewModel.navigateToDetail(it) },
+        onNavigateToDetail = { groupId, groupName -> viewModel.navigateToDetail(groupId, groupName) },
         onAddGroup = { name, desc -> viewModel.addGroup(name, desc) },
         onDeleteGroup = { viewModel.deleteGroup(it) }
     )
@@ -41,16 +42,17 @@ internal fun RegexConfigRoute(
 fun RegexConfigScreen(
     regexGroups: List<YiYiRegexGroup>,
     onBack: () -> Unit,
-    onNavigateToDetail: (String) -> Unit,
+    onNavigateToDetail: (String, String) -> Unit,
     onAddGroup: (String, String) -> Unit,
     onDeleteGroup: (YiYiRegexGroup) -> Unit
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
+    var groupToDelete by remember { mutableStateOf<YiYiRegexGroup?>(null) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("正则分组配置") },
+                title = { Text("正则组") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
@@ -85,8 +87,8 @@ fun RegexConfigScreen(
             items(regexGroups, key = { it.id }) { group ->
                 RegexGroupItem(
                     group = group,
-                    onClick = { onNavigateToDetail(group.id) },
-                    onDelete = { onDeleteGroup(group) }
+                    onClick = { onNavigateToDetail(group.id, group.name ?: "未命名分组") },
+                    onDelete = { groupToDelete = group }
                 )
             }
         }
@@ -98,6 +100,29 @@ fun RegexConfigScreen(
             onConfirm = { name, desc ->
                 onAddGroup(name, desc)
                 showAddDialog = false
+            }
+        )
+    }
+
+    if (groupToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { groupToDelete = null },
+            title = { Text("确认删除") },
+            text = { Text("确定要删除分组 \"${groupToDelete?.name ?: ""}\" 吗？此操作不可撤销，且会删除该组下的所有规则。") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        groupToDelete?.let(onDeleteGroup)
+                        groupToDelete = null
+                    }
+                ) {
+                    Text("删除", color = Color.Red)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { groupToDelete = null }) {
+                    Text("取消")
+                }
             }
         )
     }
@@ -131,7 +156,7 @@ fun RegexGroupItem(
                 )
                 if (!group.description.isNullOrBlank()) {
                     Text(
-                        text = group.description!!,
+                        text = group.description,
                         style = MaterialTheme.typography.bodySmall,
                         color = GrayText,
                         modifier = Modifier.padding(top = 4.dp)
@@ -140,9 +165,8 @@ fun RegexGroupItem(
             }
             IconButton(onClick = onDelete) {
                 Icon(
-                    imageVector = Icons.Default.Delete,
+                    imageVector = Icons.Outlined.Delete,
                     contentDescription = "删除",
-                    tint = MaterialTheme.colorScheme.error
                 )
             }
         }
@@ -197,7 +221,7 @@ fun RegexConfigScreenPreview() {
                 YiYiRegexGroup(id = "2", name = "格式化", description = "统一输出格式")
             ),
             onBack = {},
-            onNavigateToDetail = {},
+            onNavigateToDetail = { _, _ -> },
             onAddGroup = { _, _ -> },
             onDeleteGroup = {}
         )

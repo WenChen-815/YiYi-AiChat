@@ -69,7 +69,7 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             SettingNavigationCard(
-                title = "API 线路与模型配置",
+                title = "API 配置",
                 description = "配置 API Key、中转地址及对话模型",
                 onClick = { viewModel.navigate(ConfigRoutes.ApiConfig) }
             )
@@ -77,7 +77,7 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             SettingNavigationCard(
-                title = "正则脚本配置",
+                title = "正则组",
                 description = "管理正则表达式分组及替换规则",
                 onClick = { viewModel.navigate(ConfigRoutes.RegexConfig) }
             )
