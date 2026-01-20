@@ -66,6 +66,11 @@ object WebViewPool {
      * 回收 WebView 到池中，重置状态以便复用
      */
     fun release(webView: WebView) {
+        // 回收前禁用焦点，防止在销毁过程中触发焦点搜索导致的 Lookahead 崩溃
+        webView.isFocusable = false
+        webView.isFocusableInTouchMode = false
+        webView.clearFocus()
+
         // 将 WebView 从父容器移除
         (webView.parent as? ViewGroup)?.removeView(webView)
 
@@ -94,6 +99,10 @@ object WebViewPool {
     @SuppressLint("SetJavaScriptEnabled")
     private fun createWebView(context: Context): WebView {
         return WebView(context).apply {
+            // 创建时默认禁用焦点
+            isFocusable = false
+            isFocusableInTouchMode = false
+
             settings.apply {
                 javaScriptEnabled = true
                 domStorageEnabled = true

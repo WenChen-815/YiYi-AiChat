@@ -5,12 +5,15 @@ import android.view.MotionEvent
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.UiComposable
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -115,72 +118,86 @@ fun HtmlWebView(
         """.trimIndent()
     }
 
-    AndroidView(
-        modifier = modifier
+    Box(
+        modifier = Modifier
             .fillMaxWidth()
-            .height(webViewHeight.dp),
-        factory = { context ->
-            WebViewPool.acquire(context).apply {
-                // 记录最后一次点击位置
-                setOnTouchListener { _, event ->
-                    if (event.action == MotionEvent.ACTION_DOWN) {
-                        lastTouchX = event.x
-                        lastTouchY = event.y
+            .height(webViewHeight.dp)
+    ) {
+        AndroidView(
+            modifier = modifier.fillMaxSize(),
+            factory = { context ->
+                WebViewPool.acquire(context).apply {
+                    // 确保即使从池中获取，也是非焦点状态
+                    isFocusable = false
+                    isFocusableInTouchMode = false
+
+                    // 记录最后一次点击位置
+                    setOnTouchListener { _, event ->
+                        if (event.action == MotionEvent.ACTION_DOWN) {
+                            lastTouchX = event.x
+                            lastTouchY = event.y
+                        }
+                        false
                     }
-                    false
-                }
 
-                // 启用长按并触发回调
-                isLongClickable = true
-                setOnLongClickListener {
-                    currentOnLongClick(Offset(lastTouchX, lastTouchY))
-                    true
-                }
-
-                webViewClient = object : WebViewClient() {
-                    override fun onPageFinished(view: WebView?, url: String?) {
-                        // 页面加载完立即触发一次高度检测
-                        view?.evaluateJavascript("reportHeight()") {}
+                    // 启用长按并触发回调
+                    isLongClickable = true
+                    setOnLongClickListener {
+                        currentOnLongClick(Offset(lastTouchX, lastTouchY))
+                        true
                     }
-                }
 
-                addJavascriptInterface(object {
-                    @JavascriptInterface
-                    fun onHeight(reportedHeight: Int) {
-                        if (isDisposed) return
+                    webViewClient = object : WebViewClient() {
+                        override fun onPageFinished(view: WebView?, url: String?) {
+                            // 页面加载完立即触发一次高度检测
+                            view?.evaluateJavascript("reportHeight()") {}
+                        }
+                    }
 
-                        // 3. 核心高度修正逻辑：
-                        // 计算新旧高度的差值绝对值
-                        val diff = abs(reportedHeight - webViewHeight)
+                    addJavascriptInterface(object {
+                        @JavascriptInterface
+                        fun onHeight(reportedHeight: Int) {
+                            if (isDisposed) return
 
-                        // 阈值设定：
-                        // 如果当前是默认高度(无缓存情况)，任何大于0的高度都应该更新。
-                        // 如果已有缓存高度，只有当差异超过一定阈值(例如 10dp)才更新，
-                        // 这样可以避免因为字体渲染微小差异导致的界面抖动。
-                        val threshold = if (hasCachedHeight) 10 else 0
+                            // 3. 核心高度修正逻辑：
+                            // 计算新旧高度的差值绝对值
+                            val diff = abs(reportedHeight - webViewHeight)
 
-                        if (reportedHeight > 0 && diff > threshold) {
-                            post {
-                                if (!isDisposed) {
-                                    webViewHeight = reportedHeight
-                                    // 总是回调给上层，让上层有机会更新缓存
-                                    onHeight(reportedHeight)
+                            // 阈值设定：
+                            // 如果当前是默认高度(无缓存情况)，任何大于0的高度都应该更新。
+                            // 如果已有缓存高度，只有当差异超过一定阈值(例如 10dp)才更新，
+                            // 这样可以避免因为字体渲染微小差异导致的界面抖动。
+                            val threshold = if (hasCachedHeight) 10 else 0
+
+                            if (reportedHeight > 0 && diff > threshold) {
+                                post {
+                                    if (!isDisposed) {
+                                        webViewHeight = reportedHeight
+                                        // 总是回调给上层，让上层有机会更新缓存
+                                        onHeight(reportedHeight)
+                                    }
                                 }
                             }
                         }
-                    }
-                }, "android")
+                    }, "android")
+                }
+            },
+            update = { webView ->
+                val currentTag = webView.tag as? String
+                if (currentTag != styledHtml) {
+                    webView.loadDataWithBaseURL(
+                        "https://tavo.ai/",
+                        styledHtml,
+                        "text/html",
+                        "UTF-8",
+                        null
+                    )
+                    webView.tag = styledHtml
+                }
+            },
+            onRelease = { webView ->
+                WebViewPool.release(webView)
             }
-        },
-        update = { webView ->
-            val currentTag = webView.tag as? String
-            if (currentTag != styledHtml) {
-                webView.loadDataWithBaseURL("https://tavo.ai/", styledHtml, "text/html", "UTF-8", null)
-                webView.tag = styledHtml
-            }
-        },
-        onRelease = { webView ->
-            WebViewPool.release(webView)
-        }
-    )
+        )
+    }
 }
