@@ -28,10 +28,6 @@ import javax.inject.Qualifier
 object NetworkModule {
 
     private const val BASE_URL = ""
-    private const val IMG_AI_URL = "https://api.yiyi.ai/ai/img/"
-    private const val TTS_AI_URL = "https://api.yiyi.ai/ai/tts/"
-
-
 
     /**
      * 提供JSON序列化配置
@@ -123,9 +119,9 @@ object NetworkModule {
         @ApplicationContext context: Context
     ): OkHttpClient {
         return OkHttpClient.Builder()
-            .connectTimeout(10, TimeUnit.SECONDS) // 连接超时时间
-            .writeTimeout(90, TimeUnit.SECONDS) // 写超时时间
-            .readTimeout(10, TimeUnit.SECONDS) // 读超时时间
+            .connectTimeout(20, TimeUnit.SECONDS) // 连接超时时间稍作延长
+            .writeTimeout(90, TimeUnit.SECONDS) // 写超时时间保持
+            .readTimeout(60, TimeUnit.SECONDS) // 读取超时时间延长至60秒，适配AI流式返回
             .addInterceptor(apiKeyInterceptor)
             .addInterceptor(loggingInterceptor)
             .apply {
