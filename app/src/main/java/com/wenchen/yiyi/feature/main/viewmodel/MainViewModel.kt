@@ -1,5 +1,8 @@
 package com.wenchen.yiyi.feature.main.viewmodel
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
 import com.wenchen.yiyi.core.base.viewmodel.BaseViewModel
 import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.core.state.UserState
@@ -24,4 +27,11 @@ class MainViewModel @Inject constructor(
     userState = userState,
     userConfigState = userConfigState
 ) {
+    // 使用 Compose State 管理当前分页索引
+    var currentTab by mutableIntStateOf(0)
+        private set
+
+    fun updateTab(index: Int) {
+        currentTab = index
+    }
 }

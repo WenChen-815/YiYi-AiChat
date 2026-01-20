@@ -103,7 +103,7 @@ private fun MainScreenContent(
         StatusBarUtils.setStatusBarTextColor(activity as ComponentActivity, true)
     }
     var showAddPopup by remember { mutableStateOf(false) }
-    var currentPosition by remember { mutableIntStateOf(0) }
+    val currentPosition = viewModel.currentTab
     Scaffold(
         topBar = {
             when (currentPosition) {
@@ -211,7 +211,7 @@ private fun MainScreenContent(
                             .clickable(
                                 indication = null,
                                 interactionSource = remember { MutableInteractionSource() }
-                            ) { currentPosition = 0 },
+                            ) { viewModel.updateTab(0) },
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
@@ -309,7 +309,7 @@ private fun MainScreenContent(
                             .clickable(
                                 indication = null,
                                 interactionSource = remember { MutableInteractionSource() }
-                            ) { currentPosition = 1 },
+                            ) { viewModel.updateTab(1) },
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
@@ -326,23 +326,6 @@ private fun MainScreenContent(
                 }
             }
         },
-//            floatingActionButton = {
-//                FloatingActionButton(
-//                    onClick = {
-//                        startActivity(Intent(this@MainActivity, TestActivity::class.java))
-//                    },
-//                    containerColor = Pink,
-//                    modifier = Modifier.padding(16.dp)
-//                ) {
-//                    Text(
-//                        text = "测试区域",
-//                        style = MaterialTheme.typography.titleMedium.copy(
-//                            fontWeight = FontWeight.Bold
-//                        ),
-//                        color = Color.White,
-//                    )
-//                }
-//            }
     ) { padding ->
         Box(
             modifier =
