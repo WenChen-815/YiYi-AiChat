@@ -15,10 +15,14 @@ import com.wenchen.yiyi.core.database.dao.AICharacterDao
 import com.wenchen.yiyi.core.database.dao.AIChatMemoryDao
 import com.wenchen.yiyi.core.database.dao.YiYiRegexGroupDao
 import com.wenchen.yiyi.core.database.dao.YiYiRegexScriptDao
+import com.wenchen.yiyi.core.database.dao.YiYiWorldBookDao
+import com.wenchen.yiyi.core.database.dao.YiYiWorldBookEntryDao
 import com.wenchen.yiyi.core.database.entity.AICharacter
 import com.wenchen.yiyi.core.database.entity.AIChatMemory
 import com.wenchen.yiyi.core.database.entity.YiYiRegexGroup
 import com.wenchen.yiyi.core.database.entity.YiYiRegexScript
+import com.wenchen.yiyi.core.database.entity.YiYiWorldBook
+import com.wenchen.yiyi.core.database.entity.YiYiWorldBookEntry
 
 /**
  * 应用数据库
@@ -31,9 +35,11 @@ import com.wenchen.yiyi.core.database.entity.YiYiRegexScript
         AIChatMemory::class,
         Conversation::class,
         YiYiRegexScript::class,
-        YiYiRegexGroup::class
+        YiYiRegexGroup::class,
+        YiYiWorldBook::class,
+        YiYiWorldBookEntry::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -45,10 +51,72 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun conversationDao(): ConversationDao
     abstract fun yiYiRegexGroupDao(): YiYiRegexGroupDao
     abstract fun yiYiRegexScriptDao(): YiYiRegexScriptDao
+    abstract fun yiYiWorldBookDao(): YiYiWorldBookDao
+    abstract fun yiYiWorldBookEntryDao(): YiYiWorldBookEntryDao
 
     companion object {
         const val DATABASE_NAME = "ai_chat_database"
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // 创建 yiyi_world_books 表
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `yiyi_world_books` (
+                        `id` TEXT NOT NULL, 
+                        `name` TEXT, 
+                        `description` TEXT, 
+                        `createTime` INTEGER, 
+                        `updateTime` INTEGER, 
+                        PRIMARY KEY(`id`)
+                    )
+                """.trimIndent())
 
+                // 创建 yiyi_world_book_entries 表
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `yiyi_world_book_entries` (
+                        `entryId` TEXT NOT NULL, 
+                        `bookId` TEXT NOT NULL, 
+                        `keys` TEXT NOT NULL, 
+                        `content` TEXT, 
+                        `enabled` INTEGER NOT NULL, 
+                        `useRegex` INTEGER NOT NULL, 
+                        `insertionOrder` INTEGER NOT NULL, 
+                        `name` TEXT, 
+                        `comment` TEXT, 
+                        `selective` INTEGER NOT NULL, 
+                        `caseSensitive` INTEGER NOT NULL, 
+                        `constant` INTEGER NOT NULL, 
+                        `position` TEXT NOT NULL, 
+                        `displayIndex` INTEGER NOT NULL, 
+                        `ext_selectiveLogic` INTEGER NOT NULL, 
+                        `ext_position` INTEGER NOT NULL, 
+                        `ext_depth` INTEGER NOT NULL, 
+                        `ext_role` INTEGER NOT NULL, 
+                        `ext_matchWholeWords` INTEGER NOT NULL, 
+                        `ext_probability` INTEGER NOT NULL, 
+                        `ext_useProbability` INTEGER NOT NULL, 
+                        `ext_sticky` INTEGER NOT NULL, 
+                        `ext_cooldown` INTEGER NOT NULL, 
+                        `ext_delay` INTEGER NOT NULL, 
+                        `ext_excludeRecursion` INTEGER NOT NULL, 
+                        `ext_preventRecursion` INTEGER NOT NULL, 
+                        `ext_delayUntilRecursion` INTEGER NOT NULL, 
+                        `ext_group` TEXT NOT NULL, 
+                        `ext_groupOverride` INTEGER NOT NULL, 
+                        `ext_groupWeight` INTEGER NOT NULL, 
+                        `ext_useGroupScoring` INTEGER NOT NULL, 
+                        `ext_scanDepth` INTEGER, 
+                        `ext_caseSensitive` INTEGER NOT NULL, 
+                        `ext_automationId` TEXT NOT NULL, 
+                        `ext_vectorized` INTEGER NOT NULL, 
+                        PRIMARY KEY(`entryId`), 
+                        FOREIGN KEY(`bookId`) REFERENCES `yiyi_world_books`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE 
+                    )
+                """.trimIndent())
+
+                // 创建索引
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_yiyi_world_book_entries_bookId` ON `yiyi_world_book_entries` (`bookId`)")
+            }
+        }
         val MIGRATION_4_5 = object : Migration(4, 5) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 // 为 conversations 表添加 enabledRegexGroups 列

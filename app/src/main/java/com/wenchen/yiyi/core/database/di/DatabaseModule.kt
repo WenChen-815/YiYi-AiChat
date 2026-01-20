@@ -10,6 +10,8 @@ import com.wenchen.yiyi.core.database.dao.ConversationDao
 import com.wenchen.yiyi.core.database.dao.TempChatMessageDao
 import com.wenchen.yiyi.core.database.dao.YiYiRegexGroupDao
 import com.wenchen.yiyi.core.database.dao.YiYiRegexScriptDao
+import com.wenchen.yiyi.core.database.dao.YiYiWorldBookDao
+import com.wenchen.yiyi.core.database.dao.YiYiWorldBookEntryDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -45,7 +47,8 @@ object DatabaseModule {
                 AppDatabase.MIGRATION_1_2,
                 AppDatabase.MIGRATION_2_3,
                 AppDatabase.MIGRATION_3_4,
-                AppDatabase.MIGRATION_4_5
+                AppDatabase.MIGRATION_4_5,
+                AppDatabase.MIGRATION_5_6
             )
             .build()
     }
@@ -146,5 +149,29 @@ object DatabaseModule {
         database: AppDatabase
     ): YiYiRegexScriptDao {
         return database.yiYiRegexScriptDao()
+    }
+
+    /**
+     * 提供世界书DAO实例
+     *
+     * @param database 应用数据库实例
+     * @return 世界书DAO实例
+     */
+    @Provides
+    @Singleton
+    fun provideYiYiWorldBookDao(database: AppDatabase): YiYiWorldBookDao {
+        return database.yiYiWorldBookDao()
+    }
+
+    /**
+     * 提供世界书条目DAO实例
+     *
+     * @param database 应用数据库实例
+     * @return 世界书条目DAO实例
+     */
+    @Provides
+    @Singleton
+    fun provideYiYiWorldBookEntryDao(database: AppDatabase): YiYiWorldBookEntryDao {
+        return database.yiYiWorldBookEntryDao()
     }
 }
