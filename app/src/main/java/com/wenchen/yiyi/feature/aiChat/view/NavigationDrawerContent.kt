@@ -133,7 +133,7 @@ fun NavigationDrawerContent(
             ) {
                 YiYiChatDrawerItem(
                     label = "API配置",
-                    onClick = { viewModel.navigate(ConfigRoutes.ChatConfig) },
+                    onClick = { viewModel.navigate(ConfigRoutes.ApiConfig) },
                 )
                 YiYiChatDrawerItem(
                     label = "切换模型",
