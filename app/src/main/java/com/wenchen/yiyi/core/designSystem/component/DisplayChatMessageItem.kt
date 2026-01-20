@@ -116,7 +116,7 @@ fun DisplayChatMessageItem(
                 for (i in parts.indices) {
                     ChatMessageItem(
                         viewModel = viewModel,
-                        messageId = "${message.id}_$i",
+                        messageId = message.id,
                         content = parts[i],
                         avatarUrl = avatarUrl,
                         messageType = message.type,
