@@ -1,17 +1,22 @@
 package com.wenchen.yiyi.feature.config.view
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Draw
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -186,29 +191,42 @@ fun RegexScriptItem(
                         text = script.scriptName ?: "未命名规则",
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.padding(end = 4.dp)
-                        )
+                    )
                     Text(
                         text = if (script.disabled == true) "已禁用" else "已启用",
                         style = MaterialTheme.typography.labelSmall,
                         color = if (script.disabled == true) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.background(
-                            shape = RoundedCornerShape(4.dp),
-                            color = if (script.disabled == true) MaterialTheme.colorScheme.error.copy(alpha = 0.2f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
-                        ).padding(2.dp)
+                        modifier = Modifier
+                            .background(
+                                shape = RoundedCornerShape(4.dp),
+                                color = if (script.disabled == true) MaterialTheme.colorScheme.error.copy(
+                                    alpha = 0.2f
+                                ) else MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                            )
+                            .padding(2.dp)
                     )
                 }
                 IconButton(onClick = onEdit) {
                     Icon(
-                        Icons.Outlined.Draw,
-                        contentDescription = "编辑",
-                        modifier = Modifier.size(20.dp)
+                        Icons.Outlined.Edit,
+                        "编辑",
+                        modifier = Modifier.size(20.dp),
+                        tint = Color.Gray
                     )
                 }
-                IconButton(onClick = onDelete) {
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clip(CircleShape)
+                        .background(Color.Gray.copy(alpha = 0.2f))
+                        .clickable { onDelete() },
+                    contentAlignment = Alignment.Center
+                ) {
                     Icon(
-                        Icons.Outlined.Delete,
+                        Icons.Default.Close,
                         contentDescription = "删除",
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(14.dp),
+                        tint = Color.Gray
                     )
                 }
             }
