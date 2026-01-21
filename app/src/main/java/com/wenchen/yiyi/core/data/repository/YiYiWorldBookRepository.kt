@@ -1,7 +1,12 @@
 package com.wenchen.yiyi.core.data.repository
 
+import androidx.room.withTransaction
+import com.wenchen.yiyi.Application
+import com.wenchen.yiyi.core.database.AppDatabase
 import com.wenchen.yiyi.core.database.datasource.aiChat.YiYiWorldBookDataSource
+import com.wenchen.yiyi.core.database.datasource.aiChat.YiYiWorldBookEntryDataSource
 import com.wenchen.yiyi.core.database.entity.YiYiWorldBook
+import com.wenchen.yiyi.core.database.entity.YiYiWorldBookEntry
 import com.wenchen.yiyi.core.database.entity.YiYiWorldBookWithEntries
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -14,45 +19,53 @@ import javax.inject.Singleton
  */
 @Singleton
 class YiYiWorldBookRepository @Inject constructor(
-    private val dataSource: YiYiWorldBookDataSource
+    private val bookDataSource: YiYiWorldBookDataSource,
+    private val entryDataSource: YiYiWorldBookEntryDataSource,
 ) {
     suspend fun insertBook(book: YiYiWorldBook): Long {
-        return dataSource.insertBook(book)
+        return bookDataSource.insertBook(book)
     }
 
     suspend fun insertBooks(books: List<YiYiWorldBook>) {
-        dataSource.insertBooks(books)
+        bookDataSource.insertBooks(books)
     }
 
     suspend fun updateBook(book: YiYiWorldBook): Int {
-        return dataSource.updateBook(book)
+        return bookDataSource.updateBook(book)
     }
 
     suspend fun deleteBook(book: YiYiWorldBook): Int {
-        return dataSource.deleteBook(book)
+        return bookDataSource.deleteBook(book)
     }
 
     suspend fun getBookById(id: String): YiYiWorldBook? {
-        return dataSource.getBookById(id)
+        return bookDataSource.getBookById(id)
     }
 
     fun getAllBooksFlow(): Flow<List<YiYiWorldBook>> {
-        return dataSource.getAllBooksFlow().flowOn(Dispatchers.IO)
+        return bookDataSource.getAllBooksFlow().flowOn(Dispatchers.IO)
     }
 
     suspend fun getAllBooks(): List<YiYiWorldBook> {
-        return dataSource.getAllBooks()
+        return bookDataSource.getAllBooks()
     }
 
     suspend fun getBookWithEntriesById(id: String): YiYiWorldBookWithEntries? {
-        return dataSource.getBookWithEntriesById(id)
+        return bookDataSource.getBookWithEntriesById(id)
     }
 
     suspend fun getBooksWithEntriesByIds(ids: List<String>): List<YiYiWorldBookWithEntries> {
-        return dataSource.getBooksWithEntriesByIds(ids)
+        return bookDataSource.getBooksWithEntriesByIds(ids)
     }
 
     fun getAllBooksWithEntriesFlow(): Flow<List<YiYiWorldBookWithEntries>> {
-        return dataSource.getAllBooksWithEntriesFlow().flowOn(Dispatchers.IO)
+        return bookDataSource.getAllBooksWithEntriesFlow().flowOn(Dispatchers.IO)
+    }
+
+    suspend fun saveBookWithEntries(book: YiYiWorldBook, entries: List<YiYiWorldBookEntry>) {
+        Application.appDatabase.withTransaction {
+            bookDataSource.insertBook(book)
+            entryDataSource.insertEntries(entries)
+        }
     }
 }

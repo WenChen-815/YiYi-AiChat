@@ -43,10 +43,13 @@ import timber.log.Timber
 import com.aventrix.jnanoid.jnanoid.NanoIdUtils
 import com.wenchen.yiyi.core.data.repository.YiYiRegexGroupRepository
 import com.wenchen.yiyi.core.data.repository.YiYiRegexScriptRepository
+import com.wenchen.yiyi.core.data.repository.YiYiWorldBookEntryRepository
 import com.wenchen.yiyi.core.data.repository.YiYiWorldBookRepository
+import com.wenchen.yiyi.core.database.entity.WorldBookEntryExtensions
 import com.wenchen.yiyi.core.database.entity.YiYiRegexGroup
 import com.wenchen.yiyi.core.database.entity.YiYiRegexScript
 import com.wenchen.yiyi.core.database.entity.YiYiWorldBook
+import com.wenchen.yiyi.core.database.entity.YiYiWorldBookEntry
 import com.wenchen.yiyi.core.util.common.AppJson
 import com.wenchen.yiyi.core.util.ui.BitMapUtils
 import com.wenchen.yiyi.feature.output.model.CharaExtensionModel
@@ -66,6 +69,7 @@ class CharacterEditViewModel @Inject constructor(
     private val yiyiRegexGroupRepository: YiYiRegexGroupRepository,
     private val yiyiRegexScriptRepository: YiYiRegexScriptRepository,
     private val yiyiWorldBookRepository: YiYiWorldBookRepository,
+    private val yiyiWorldBookEntryRepository: YiYiWorldBookEntryRepository,
     navigator: AppNavigator,
     userState: UserState,
     userConfigState: UserConfigState,
@@ -96,6 +100,16 @@ class CharacterEditViewModel @Inject constructor(
 
     private val _parsedRegexScripts = MutableStateFlow<List<YiYiRegexScript>>(emptyList())
     val parsedRegexScripts: StateFlow<List<YiYiRegexScript>> = _parsedRegexScripts.asStateFlow()
+
+    private val _parsedWorldBook = MutableStateFlow<YiYiWorldBook?>(null)
+    val parsedWorldBook: StateFlow<YiYiWorldBook?> = _parsedWorldBook.asStateFlow()
+
+    private val _parsedWorldBookEntries = MutableStateFlow<List<YiYiWorldBookEntry>>(emptyList())
+    val parsedWorldBookEntries: StateFlow<List<YiYiWorldBookEntry>> =
+        _parsedWorldBookEntries.asStateFlow()
+
+    private val _saveWorldBookFlag = MutableStateFlow<Boolean?>(null)
+    val saveWorldBookFlag: StateFlow<Boolean?> = _saveWorldBookFlag.asStateFlow()
 
     private val _parsedMemory = MutableStateFlow<String>("")
     val parsedMemory: StateFlow<String?> = _parsedMemory.asStateFlow()
@@ -139,7 +153,10 @@ class CharacterEditViewModel @Inject constructor(
             try {
                 val character = aiCharacterRepository.getCharacterById(characterId)
                 val memory =
-                    aiChatMemoryRepository.getByCharacterIdAndConversationId(characterId, conversationId)
+                    aiChatMemoryRepository.getByCharacterIdAndConversationId(
+                        characterId,
+                        conversationId
+                    )
                 Timber.tag("CharacterEditViewModel")
                     .i("加载角色记忆: $memory characterId:$characterId conversationId:$conversationId")
                 onLoadComplete(character, memory)
@@ -194,7 +211,10 @@ class CharacterEditViewModel @Inject constructor(
     ) {
         _selectedImageUri.value = uri
         viewModelScope.launch(Dispatchers.IO) {
-            val (cardV3, extension) = CharaCardParser.readTavernCardAndLargeDataFromUri<CharaCardV3, CharaExtensionModel>(context, uri)
+            val (cardV3, extension) = CharaCardParser.readTavernCardAndLargeDataFromUri<CharaCardV3, CharaExtensionModel>(
+                context,
+                uri
+            )
             withContext(Dispatchers.Main) {
                 if (cardV3 != null) {
                     try {
@@ -214,8 +234,12 @@ class CharacterEditViewModel @Inject constructor(
                         }
 
                         // 优先从扩展数据中恢复位图，如果没有则使用原图补偿
-                        avatarBitmap = extension?.avatarByte?.let { BitMapUtils.byteArrayToBitmap(it) } ?: originalBitmap
-                        backgroundBitmap = extension?.backgroundByte?.let { BitMapUtils.byteArrayToBitmap(it) } ?: originalBitmap
+                        avatarBitmap =
+                            extension?.avatarByte?.let { BitMapUtils.byteArrayToBitmap(it) }
+                                ?: originalBitmap
+                        backgroundBitmap =
+                            extension?.backgroundByte?.let { BitMapUtils.byteArrayToBitmap(it) }
+                                ?: originalBitmap
                         hasNewBackground = true
                         hasNewAvatar = true
 
@@ -229,38 +253,106 @@ class CharacterEditViewModel @Inject constructor(
                                     parsedCharacter.value?.extensions.toString()
                                 )
                                 Timber.tag("CharacterEditViewModel").i("发现正则扩展！")
-                                val id = NanoIdUtils.randomNanoId()
+                                val regexGroupId = NanoIdUtils.randomNanoId()
                                 _parsedRegexGroup.value = YiYiRegexGroup(
-                                    id = id,
+                                    id = regexGroupId,
                                     name = "${parsedCharacter.value?.name} 的正则",
                                     description = "${parsedCharacter.value?.name} 的正则",
                                     source_owner = regexExtension.source_owner,
                                     createTime = System.currentTimeMillis(),
                                     updateTime = System.currentTimeMillis(),
                                 )
-                                _parsedRegexScripts.value = regexExtension.regex_scripts?.map { script ->
-                                    YiYiRegexScript(
-                                        id = NanoIdUtils.randomNanoId(),
-                                        groupId = id,
-                                        scriptName = script.scriptName,
-                                        findRegex = script.findRegex,
-                                        replaceString = script.replaceString,
-                                        trimStrings = script.trimStrings,
-                                        placement = script.placement,
-                                        disabled = script.disabled,
-                                        markdownOnly = script.markdownOnly,
-                                        promptOnly = script.promptOnly,
-                                        runOnEdit = script.runOnEdit,
-                                        substituteRegex = script.substituteRegex,
-                                        minDepth = script.minDepth,
-                                        maxDepth = script.maxDepth
-                                    )
-                                } ?: emptyList()
+                                _parsedRegexScripts.value =
+                                    regexExtension.regex_scripts?.map { script ->
+                                        YiYiRegexScript(
+                                            id = NanoIdUtils.randomNanoId(),
+                                            groupId = regexGroupId,
+                                            scriptName = script.scriptName,
+                                            findRegex = script.findRegex,
+                                            replaceString = script.replaceString,
+                                            trimStrings = script.trimStrings,
+                                            placement = script.placement,
+                                            disabled = script.disabled,
+                                            markdownOnly = script.markdownOnly,
+                                            promptOnly = script.promptOnly,
+                                            runOnEdit = script.runOnEdit,
+                                            substituteRegex = script.substituteRegex,
+                                            minDepth = script.minDepth,
+                                            maxDepth = script.maxDepth
+                                        )
+                                    } ?: emptyList()
                                 _saveRegexGroupFlag.value = true
                             } catch (e: Exception) {
                                 Timber.tag("CharacterEditViewModel").e(e, "解析正则扩展失败")
                             }
                         }
+
+                        // 尝试查找世界书
+                        if (parsedCharacter.value?.character_book != null) {
+                            try {
+                                val characterBook = parsedCharacter.value?.character_book
+                                Timber.tag("CharacterEditViewModel").i("发现世界书！")
+                                val worldBookId = NanoIdUtils.randomNanoId()
+                                val bookName =
+                                    characterBook?.name?.ifEmpty { "${parsedCharacter.value?.name} 的世界书" } ?: "${parsedCharacter.value?.name} 的世界书"
+                                val bookDescription = characterBook?.description
+                                    ?: "${parsedCharacter.value?.name} 的世界书"
+                                _parsedWorldBook.value = YiYiWorldBook(
+                                    id = worldBookId,
+                                    name = bookName,
+                                    description = bookDescription,
+                                    createTime = System.currentTimeMillis(),
+                                    updateTime = System.currentTimeMillis(),
+                                )
+                                _parsedWorldBookEntries.value =
+                                    characterBook?.entries?.map { entry ->
+                                        val extensions = entry.extensions
+                                        YiYiWorldBookEntry(
+                                            entryId = NanoIdUtils.randomNanoId(),
+                                            bookId = worldBookId,
+                                            keys = entry.keys,
+                                            content = entry.content,
+                                            enabled = entry.enabled,
+                                            useRegex = entry.use_regex ?: false,
+                                            insertionOrder = entry.insertion_order,
+                                            name = entry.name,
+                                            comment = entry.comment,
+                                            selective = entry.selective ?: false,
+                                            caseSensitive = entry.case_sensitive ?: false,
+                                            constant = entry.constant ?: true,
+                                            position = entry.position ?: "before_char",
+                                            displayIndex = entry.display_index ?: 1,
+                                            extensions = WorldBookEntryExtensions(
+                                                selectiveLogic = extensions?.selectiveLogic ?: 0,
+                                                position = extensions?.position ?: 0,
+                                                depth = extensions?.depth ?: 4,
+                                                role = extensions?.role ?: 0,
+                                                matchWholeWords = extensions?.match_whole_words ?: true,
+                                                probability = extensions?.probability ?: 100,
+                                                useProbability = extensions?.useProbability ?: true,
+                                                sticky = extensions?.sticky ?: 0,
+                                                cooldown = extensions?.cooldown ?: 0,
+                                                delay = extensions?.delay ?: 0,
+                                                excludeRecursion = extensions?.exclude_recursion ?: false,
+                                                preventRecursion = extensions?.prevent_recursion ?: false,
+                                                delayUntilRecursion = extensions?.delay_until_recursion ?: false,
+                                                group = extensions?.group ?: "",
+                                                groupOverride = extensions?.group_override ?: false,
+                                                groupWeight = extensions?.group_weight ?: 100,
+                                                useGroupScoring = extensions?.use_group_scoring ?: false,
+                                                scanDepth = extensions?.scan_depth ?: 2,
+                                                caseSensitive = extensions?.case_sensitive ?: false,
+                                                automationId = extensions?.automation_id ?: "",
+                                                vectorized = extensions?.vectorized ?: false
+                                            )
+                                        )
+                                    } ?: emptyList()
+                                _saveWorldBookFlag.value = true
+                            } catch (e: Exception) {
+                                Timber.tag("CharacterEditViewModel").e(e, "解析世界书失败")
+                            }
+                        }
+
                         ToastUtils.showToast("导入成功: ${cardV3.data.name}")
                     } catch (e: Exception) {
                         Timber.tag("CharacterEditViewModel").e(e, "解析角色卡失败")
@@ -286,6 +378,10 @@ class CharacterEditViewModel @Inject constructor(
 
     fun onSaveRegexGroupChange(enabled: Boolean) {
         _saveRegexGroupFlag.value = enabled
+    }
+
+    fun onSaveWorldBookChange(enabled: Boolean) {
+        _saveWorldBookFlag.value = enabled
     }
 
     // 保存角色数据
@@ -325,7 +421,7 @@ class CharacterEditViewModel @Inject constructor(
             // 获取现有角色以保留创建日期，如果是新角色则使用当前时间
             val existingCharacter = aiCharacterRepository.getCharacterById(characterId.value)
             val now = System.currentTimeMillis()
-            
+
             val character = AICharacter(
                 id = characterId.value,
                 name = name,
@@ -351,30 +447,63 @@ class CharacterEditViewModel @Inject constructor(
             }
 
             // 处理角色记忆
-            val existingMemory = aiChatMemoryRepository.getByCharacterIdAndConversationId(characterId.value, conversationId.value)
+            val existingMemory = aiChatMemoryRepository.getByCharacterIdAndConversationId(
+                characterId.value,
+                conversationId.value
+            )
             if (existingMemory != null) {
-                aiChatMemoryRepository.update(existingMemory.copy(content = memory, count = memoryCount))
+                aiChatMemoryRepository.update(
+                    existingMemory.copy(
+                        content = memory,
+                        count = memoryCount
+                    )
+                )
             } else {
-                aiChatMemoryRepository.insert(AIChatMemory(
-                    id = NanoIdUtils.randomNanoId(),
-                    characterId = characterId.value,
-                    conversationId = conversationId.value,
-                    content = memory.ifEmpty { "" },
-                    createdAt = System.currentTimeMillis(),
-                    count = memoryCount
-                ))
+                aiChatMemoryRepository.insert(
+                    AIChatMemory(
+                        id = NanoIdUtils.randomNanoId(),
+                        characterId = characterId.value,
+                        conversationId = conversationId.value,
+                        content = memory.ifEmpty { "" },
+                        createdAt = System.currentTimeMillis(),
+                        count = memoryCount
+                    )
+                )
             }
 
             // 处理正则组保存
+            var finalEnabledRegexGroups: List<String>? = null
             if (saveRegexGroupFlag.value == true && parsedRegexGroup.value != null) {
                 yiyiRegexGroupRepository.insertGroup(parsedRegexGroup.value!!)
                 yiyiRegexScriptRepository.insertScripts(parsedRegexScripts.value)
+                finalEnabledRegexGroups = listOf(parsedRegexGroup.value!!.id)
             }
 
-            // 更新对话的世界书 ID
+            var finalChatWorldId = chatWorldId
+            if (saveWorldBookFlag.value == true && parsedWorldBook.value != null) {
+                yiyiWorldBookRepository.saveBookWithEntries(parsedWorldBook.value!!, parsedWorldBookEntries.value)
+                // 如果保存了导入的世界书，自动将其加入当前对话的已选世界书列表
+                if (!finalChatWorldId.contains(parsedWorldBook.value!!.id)) {
+                    finalChatWorldId = finalChatWorldId + parsedWorldBook.value!!.id
+                }
+            }
+
+            // 更新对话的世界书 ID 和正则组 ID
             val conversation = conversationRepository.getById(conversationId.value)
             if (conversation != null) {
-                conversationRepository.update(conversation.copy(chatWorldId = chatWorldId))
+                var updatedRegexGroups = conversation.enabledRegexGroups ?: emptyList()
+                if (finalEnabledRegexGroups != null) {
+                    val newId = finalEnabledRegexGroups.first()
+                    if (!updatedRegexGroups.contains(newId)) {
+                        updatedRegexGroups = updatedRegexGroups + newId
+                    }
+                }
+                conversationRepository.update(
+                    conversation.copy(
+                        chatWorldId = finalChatWorldId,
+                        enabledRegexGroups = updatedRegexGroups
+                    )
+                )
             } else {
                 val newConversation = Conversation(
                     id = conversationId.value,
@@ -389,7 +518,8 @@ class CharacterEditViewModel @Inject constructor(
                     additionalSummaryRequirement = "",
                     avatarPath = character.avatar,
                     backgroundPath = character.background,
-                    chatWorldId = chatWorldId
+                    chatWorldId = finalChatWorldId,
+                    enabledRegexGroups = finalEnabledRegexGroups
                 )
                 conversationRepository.insert(newConversation)
             }

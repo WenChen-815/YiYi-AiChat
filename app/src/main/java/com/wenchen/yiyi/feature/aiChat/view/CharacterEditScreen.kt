@@ -73,6 +73,8 @@ private fun CharacterEditScreen(
     val conversationId by viewModel.conversationId.collectAsState()
     val parsedRegexGroup by viewModel.parsedRegexGroup.collectAsState()
     val savaRegexGroupFlag by viewModel.saveRegexGroupFlag.collectAsState()
+    val parsedWorldBook by viewModel.parsedWorldBook.collectAsState()
+    val saveWorldBookFlag by viewModel.saveWorldBookFlag.collectAsState()
     val allWorldBook by viewModel.allWorldBooks.collectAsState()
 
     // 编辑状态
@@ -186,7 +188,10 @@ private fun CharacterEditScreen(
         },
         parsedRegexGroupName = parsedRegexGroup?.name,
         savaRegexGroupFlag = savaRegexGroupFlag,
-        onSaveRegexGroupChange = viewModel::onSaveRegexGroupChange
+        onSaveRegexGroupChange = viewModel::onSaveRegexGroupChange,
+        parsedWorldBookName = parsedWorldBook?.name,
+        saveWorldBookFlag = saveWorldBookFlag,
+        onSaveWorldBookChange = viewModel::onSaveWorldBookChange
     )
 }
 
@@ -223,7 +228,10 @@ private fun CharacterEditScreenContent(
     onWorldSelected: (YiYiWorldBook) -> Unit,
     parsedRegexGroupName: String?,
     savaRegexGroupFlag: Boolean?,
-    onSaveRegexGroupChange: (Boolean) -> Unit
+    onSaveRegexGroupChange: (Boolean) -> Unit,
+    parsedWorldBookName: String?,
+    saveWorldBookFlag: Boolean?,
+    onSaveWorldBookChange: (Boolean) -> Unit
 ) {
     val scrollState = rememberScrollState()
 
@@ -495,6 +503,27 @@ private fun CharacterEditScreenContent(
                     )
                     Text(
                         text = "保存正则组: $parsedRegexGroupName",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+
+            if (parsedWorldBookName != null) {
+                Text(
+                    text = "世界书导入",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = saveWorldBookFlag ?: false,
+                        onCheckedChange = { onSaveWorldBookChange(it) }
+                    )
+                    Text(
+                        text = "保存世界书: $parsedWorldBookName",
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
