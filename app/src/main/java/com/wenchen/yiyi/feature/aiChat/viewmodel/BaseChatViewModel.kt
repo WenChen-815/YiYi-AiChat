@@ -107,7 +107,7 @@ abstract class BaseChatViewModel(
         playerName = "",
         playGender = "",
         playerDescription = "",
-        chatWorldId = "",
+        chatWorldId = emptyList(),
         chatSceneDescription = "",
         additionalSummaryRequirement = "",
         avatarPath = "",

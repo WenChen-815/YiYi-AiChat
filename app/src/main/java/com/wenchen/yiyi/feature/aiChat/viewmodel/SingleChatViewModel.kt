@@ -83,7 +83,7 @@ class SingleChatViewModel @Inject constructor(
                                 playerName = "",
                                 playGender = "",
                                 playerDescription = "",
-                                chatWorldId = "",
+                                chatWorldId = emptyList(), // 修改为 List<String>
                                 chatSceneDescription = "",
                                 additionalSummaryRequirement = "",
                                 avatarPath = currentAICharacter?.avatar,

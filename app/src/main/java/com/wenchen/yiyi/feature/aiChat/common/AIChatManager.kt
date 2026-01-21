@@ -2,8 +2,6 @@ package com.wenchen.yiyi.feature.aiChat.common
 
 import android.graphics.Bitmap
 import android.net.Uri
-import com.squareup.moshi.JsonAdapter
-import com.squareup.moshi.Moshi
 import com.wenchen.yiyi.core.database.entity.ChatMessage
 import com.wenchen.yiyi.core.database.entity.Conversation
 import com.wenchen.yiyi.core.database.entity.MessageContentType
@@ -17,6 +15,8 @@ import com.wenchen.yiyi.core.data.repository.AIChatMemoryRepository
 import com.wenchen.yiyi.core.data.repository.AiHubRepository
 import com.wenchen.yiyi.core.data.repository.ChatMessageRepository
 import com.wenchen.yiyi.core.data.repository.TempChatMessageRepository
+import com.wenchen.yiyi.core.data.repository.YiYiWorldBookRepository
+import com.wenchen.yiyi.core.database.entity.YiYiWorldBookEntry
 import com.wenchen.yiyi.core.model.network.ChatResponse
 import com.wenchen.yiyi.core.model.network.Message
 import com.wenchen.yiyi.core.network.service.ChatRequest
@@ -28,8 +28,6 @@ import com.wenchen.yiyi.core.result.asResult
 import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.core.util.ui.BitMapUtils
 import com.wenchen.yiyi.core.util.business.ChatUtils
-import com.wenchen.yiyi.core.util.storage.FilesUtils
-import com.wenchen.yiyi.feature.worldBook.model.WorldBook
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -55,6 +53,7 @@ class AIChatManager @Inject constructor(
     val tempChatMessageRepository: TempChatMessageRepository,
     val aiChatMemoryRepository: AIChatMemoryRepository,
     val aiHubRepository: AiHubRepository,
+    val yiYiWorldBookRepository: YiYiWorldBookRepository,
     val chatUtils: ChatUtils
 ) {
     // 基础配置
@@ -260,34 +259,53 @@ class AIChatManager @Inject constructor(
             aiCharacter.id,
             conversation.id
         )?.content
-        var worldBook: WorldBook? = null
-        if (conversation.chatWorldId.isNotEmpty()) {
-            // 获取世界ID并通过moshi解析
-            val worldBookJson = FilesUtils.readFile("world_book/${conversation.chatWorldId}.json")
-            val worldBookAdapter: JsonAdapter<WorldBook> =
-                Moshi.Builder().build().adapter(WorldBook::class.java)
-            worldBook = worldBookJson.let { worldBookAdapter.fromJson(it) }
-        }
+
+        val worldBooksWithEntries = if (conversation.chatWorldId.isNotEmpty()) {
+            yiYiWorldBookRepository.getBooksWithEntriesByIds(conversation.chatWorldId)
+        } else emptyList()
+
         val worldItemBuilder = StringBuilder()
-        // 处理世界物品，构建名称到描述的映射和正则模式
-        val worldItems = worldBook?.worldItems ?: emptyList()
-        val itemNameToDesc = worldItems.associate { it.name to it.desc } // 名称→描述映射
-        /*
-        知识点：集合操作函数
-        associate 和 groupBy 都是 Kotlin 集合操作函数，但它们有不同的用途：
-            associate 函数
-                作用: 将集合转换为 Map，每个元素映射到一个键值对，遇到重复值则保留最后一个
-                特点:每个输入元素产生一个键值对,输出 Map 的大小等于输入集合的大小（除非有重复键）,常见变体包括 associateBy、associateWith 等
-            groupBy 函数
-                作用: 将集合按照某个键进行分组
-                特点:相同键的元素会被归为一组,输出 Map 的值是元素列表,可能产生比原集合更少的键
-         */
-        // 构建正则模式（转义特殊字符，避免正则语法错误）
-        val itemNames = worldItems.map { Regex.escape(it.name) } // 转义特殊字符
-        val pattern = if (itemNames.isNotEmpty()) itemNames.joinToString("|")
-            .toRegex() else null // 合并为"item1|item2"模式
-        val matchedItems = mutableSetOf<String>() // 记录已匹配物品，避免重复添加
-        // 添加历史消息
+        val appliedEntryIds = mutableSetOf<String>()
+        val keywordEntries = mutableListOf<YiYiWorldBookEntry>()
+
+        // 1. 处理 Constant 条目 (常驻条目)
+        worldBooksWithEntries.forEach { bookWithEntries ->
+            bookWithEntries.entries.forEach { entry ->
+                if (entry.enabled) { // 检查条目是否启用
+                    if (entry.constant) { // 判断是否为常驻条目
+                        val shouldApply = if (entry.extensions.useProbability) { // 检查是否使用概率设置
+                            (Math.random() * 100).toInt() < entry.extensions.probability // 根据概率计算是否应用此条目
+                        } else {
+                            true // 如果不使用概率，则总是应用
+                        }
+                        if (shouldApply) { // 如果确定应用此条目
+                            if (appliedEntryIds.add(entry.entryId)) { // 确保条目ID未被添加过（避免重复）
+                                val displayName = entry.name ?: entry.entryId // 使用条目名称，如果没有则使用ID作为显示名
+                                worldItemBuilder.append("[$displayName]: ${entry.content ?: ""}\n") // 将条目内容添加到世界项构建器中
+                            }
+                        }
+                    } else {
+                        keywordEntries.add(entry) // 如果不是常驻条目，则将其添加到关键词条目列表中
+                    }
+                }
+            }
+        }
+
+        // 2. 准备关键词匹配
+        val keyToEntry = mutableMapOf<String, YiYiWorldBookEntry>() // 创建一个映射，将关键词映射到对应的世界书条目
+        val allKeys = mutableListOf<String>() // 创建一个列表存储所有的关键词
+        keywordEntries.forEach { entry -> // 遍历所有非常驻关键词条目
+            entry.keys.forEach { key -> // 遍历每个条目的所有关键词
+                if (key.isNotBlank()) { // 检查关键词是否非空（不是空白）
+                    keyToEntry[key] = entry // 将关键词和其对应的世界书条目建立映射关系
+                    allKeys.add(Regex.escape(key)) // 将关键词转义后添加到关键词列表中，防止正则表达式特殊字符造成问题
+                }
+            }
+        }
+
+        val pattern = if (allKeys.isNotEmpty()) allKeys.joinToString("|").toRegex() else null
+
+        // 3. 处理消息历史并进行关键词匹配
         for (message in oldMessages) {
             if (message.type == MessageType.ASSISTANT && message.characterId == aiCharacter.id) {
                 messages.add(Message("assistant", chatUtils.parseMessage(message).cleanedContent))
@@ -295,28 +313,29 @@ class AIChatManager @Inject constructor(
                 messages.add(Message("user", message.content))
             }
 
-            // 使用正则匹配替换嵌套循环
-//            if (pattern != null) {
-            pattern?.findAll(message.content)?.forEach { matchResult -> // 一次匹配所有物品
-                val matchedName = matchResult.value
-                if (matchedName !in matchedItems) { // 去重处理
-                    itemNameToDesc[matchedName]?.let { desc ->
-                        worldItemBuilder.append("[${matchedName}]: $desc\n")
-                        matchedItems.add(matchedName)
-                    }
+            // 匹配关键词
+            pattern?.findAll(message.content)?.forEach { matchResult -> // 在消息内容中查找所有匹配关键词模式的内容
+                val matchedKey = matchResult.value // 获取匹配到的具体关键词
+                val entry = keyToEntry[matchedKey] // 根据匹配到的关键词查找对应的世界书条目
+                if (entry != null && appliedEntryIds.add(entry.entryId)) { // 如果找到了对应的条目且该条目尚未被添加过
+                    worldItemBuilder.append("${entry.content ?: ""}\n") // 将匹配到的条目内容追加到世界项构建器中
                 }
             }
         }
+
         // 添加系统提示消息
         val prompt = buildString {
-            if (worldBook != null) {
-                append("# [WORLD]\n## 世界介绍\n${worldBook.worldDesc ?: ""}")
-            }
+//            if (worldBooksWithEntries.isNotEmpty()) {
+//                append("# [WORLD]\n")
+//                worldBooksWithEntries.forEach { bookWithEntries ->
+//                    append("## 世界介绍: ${bookWithEntries.book.name ?: ""}\n${bookWithEntries.book.description ?: ""}\n")
+//                }
+//            }
             if (worldItemBuilder.isNotEmpty()) {
-                append("\n## 物品释义\n${worldItemBuilder}")
+                append(worldItemBuilder.toString())
             }
             append("\n# [PLAYER]")
-            append("\n## 用户角色信息\n-名称：${conversation.playerName} ")
+            append("\n## 用户角色信息\n-昵称：${conversation.playerName} ")
             if (conversation.playGender.isNotBlank()) {
                 append("\n-性别:${conversation.playGender} ")
             }
@@ -326,24 +345,24 @@ class AIChatManager @Inject constructor(
             if (conversation.chatSceneDescription.isNotBlank()) {
                 append("\n# [SCENE]当前场景\n${conversation.chatSceneDescription}\n")
             }
-            if (conversation.type == ConversationType.SINGLE) {
-                append(
-                    """
-                    # [IMPORTANT]
-                    **你应以[${conversation.playerName}]为主要交互对象**
-                    **你需要深度理解世界设定、用户角色信息、当前场景以及后续你需要扮演的角色信息**
-                    **现在请使用以下[${aiCharacter.name}]的身份参与对话**
-                    """.trimIndent()
-                )
-            }
+//            if (conversation.type == ConversationType.SINGLE) {
+//                append(
+//                    """
+//                    # [IMPORTANT]
+//                    **你应以[${conversation.playerName}]为主要交互对象**
+//                    **你需要深度理解世界设定、用户角色信息、当前场景以及后续你需要扮演的角色信息**
+//                    **现在请使用以下[${aiCharacter.name}]的身份参与对话**
+//                    """.trimIndent()
+//                )
+//            }
             if (conversation.type == ConversationType.GROUP) {
                 append(
+                    // **你需要深度理解世界设定、用户角色信息、当前场景以及后续你需要扮演的角色信息**
+                    // **现在请使用以下[${aiCharacter.name}]的身份参与对话**
                     """
                     # [IMPORTANT]
                     **你正处于多人对话与行动的环境当中**
                     **你允许与多位角色交互，但仍应以[${conversation.playerName}]为主要交互对象**
-                    **你需要深度理解世界设定、用户角色信息、当前场景以及后续你需要扮演的角色信息**
-                    **现在请使用以下[${aiCharacter.name}]的身份参与对话**
                     """.trimIndent()
                 )
             }
@@ -361,20 +380,19 @@ class AIChatManager @Inject constructor(
                 append("\n## 角色场景\n$it")
             }
 
-            append("\n# [MEMORY]以下为角色[${aiCharacter.name}]的记忆:\n$history")
+            append("\n# [MEMORY]以下为角色[${aiCharacter.name}]的记忆:\n ===MEMORY START===\n$history\n ===MEMORY END===\n")
             
             if (aiCharacter.mes_example?.isNotBlank() == true) {
-                append("\n# [EXAMPLE]角色输出示例\n${aiCharacter.mes_example}\n")
+                append("\n# [EXAMPLE]输出示例\n${aiCharacter.mes_example}\n")
             }
-            // [PRIORITY 2]在“。 ？ ！ …”等表示句子结束处，或根于语境需要分隔处使用反斜线 (\) 分隔,以确保良好的可读性，但严格要求[]中的内容不允许使用(\)来分隔
-            append(
-                """
-                # [RULES — STRICT]严格遵守以下行为准则
-                [PRIORITY 1]记住你要扮演的是[${aiCharacter.name}]，请保持这个身份进行对话，不要改变身份
-                [PRIORITY 2]收到系统旁白消息时，必须根据其中提示内容进行扩写
-                其他规则:
-                """.trimIndent()
-            )
+//            append(
+//                """
+//                # [RULES — STRICT]严格遵守以下行为准则
+//                [PRIORITY 1]记住你要扮演的是[${aiCharacter.name}]，请保持这个身份进行对话，不要改变身份
+//                [PRIORITY 2]收到系统旁白消息时，必须根据其中提示内容进行扩写
+//                其他规则:
+//                """.trimIndent()
+//            )
             
             // 系统提示和历史指令
             aiCharacter.system_prompt?.takeIf { it.isNotBlank() }?.let {
@@ -520,7 +538,7 @@ class AIChatManager @Inject constructor(
      *
      * @param conversation 当前聊天会话对象，包含会话相关信息
      * @param aiCharacter AI角色对象，包含角色身份、描述等配置信息
-     * @param messages 要发送的消息列表，包括系统提示、历史消息和用户最新消息
+     * @param messages 要发送的消息列表，包括系统提示、历史消息 and 用户最新消息
      * @param afterSend 发送完成后的回调函数，用于通知调用方是否成功
      */
     private suspend fun sendWithStream(
@@ -752,7 +770,7 @@ class AIChatManager @Inject constructor(
             content = "发送了图片:[$imgUri]",
             type = MessageType.USER,
             characterId = character.id,
-            chatUserId = userConfig.userId ?: "",
+            chatUserId = userConfig.userId,
             contentType = MessageContentType.IMAGE,
             imgUrl = imgUri.toString(),
             conversationId = conversation.id

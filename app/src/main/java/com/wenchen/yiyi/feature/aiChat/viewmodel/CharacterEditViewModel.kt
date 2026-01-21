@@ -43,14 +43,18 @@ import timber.log.Timber
 import com.aventrix.jnanoid.jnanoid.NanoIdUtils
 import com.wenchen.yiyi.core.data.repository.YiYiRegexGroupRepository
 import com.wenchen.yiyi.core.data.repository.YiYiRegexScriptRepository
+import com.wenchen.yiyi.core.data.repository.YiYiWorldBookRepository
 import com.wenchen.yiyi.core.database.entity.YiYiRegexGroup
 import com.wenchen.yiyi.core.database.entity.YiYiRegexScript
+import com.wenchen.yiyi.core.database.entity.YiYiWorldBook
 import com.wenchen.yiyi.core.util.common.AppJson
 import com.wenchen.yiyi.core.util.ui.BitMapUtils
 import com.wenchen.yiyi.feature.output.model.CharaExtensionModel
 import com.wenchen.yiyi.feature.output.model.CharacterData
 import com.wenchen.yiyi.feature.output.model.CharacterExtensions
 import com.wenchen.yiyi.feature.output.model.RegexScript
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.serialization.decodeFromString
 import javax.inject.Inject
 
@@ -61,6 +65,7 @@ class CharacterEditViewModel @Inject constructor(
     private val conversationRepository: ConversationRepository,
     private val yiyiRegexGroupRepository: YiYiRegexGroupRepository,
     private val yiyiRegexScriptRepository: YiYiRegexScriptRepository,
+    private val yiyiWorldBookRepository: YiYiWorldBookRepository,
     navigator: AppNavigator,
     userState: UserState,
     userConfigState: UserConfigState,
@@ -97,6 +102,9 @@ class CharacterEditViewModel @Inject constructor(
 
     private val _selectedImageUri = MutableStateFlow<Uri?>(null)
     val selectedImageUri: StateFlow<Uri?> = _selectedImageUri.asStateFlow()
+
+    val allWorldBooks: StateFlow<List<YiYiWorldBook>> = yiyiWorldBookRepository.getAllBooksFlow()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val imageManager = ImageManager()
 
@@ -296,7 +304,7 @@ class CharacterEditViewModel @Inject constructor(
         playerName: String,
         playGender: String,
         playerDescription: String,
-        chatWorldId: String
+        chatWorldId: List<String>
     ) {
         viewModelScope.launch(Dispatchers.IO) {
             if (name.isEmpty()) {
@@ -336,86 +344,59 @@ class CharacterEditViewModel @Inject constructor(
                 modification_date = now
             )
 
-            var memoryEntity = aiChatMemoryRepository.getByCharacterIdAndConversationId(
-                character.id,
-                conversationId.value
-            )
-            if (memoryEntity == null) {
-                memoryEntity = AIChatMemory(
+            if (isNewCharacter.value) {
+                aiCharacterRepository.insertAICharacter(character)
+            } else {
+                aiCharacterRepository.updateAICharacter(character)
+            }
+
+            // 处理角色记忆
+            val existingMemory = aiChatMemoryRepository.getByCharacterIdAndConversationId(characterId.value, conversationId.value)
+            if (existingMemory != null) {
+                aiChatMemoryRepository.update(existingMemory.copy(content = memory, count = memoryCount))
+            } else {
+                aiChatMemoryRepository.insert(AIChatMemory(
                     id = NanoIdUtils.randomNanoId(),
+                    characterId = characterId.value,
                     conversationId = conversationId.value,
-                    characterId = character.id,
                     content = memory.ifEmpty { "" },
                     createdAt = System.currentTimeMillis(),
                     count = memoryCount
-                )
-            } else {
-                memoryEntity.content = memory.ifEmpty { "" }
-                memoryEntity.count = memoryCount
+                ))
             }
 
-            try {
-                if (isNewCharacter.value) {
-                    // 新增角色
-                    val result = aiCharacterRepository.insertAICharacter(character)
-                    aiChatMemoryRepository.insert(memoryEntity)
+            // 处理正则组保存
+            if (saveRegexGroupFlag.value == true && parsedRegexGroup.value != null) {
+                yiyiRegexGroupRepository.insertGroup(parsedRegexGroup.value!!)
+                yiyiRegexScriptRepository.insertScripts(parsedRegexScripts.value)
+            }
 
-                    // 创建初始Conversation
-                    val initialConversation = Conversation(
-                        id = conversationId.value,
-                        name = character.name,
-                        type = ConversationType.SINGLE,
-                        characterIds = mapOf(character.id to 1.0f),
-                        characterKeywords = mapOf(character.id to emptyList()),
-                        playerName = playerName.ifEmpty {
-                            userConfigState.userConfig.value?.userName ?: ""
-                        },
-                        playGender = playGender,
-                        playerDescription = playerDescription,
-                        chatWorldId = chatWorldId,
-                        chatSceneDescription = "",
-                        additionalSummaryRequirement = "",
-                        avatarPath = character.avatar,
-                        backgroundPath = character.background,
-                    )
-                    conversationRepository.insert(initialConversation)
-                    // 如果需要保存正则组和脚本
-                    if (saveRegexGroupFlag.value == true) {
-                        try {
-                            // 保存正则组
-                            val regexGroup = parsedRegexGroup.value
-                            if (regexGroup != null) {
-                                yiyiRegexGroupRepository.insertGroup(regexGroup)
+            // 更新对话的世界书 ID
+            val conversation = conversationRepository.getById(conversationId.value)
+            if (conversation != null) {
+                conversationRepository.update(conversation.copy(chatWorldId = chatWorldId))
+            } else {
+                val newConversation = Conversation(
+                    id = conversationId.value,
+                    name = name,
+                    type = ConversationType.SINGLE,
+                    characterIds = mapOf(characterId.value to 1.0f),
+                    characterKeywords = mapOf(characterId.value to emptyList()),
+                    playerName = playerName,
+                    playGender = playGender,
+                    playerDescription = playerDescription,
+                    chatSceneDescription = "",
+                    additionalSummaryRequirement = "",
+                    avatarPath = character.avatar,
+                    backgroundPath = character.background,
+                    chatWorldId = chatWorldId
+                )
+                conversationRepository.insert(newConversation)
+            }
 
-                                // 保存正则脚本
-                                val regexScripts = parsedRegexScripts.value
-                                if (regexScripts.isNotEmpty()) {
-                                    yiyiRegexScriptRepository.insertScripts(regexScripts)
-                                }
-                            }
-                        } catch (e: Exception) {
-                            Timber.tag("CharacterEditViewModel").e(e, "保存正则组和脚本失败")
-                        }
-                    }
-
-                    withContext(Dispatchers.Main) {
-                        if (result > 0) ToastUtils.show("保存成功") else ToastUtils.show("保存失败")
-                        navigateBack()
-                    }
-                } else {
-                    // 更新角色
-                    val result = aiCharacterRepository.updateAICharacter(character)
-                    aiChatMemoryRepository.update(memoryEntity)
-                    withContext(Dispatchers.Main) {
-                        if (result > 0) ToastUtils.show("更新成功") else ToastUtils.show("更新失败")
-                        navigateBack()
-                    }
-                }
-            } catch (e: Exception) {
-                Timber.e(e, "保存角色失败")
-                withContext(Dispatchers.Main) {
-                    ToastUtils.show("保存失败: ${e.message}")
-                }
+            withContext(Dispatchers.Main) {
+                ToastUtils.showToast("角色保存成功")
+                navigateBack()
             }
         }
     }

@@ -1,62 +1,45 @@
 package com.wenchen.yiyi.feature.aiChat.view
 
-import android.app.Activity
 import android.graphics.Bitmap
-import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.core.copy
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
-import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.RemoveCircleOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import com.squareup.moshi.JsonAdapter
-import com.squareup.moshi.Moshi
 import com.wenchen.yiyi.core.common.theme.*
 import com.wenchen.yiyi.core.designSystem.component.SettingTextFieldItem
-import com.wenchen.yiyi.core.util.storage.FilesUtils
 import com.wenchen.yiyi.core.util.ui.StatusBarUtils
 import com.wenchen.yiyi.core.util.ui.ToastUtils
 import com.wenchen.yiyi.feature.aiChat.viewmodel.CharacterEditViewModel
-import com.wenchen.yiyi.feature.worldBook.model.WorldBook
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import com.wenchen.yiyi.core.database.entity.YiYiWorldBook
+import androidx.activity.compose.LocalActivity
+import androidx.compose.foundation.lazy.LazyColumn
 
 @Composable
 internal fun CharacterEditRoute(
@@ -90,6 +73,7 @@ private fun CharacterEditScreen(
     val conversationId by viewModel.conversationId.collectAsState()
     val parsedRegexGroup by viewModel.parsedRegexGroup.collectAsState()
     val savaRegexGroupFlag by viewModel.saveRegexGroupFlag.collectAsState()
+    val allWorldBook by viewModel.allWorldBooks.collectAsState()
 
     // 编辑状态
     var name by remember { mutableStateOf("") }
@@ -99,13 +83,9 @@ private fun CharacterEditScreen(
     var memoryCount by remember { mutableIntStateOf(0) }
     var avatarPath by remember { mutableStateOf("") }
     var backgroundPath by remember { mutableStateOf("") }
-    var chatWorldId by remember { mutableStateOf("") }
+    var chatWorldId by remember { mutableStateOf<List<String>>(emptyList()) }
 
-    var allWorldBook by remember { mutableStateOf<List<WorldBook>>(emptyList()) }
     var isWorldSheetVisible by remember { mutableStateOf(false) }
-
-    val moshi = remember { Moshi.Builder().build() }
-    val worldBookAdapter = remember { moshi.adapter(WorldBook::class.java) }
 
     // 状态栏
     val isDark = isSystemInDarkTheme()
@@ -135,20 +115,6 @@ private fun CharacterEditScreen(
             avatarPath = chara?.avatar ?: ""
             backgroundPath = chara?.background ?: ""
         }
-    }
-
-    // 世界书列表
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                viewModel.viewModelScope.launch {
-                    loadWorldBooks(worldBookAdapter) { allWorldBook = it }
-                }
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     val pickAvatarLauncher = rememberLauncherForActivityResult(
@@ -211,7 +177,13 @@ private fun CharacterEditScreen(
         allWorldBook = allWorldBook,
         isWorldSheetVisible = isWorldSheetVisible,
         onWorldSheetVisibleChange = { isWorldSheetVisible = it },
-        onWorldSelected = { chatWorldId = it.id; isWorldSheetVisible = false },
+        onWorldSelected = { world ->
+            chatWorldId = if (chatWorldId.contains(world.id)) {
+                chatWorldId - world.id
+            } else {
+                chatWorldId + world.id
+            }
+        },
         parsedRegexGroupName = parsedRegexGroup?.name,
         savaRegexGroupFlag = savaRegexGroupFlag,
         onSaveRegexGroupChange = viewModel::onSaveRegexGroupChange
@@ -244,11 +216,11 @@ private fun CharacterEditScreenContent(
     onCancelClick: () -> Unit,
     onBackClick: () -> Unit,
     onPickImageClick: () -> Unit,
-    chatWorldId: String,
-    allWorldBook: List<WorldBook>,
+    chatWorldId: List<String>,
+    allWorldBook: List<YiYiWorldBook>,
     isWorldSheetVisible: Boolean,
     onWorldSheetVisibleChange: (Boolean) -> Unit,
-    onWorldSelected: (WorldBook) -> Unit,
+    onWorldSelected: (YiYiWorldBook) -> Unit,
     parsedRegexGroupName: String?,
     savaRegexGroupFlag: Boolean?,
     onSaveRegexGroupChange: (Boolean) -> Unit
@@ -363,24 +335,23 @@ private fun CharacterEditScreenContent(
                     .fillMaxWidth()
                     .padding(top = 8.dp)
                     .heightIn(max = 250.dp),
-                label = "长期记忆",
+                label = "角色记忆",
                 value = memory,
                 onValueChange = onMemoryChange,
-                placeholder = { Text("暂无长期记忆") },
-                minLines = 5,
-                maxLines = 15,
+                placeholder = { Text("请输入角色记忆内容...") },
+                minLines = 3,
+                maxLines = 10,
             )
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(text = "记忆次数: $memoryCount", style = MaterialTheme.typography.bodyMedium)
-                Text(
-                    text = "重置次数",
-                    style = MaterialTheme.typography.bodyMedium.copy(Gold),
-                    modifier = Modifier.clickable { onResetCountClick() }
-                )
+                TextButton(onClick = onResetCountClick) {
+                    Text("重置次数")
+                }
             }
 
             Text(
@@ -399,7 +370,7 @@ private fun CharacterEditScreenContent(
                 if (avatarBitmap != null) {
                     Image(
                         bitmap = avatarBitmap.asImageBitmap(),
-                        contentDescription = null,
+                        contentDescription = "角色头像",
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
                     )
@@ -411,22 +382,24 @@ private fun CharacterEditScreenContent(
                             .offset(8.dp, (-8).dp)
                     ) {
                         Icon(
-                            Icons.Rounded.RemoveCircleOutline,
-                            contentDescription = null,
+                            imageVector = Icons.Rounded.RemoveCircleOutline,
+                            contentDescription = "删除头像",
                             tint = BlackText
                         )
                     }
                 } else if (avatarPath.isNotEmpty()) {
                     AsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current).data(avatarPath.toUri())
-                            .crossfade(true).build(),
-                        contentDescription = null,
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(avatarPath.toUri())
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = "角色头像",
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
                     )
                 } else {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Default.Add, contentDescription = null)
+                        Icon(imageVector = Icons.Default.Add, contentDescription = "添加头像")
                         Text("添加头像", style = MaterialTheme.typography.bodySmall)
                     }
                 }
@@ -440,7 +413,7 @@ private fun CharacterEditScreenContent(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(450.dp)
+                    .height(200.dp)
                     .clip(RoundedCornerShape(12.dp))
                     .background(if (isSystemInDarkTheme()) DarkGray else LightGray)
                     .clickable { onBackgroundClick() },
@@ -449,7 +422,7 @@ private fun CharacterEditScreenContent(
                 if (backgroundBitmap != null) {
                     Image(
                         bitmap = backgroundBitmap.asImageBitmap(),
-                        contentDescription = null,
+                        contentDescription = "背景图",
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
                     )
@@ -461,194 +434,114 @@ private fun CharacterEditScreenContent(
                             .offset(8.dp, (-8).dp)
                     ) {
                         Icon(
-                            Icons.Rounded.RemoveCircleOutline,
-                            contentDescription = null,
+                            imageVector = Icons.Rounded.RemoveCircleOutline,
+                            contentDescription = "删除背景",
                             tint = BlackText
                         )
                     }
                 } else if (backgroundPath.isNotEmpty()) {
                     AsyncImage(
                         model = ImageRequest.Builder(LocalContext.current)
-                            .data(backgroundPath.toUri()).crossfade(true).build(),
-                        contentDescription = null,
+                            .data(backgroundPath.toUri())
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = "背景图",
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
                     )
                 } else {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Default.Add, contentDescription = null)
+                        Icon(imageVector = Icons.Default.Add, contentDescription = "添加背景")
                         Text("添加背景", style = MaterialTheme.typography.bodySmall)
                     }
                 }
             }
 
-            if (savaRegexGroupFlag != null) {
+            Text(
+                text = "世界书选择",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.primary)
+                    .clickable { onWorldSheetVisibleChange(true) }
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                val selectedNames = allWorldBook.filter { it.id in chatWorldId }.map { it.name ?: "未命名世界" }
                 Text(
-                    text = "正则组",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(top = 8.dp)
+                    text = if (selectedNames.isEmpty()) "未选择世界" else selectedNames.joinToString(", "),
+                    color = WhiteText,
+                    modifier = Modifier.weight(1f)
                 )
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(MaterialTheme.colorScheme.primary)
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = parsedRegexGroupName ?: "未知正则组",
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(start = 16.dp),
-                            color = WhiteText
-                        )
-                        // 使用自定义的圆形勾选框
-                        RoundCheckbox(
-                            checked = savaRegexGroupFlag,
-                            onCheckedChange = { onSaveRegexGroupChange(it) },
-                            modifier = Modifier.padding(end = 12.dp)
-                        )
-                    }
-                }
             }
-            if (isNewCharacter) {
+
+            if (parsedRegexGroupName != null) {
                 Text(
-                    text = "世界选择",
+                    text = "正则导入",
                     style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(top = 8.dp)
+                    modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
                 )
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(MaterialTheme.colorScheme.primary)
-                        .clickable { onWorldSheetVisibleChange(true) }
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
+                    Checkbox(
+                        checked = savaRegexGroupFlag ?: false,
+                        onCheckedChange = { onSaveRegexGroupChange(it) }
+                    )
                     Text(
-                        text = allWorldBook.find { it.id == chatWorldId }?.worldName
-                            ?: "未选择世界",
-                        modifier = Modifier.fillMaxWidth(),
-                        color = WhiteText
+                        text = "保存正则组: $parsedRegexGroupName",
+                        style = MaterialTheme.typography.bodyMedium
                     )
                 }
             }
 
-            if (isWorldSheetVisible) {
-                ModalBottomSheet(
-                    onDismissRequest = { onWorldSheetVisibleChange(false) },
-                    sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            Spacer(modifier = Modifier.height(100.dp))
+        }
+    }
+
+    if (isWorldSheetVisible) {
+        ModalBottomSheet(
+            onDismissRequest = { onWorldSheetVisibleChange(false) },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ) {
+            val screenHeight = with(LocalDensity.current) {
+                LocalWindowInfo.current.containerSize.height.toDp()
+            }
+            if (allWorldBook.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    val screenHeight =
-                        with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() }
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(max = screenHeight * 0.6f)
-                    ) {
-                        items(allWorldBook.size) { index ->
-                            val worldBook = allWorldBook[index]
-                            ListItem(
-                                headlineContent = { Text(worldBook.worldName) },
-                                modifier = Modifier.clickable { onWorldSelected(worldBook) }
-                            )
-                        }
+                    Text(text = "暂无可选世界", style = MaterialTheme.typography.bodyMedium)
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = screenHeight * 0.6f)
+                ) {
+                    items(allWorldBook.size) { index ->
+                        val world = allWorldBook[index]
+                        ListItem(
+                            headlineContent = { Text(world.name ?: "未命名世界") },
+                            trailingContent = {
+                                Checkbox(
+                                    checked = chatWorldId.contains(world.id),
+                                    onCheckedChange = null
+                                )
+                            },
+                            modifier = Modifier.clickable { onWorldSelected(world) }
+                        )
                     }
                 }
             }
         }
     }
-}
-
-@Composable
-private fun RoundCheckbox(
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .size(24.dp)
-            .border(
-                width = 1.5.dp,
-                color = Color.White,
-                shape = CircleShape
-            ) // 白色边框
-            .clip(CircleShape)
-            .background(if (checked) Color.White.copy(alpha = 0.3f) else Color.Transparent) // 勾选后的填充感（半透明白以突出白勾）
-            .clickable { onCheckedChange(!checked) },
-        contentAlignment = Alignment.Center
-    ) {
-        if (checked) {
-            Icon(
-                imageVector = Icons.Rounded.Check, // 白色的勾
-                contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier.size(16.dp)
-            )
-        }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun CharacterEditPreview() {
-    AIChatTheme {
-        CharacterEditScreenContent(
-            isNewCharacter = true,
-            name = "预览角色",
-            onNameChange = {},
-            description = "这是一个测试角色的描述设定。",
-            onDescriptionChange = {},
-            mesExample = "预览对话示例",
-            onMesExampleChange = {},
-            memory = "长期记忆内容",
-            onMemoryChange = {},
-            memoryCount = 5,
-            onResetCountClick = {},
-            avatarBitmap = null,
-            backgroundBitmap = null,
-            avatarPath = "",
-            backgroundPath = "",
-            onAvatarClick = {},
-            onAvatarDeleteClick = {},
-            onBackgroundClick = {},
-            onBackgroundDeleteClick = {},
-            onSaveClick = {},
-            onCancelClick = {},
-            onBackClick = {},
-            onPickImageClick = {},
-            chatWorldId = "",
-            allWorldBook = listOf(WorldBook("1", "现代都市"), WorldBook("2", "魔法世界")),
-            isWorldSheetVisible = false,
-            onWorldSheetVisibleChange = {},
-            onWorldSelected = {},
-            parsedRegexGroupName = null,
-            savaRegexGroupFlag = null,
-            onSaveRegexGroupChange = {}
-        )
-    }
-}
-
-private suspend fun loadWorldBooks(
-    adapter: JsonAdapter<WorldBook>,
-    onLoaded: (List<WorldBook>) -> Unit
-) = withContext(Dispatchers.IO) {
-    val worldBookFiles = FilesUtils.listFileNames("world_book")
-    val worldBooks = mutableListOf(WorldBook("", "未选择世界"))
-    worldBookFiles.forEach { fileName ->
-        try {
-            val json = FilesUtils.readFile("world_book/$fileName")
-            adapter.fromJson(json)?.let { worldBooks.add(it) }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-    withContext(Dispatchers.Main) { onLoaded(worldBooks) }
 }

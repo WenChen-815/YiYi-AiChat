@@ -77,7 +77,7 @@ class GroupChatViewModel @Inject constructor(
                         playerName = "",
                         playGender = "",
                         playerDescription = "",
-                        chatWorldId = "",
+                        chatWorldId = emptyList(),
                         chatSceneDescription = "",
                         additionalSummaryRequirement = "",
                         avatarPath = currentAICharacter?.avatar,

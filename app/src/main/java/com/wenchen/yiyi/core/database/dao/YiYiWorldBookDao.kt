@@ -39,6 +39,10 @@ interface YiYiWorldBookDao {
     suspend fun getBookWithEntriesById(id: String): YiYiWorldBookWithEntries?
 
     @Transaction
+    @Query("SELECT * FROM yiyi_world_books WHERE id IN (:ids)")
+    suspend fun getBooksWithEntriesByIds(ids: List<String>): List<YiYiWorldBookWithEntries>
+
+    @Transaction
     @Query("SELECT * FROM yiyi_world_books")
     fun getAllBooksWithEntriesFlow(): Flow<List<YiYiWorldBookWithEntries>>
 }

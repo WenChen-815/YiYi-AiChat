@@ -48,6 +48,10 @@ class YiYiWorldBookRepository @Inject constructor(
         return dataSource.getBookWithEntriesById(id)
     }
 
+    suspend fun getBooksWithEntriesByIds(ids: List<String>): List<YiYiWorldBookWithEntries> {
+        return dataSource.getBooksWithEntriesByIds(ids)
+    }
+
     fun getAllBooksWithEntriesFlow(): Flow<List<YiYiWorldBookWithEntries>> {
         return dataSource.getAllBooksWithEntriesFlow().flowOn(Dispatchers.IO)
     }

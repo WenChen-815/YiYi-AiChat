@@ -9,6 +9,7 @@ import androidx.room.PrimaryKey
 import androidx.room.Relation
 import kotlinx.serialization.Serializable
 
+@Keep
 @Serializable
 @Entity(tableName = "yiyi_world_books")
 data class YiYiWorldBook(
@@ -24,6 +25,7 @@ data class YiYiWorldBook(
     val updateTime: Long? = null
 )
 
+@Keep
 @Serializable
 @Entity(
     tableName = "yiyi_world_book_entries",
@@ -37,8 +39,6 @@ data class YiYiWorldBook(
     ],
     indices = [Index(value = ["bookId"])]
 )
-
-@Keep
 data class YiYiWorldBookEntry(
     @PrimaryKey val entryId: String,
     val bookId: String, // 关联 YiYiWorldBook 的 id

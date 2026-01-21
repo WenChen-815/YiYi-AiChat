@@ -14,15 +14,14 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
-import com.squareup.moshi.JsonAdapter
 import com.wenchen.yiyi.core.base.viewmodel.BaseViewModel
 import com.wenchen.yiyi.core.data.repository.AICharacterRepository
 import com.wenchen.yiyi.core.data.repository.AIChatMemoryRepository
 import com.wenchen.yiyi.core.data.repository.ConversationRepository
 import com.wenchen.yiyi.core.data.repository.YiYiRegexGroupRepository
+import com.wenchen.yiyi.core.data.repository.YiYiWorldBookRepository
 import com.wenchen.yiyi.core.database.entity.AICharacter
 import com.wenchen.yiyi.core.database.entity.AIChatMemory
-import com.wenchen.yiyi.core.util.storage.FilesUtils
 import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.core.state.UserState
 import com.wenchen.yiyi.core.util.ui.ToastUtils
@@ -30,14 +29,16 @@ import com.wenchen.yiyi.core.datastore.storage.ImageManager
 import com.wenchen.yiyi.core.database.entity.Conversation
 import com.wenchen.yiyi.core.database.entity.ConversationType
 import com.wenchen.yiyi.core.database.entity.YiYiRegexGroup
-import com.wenchen.yiyi.feature.worldBook.model.WorldBook
+import com.wenchen.yiyi.core.database.entity.YiYiWorldBook
 import com.wenchen.yiyi.navigation.AppNavigator
 import com.wenchen.yiyi.navigation.routes.AiChatRoutes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import com.aventrix.jnanoid.jnanoid.NanoIdUtils
@@ -49,6 +50,7 @@ class ConversationEditViewModel @Inject constructor(
     private val aiCharacterRepository: AICharacterRepository,
     private val aiChatMemoryRepository: AIChatMemoryRepository,
     private val regexGroupRepository: YiYiRegexGroupRepository,
+    private val worldBookRepository: YiYiWorldBookRepository,
     navigator: AppNavigator,
     userState: UserState,
     userConfigState: UserConfigState,
@@ -73,6 +75,9 @@ class ConversationEditViewModel @Inject constructor(
     var backgroundBitmap by mutableStateOf<Bitmap?>(null)
     var hasNewAvatar by mutableStateOf(false)
     var hasNewBackground by mutableStateOf(false)
+
+    val allWorldBooks: StateFlow<List<YiYiWorldBook>> = worldBookRepository.getAllBooksFlow()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     init {
         val route = savedStateHandle.toRoute<AiChatRoutes.ConversationEdit>()
@@ -155,7 +160,7 @@ class ConversationEditViewModel @Inject constructor(
         playerName: String,
         playGender: String,
         playerDescription: String,
-        chatWorldId: String,
+        chatWorldId: List<String>,
         chatSceneDescription: String,
         additionalSummaryRequirement: String,
         chooseCharacterMap: Map<String, Float>,
@@ -180,14 +185,6 @@ class ConversationEditViewModel @Inject constructor(
 
                 val existingConversation = conversationRepository.getById(conversationId.value)
                 if (existingConversation != null) {
-                    if (hasNewAvatar) {
-                        imageManager.deleteAvatarImage(conversationId.value)
-                        imageManager.saveAvatarImage(conversationId.value, avatarBitmap!!)
-                    }
-                    if (hasNewBackground) {
-                        imageManager.deleteBackgroundImage(conversationId.value)
-                        imageManager.saveBackgroundImage(conversationId.value, backgroundBitmap!!)
-                    }
                     val updatedConversation =
                         existingConversation.copy(
                             name = name,
@@ -270,27 +267,6 @@ class ConversationEditViewModel @Inject constructor(
                 ToastUtils.showToast("保存对话失败")
             }
         }
-    }
-
-    // 从文件加载世界书列表
-    fun loadWorldBooks(
-        adapter: JsonAdapter<WorldBook>,
-        onLoaded: (List<WorldBook>) -> Unit
-    ) = viewModelScope.launch(Dispatchers.IO) {
-        val worldBookFiles = FilesUtils.listFileNames("world_book")
-        Timber.tag("WorldBookListActivity").d("loadWorldBooks: $worldBookFiles")
-        val worldBooks = mutableListOf(WorldBook("","未选择世界"))
-
-        worldBookFiles.forEach { fileName ->
-            try {
-                val json = FilesUtils.readFile("world_book/$fileName")
-                val worldBook = adapter.fromJson(json)
-                worldBook?.let { worldBooks.add(it) }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-        onLoaded(worldBooks)
     }
 }
 

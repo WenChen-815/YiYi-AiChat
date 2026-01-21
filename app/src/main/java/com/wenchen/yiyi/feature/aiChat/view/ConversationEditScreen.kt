@@ -15,7 +15,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -41,16 +40,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import com.squareup.moshi.JsonAdapter
-import com.squareup.moshi.Moshi
 import com.wenchen.yiyi.core.database.entity.AIChatMemory
 import com.wenchen.yiyi.core.database.entity.ConversationType
 import com.wenchen.yiyi.core.designSystem.component.SettingTextFieldItem
@@ -63,7 +58,7 @@ import com.wenchen.yiyi.core.common.theme.LightGray
 import com.wenchen.yiyi.core.common.theme.WhiteText
 import com.wenchen.yiyi.core.util.ui.StatusBarUtils
 import com.wenchen.yiyi.feature.aiChat.viewmodel.ConversationEditViewModel
-import com.wenchen.yiyi.feature.worldBook.model.WorldBook
+import com.wenchen.yiyi.core.database.entity.YiYiWorldBook
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -120,11 +115,13 @@ private fun ConversationEditScreen(
     }
 
     val uiState by viewModel.uiState.collectAsState()
+    val allWorldBooks by viewModel.allWorldBooks.collectAsState()
 
     ConversationEditScreenContent(
         viewModel = viewModel,
         activity = activity,
         uiState = uiState,
+        allWorldBooks = allWorldBooks,
         isCreateNew = viewModel.isNewConversation.collectAsState().value,
         conversationId = viewModel.conversationId.collectAsState().value,
         onSaveClick = {
@@ -180,9 +177,10 @@ fun ConversationEditScreenContent(
     viewModel: ConversationEditViewModel,
     activity: Activity,
     uiState: ConversationEditUiState,
+    allWorldBooks: List<YiYiWorldBook>,
     isCreateNew: Boolean,
     conversationId: String,
-    onSaveClick: (String, String, String, String, String, String, String, Map<String, Float>, Map<String, List<String>>, List<String>) -> Unit,
+    onSaveClick: (String, String, String, String, List<String>, String, String, Map<String, Float>, Map<String, List<String>>, List<String>) -> Unit,
     onCancelClick: () -> Unit,
     onAvatarClick: () -> Unit,
     onBackgroundClick: () -> Unit,
@@ -203,15 +201,12 @@ fun ConversationEditScreenContent(
     var playerName by remember { mutableStateOf(userConfig?.userName ?: "") }
     var playGender by remember { mutableStateOf("") }
     var playerDescription by remember { mutableStateOf("") }
-    var chatWorldId by remember { mutableStateOf("") }
+    var chatWorldId by remember { mutableStateOf<List<String>>(emptyList()) }
     var chatSceneDescription by remember { mutableStateOf("") }
     var additionalSummaryRequirement by remember { mutableStateOf("") }
     var chooseCharacterMap by remember { mutableStateOf<Map<String, Float>>(emptyMap()) }
     var characterKeywordsMap by remember { mutableStateOf<Map<String, List<String>>>(emptyMap()) }
     var enabledRegexGroups by remember { mutableStateOf<List<String>>(emptyList()) }
-    var allWorldBook by remember { mutableStateOf<List<WorldBook>>(emptyList()) }
-    val moshi: Moshi = Moshi.Builder().build()
-    val worldBookAdapter: JsonAdapter<WorldBook> = moshi.adapter(WorldBook::class.java)
 
     val scrollState = rememberScrollState()
     var avatarPath by remember { mutableStateOf("") }
@@ -241,19 +236,6 @@ fun ConversationEditScreenContent(
             chooseCharacterMap = conversation.characterIds
             characterKeywordsMap = conversation.characterKeywords ?: emptyMap()
             enabledRegexGroups = conversation.enabledRegexGroups ?: emptyList()
-        }
-    }
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                viewModel.loadWorldBooks(worldBookAdapter) { loadedBooks ->
-                        allWorldBook = loadedBooks
-                }
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
 
@@ -818,9 +800,9 @@ fun ConversationEditScreenContent(
                         .weight(1f)
                         .clickable { setWorldSheetVisible(true) }
                         .padding(16.dp)) {
+                    val selectedNames = allWorldBooks.filter { it.id in chatWorldId }.map { it.name ?: "未命名世界" }
                     Text(
-                        text = allWorldBook.find { it.id == chatWorldId }?.worldName
-                            ?: "未选择世界",
+                        text = if (selectedNames.isEmpty()) "未选择世界" else selectedNames.joinToString(", "),
                         modifier = Modifier.fillMaxWidth(),
                         color = WhiteText
                     )
@@ -956,13 +938,22 @@ fun ConversationEditScreenContent(
                             .fillMaxWidth()
                             .heightIn(max = screenHeight * 0.6f)
                     ) {
-                        items(allWorldBook.size) { index ->
-                            val worldBook = allWorldBook[index]
+                        items(allWorldBooks.size) { index ->
+                            val worldBook = allWorldBooks[index]
                             ListItem(
-                                headlineContent = { Text(worldBook.worldName) },
+                                headlineContent = { Text(worldBook.name ?: "未命名世界") },
+                                trailingContent = {
+                                    Checkbox(
+                                        checked = chatWorldId.contains(worldBook.id),
+                                        onCheckedChange = null
+                                    )
+                                },
                                 modifier = Modifier.clickable {
-                                    chatWorldId = worldBook.id
-                                    setWorldSheetVisible(false)
+                                    chatWorldId = if (chatWorldId.contains(worldBook.id)) {
+                                        chatWorldId - worldBook.id
+                                    } else {
+                                        chatWorldId + worldBook.id
+                                    }
                                 }
                             )
                         }

@@ -28,12 +28,11 @@ data class Conversation(
     var playGender: String,
     var playerDescription: String,
 
-    var chatWorldId: String,
     var chatSceneDescription: String,
     var additionalSummaryRequirement: String? = null,
-
     val avatarPath: String?,
     val backgroundPath: String?,
 
+    var chatWorldId: List<String> = emptyList(),
     val enabledRegexGroups: List<String>? = null,
 )
