@@ -2,6 +2,7 @@ package com.wenchen.yiyi.core.designSystem.component
 
 import android.annotation.SuppressLint
 import android.view.MotionEvent
+import android.view.View
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -17,6 +18,7 @@ import androidx.compose.ui.UiComposable
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.wenchen.yiyi.core.util.system.WebViewPool
@@ -64,6 +66,8 @@ fun HtmlWebView(
                     -webkit-user-select: none;  
                     user-select: none;
                     -webkit-touch-callout: none; 
+                    /* 禁用点击高亮，减少布局反馈 */
+                    -webkit-tap-highlight-color: transparent;
                 }
                 html, body { 
                     background-color: transparent; 
@@ -71,6 +75,12 @@ fun HtmlWebView(
                     /* 关键：防止 body 自动撑满 WebView 高度 */
                     height: auto !important;
                     min-height: 0 !important;
+                    /* 开启硬件加速渲染 */
+                    transform: translateZ(0); 
+                    
+                   -webkit-backface-visibility: hidden;
+                    backface-visibility: hidden;
+                    perspective: 1000px;
                 }
                 body { 
                     color: $colorHex; 
@@ -79,19 +89,31 @@ fun HtmlWebView(
                     line-height: 1.4;
                     word-wrap: break-word;
                     overflow: hidden; 
+                    /* 文本渲染优化 */
+                    text-rendering: optimizeLegibility;
+                    -webkit-font-smoothing: antialiased;
                 }
-                img { max-width: 100%; height: auto; border-radius: 8px; display: block; }
+                img { 
+                    max-width: 100%; height: auto; border-radius: 8px; display: block;
+                    /* 强制图片也有独立的合成层，防止滑动闪烁 */
+                    transform: translateZ(0);
+                }
                 #container {
                     width: 100%;
                     /* 关键：使用 flow-root 确保内部 margin 不会溢出到 body 之外 */
                     display: flow-root; 
                     position: relative;
+                    /* 核心优化：渲染隔离。包含布局、样式和绘制，防止子元素变化影响全局 */
+                    contain: content;
+                    /* 提示浏览器该元素将有变化，预先分配 GPU 资源 */
+                    will-change: transform;
                 }
             </style>
         </head>
         <body>
             <div id="container">$html</div>
             <script>
+                var lastReportedHeight = 0;
                 function reportHeight() {
                     const container = document.getElementById('container');
                     if (!container) return;
@@ -100,7 +122,9 @@ fun HtmlWebView(
                     // getBoundingClientRect().height 能获取包含小数的精确物理高度
                     const height = Math.ceil(container.getBoundingClientRect().height);
                     
-                    if (height > 0) {
+                    // 优化 2：JS 端防抖，只有高度变化超过 2px 才上报，减少 Bridge 调用频率
+                    if (height > 0 && Math.abs(height - lastReportedHeight) > 2) {
+                        lastReportedHeight = height;
                         window.android.onHeight(height);
                     }
                 }
@@ -109,7 +133,8 @@ fun HtmlWebView(
                 
                 // ResizeObserver 观察 container 的尺寸变化
                 const resizeObserver = new ResizeObserver(() => {
-                    reportHeight();
+                    // 使用 requestAnimationFrame 确保在浏览器渲染帧中处理
+                    window.requestAnimationFrame(reportHeight);
                 });
                 resizeObserver.observe(document.getElementById('container'));
             </script>
@@ -127,6 +152,8 @@ fun HtmlWebView(
             modifier = modifier.fillMaxSize(),
             factory = { context ->
                 WebViewPool.acquire(context).apply {
+                    // 强制开启硬件加速
+                    setLayerType(View.LAYER_TYPE_HARDWARE, null)
                     // 确保即使从池中获取，也是非焦点状态
                     isFocusable = false
                     isFocusableInTouchMode = false

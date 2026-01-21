@@ -107,7 +107,15 @@ object WebViewPool {
                 javaScriptEnabled = true
                 domStorageEnabled = true
                 loadsImagesAutomatically = true
-                cacheMode = WebSettings.LOAD_DEFAULT
+                // 关键设置。允许预渲染视口外内容，极大改善长页面渲染稳定性
+                offscreenPreRaster = true
+                cacheMode = WebSettings.LOAD_NO_CACHE
+
+                // 禁用不必要的特性
+                setSupportZoom(false)
+                builtInZoomControls = false
+                // 允许内容自适应
+                layoutAlgorithm = WebSettings.LayoutAlgorithm.TEXT_AUTOSIZING
             }
             setBackgroundColor(0)
             // 禁用一切滚动，由 Compose 外部容器负责滚动

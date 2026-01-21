@@ -267,42 +267,54 @@ fun ChatMessageItem(
                             MessageType.ASSISTANT -> Color.LightGray
                             MessageType.SYSTEM -> WhiteText
                         }
-                        val regexReplace = viewModel.regexReplace(content)
-                        // 拆分内容
-                        val segments = remember(regexReplace) { splitMessageContent(regexReplace) }
+                        if (messageType == MessageType.ASSISTANT) {
+                            val regexReplace = viewModel.regexReplace(content)
+                            // 拆分内容
+                            val segments = remember(regexReplace) { splitMessageContent(regexReplace) }
 
-                        Column {
-                            segments.forEachIndexed { index, segment ->
-                                when (segment) {
-                                    is MessageSegment.Text -> {
-                                        StyledBracketText(
-                                            text = segment.content.trim(),
-                                            normalTextStyle = MaterialTheme.typography.bodyLarge.copy(color = color),
-                                            specialTextStyle = MaterialTheme.typography.bodyLarge.copy(
-                                                color = specialTextColor,
-                                                fontStyle = FontStyle.Italic
+                            Column {
+                                segments.forEachIndexed { index, segment ->
+                                    when (segment) {
+                                        is MessageSegment.Text -> {
+                                            StyledBracketText(
+                                                text = segment.content.trim(),
+                                                normalTextStyle = MaterialTheme.typography.bodyLarge.copy(color = color),
+                                                specialTextStyle = MaterialTheme.typography.bodyLarge.copy(
+                                                    color = specialTextColor,
+                                                    fontStyle = FontStyle.Italic
+                                                )
                                             )
-                                        )
-                                    }
-                                    is MessageSegment.Html -> {
-                                        HtmlWebView(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            id = "${messageId}_$index", // 使用唯一片段ID
-                                            html = segment.content,
-                                            textColor = color,
-                                            height = viewModel.findSegmentHeight(messageId, index),
-                                            onHeight = { height ->
-                                                viewModel.rememberSegmentHeight(messageId, index, height)
-                                            },
-                                            onLongClick = { offset ->
-                                                val paddingPx = with(density) { 8.dp.toPx() }
-                                                touchPosition = Offset(offset.x + paddingPx, offset.y + paddingPx)
-                                                isMenuVisible = true
-                                            }
-                                        )
+                                        }
+                                        is MessageSegment.Html -> {
+                                            HtmlWebView(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                id = "${messageId}_$index", // 使用唯一片段ID
+                                                html = segment.content,
+                                                textColor = color,
+                                                height = viewModel.findSegmentHeight(messageId, index),
+                                                onHeight = { height ->
+                                                    viewModel.rememberSegmentHeight(messageId, index, height)
+                                                },
+                                                onLongClick = { offset ->
+                                                    val paddingPx = with(density) { 8.dp.toPx() }
+                                                    touchPosition = Offset(offset.x + paddingPx, offset.y + paddingPx)
+                                                    isMenuVisible = true
+                                                }
+                                            )
+                                        }
                                     }
                                 }
                             }
+                        } else {
+                            // 对于USER和SYSTEM消息，使用常规的StyledBracketText
+                            StyledBracketText(
+                                text = content.trim(),
+                                normalTextStyle = MaterialTheme.typography.bodyLarge.copy(color = color),
+                                specialTextStyle = MaterialTheme.typography.bodyLarge.copy(
+                                    color = specialTextColor,
+                                    fontStyle = FontStyle.Italic
+                                )
+                            )
                         }
                         // 识别 HTML 的简单启发式算法
 //                        val isHtmlContent = remember(content) {
