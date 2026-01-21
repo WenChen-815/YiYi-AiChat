@@ -6,6 +6,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import com.wenchen.yiyi.feature.worldBook.view.WorldBookEditRoute
+import com.wenchen.yiyi.feature.worldBook.view.WorldBookEntryEditRoute
 import com.wenchen.yiyi.feature.worldBook.view.WorldBookListRoute
 import com.wenchen.yiyi.navigation.routes.WorldBookRoutes
 
@@ -26,5 +27,9 @@ fun NavGraphBuilder.worldBookScreen(
 
     composable<WorldBookRoutes.WorldBookEdit> {
         WorldBookEditRoute(navController = navController)
+    }
+
+    composable<WorldBookRoutes.WorldBookEntryEdit> {
+        WorldBookEntryEditRoute(navController = navController)
     }
 }

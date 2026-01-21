@@ -4,27 +4,27 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.aventrix.jnanoid.jnanoid.NanoIdUtils
-import com.squareup.moshi.JsonAdapter
-import com.squareup.moshi.Moshi
 import com.wenchen.yiyi.core.base.viewmodel.BaseViewModel
+import com.wenchen.yiyi.core.data.repository.YiYiWorldBookEntryRepository
+import com.wenchen.yiyi.core.data.repository.YiYiWorldBookRepository
+import com.wenchen.yiyi.core.database.entity.YiYiWorldBook
+import com.wenchen.yiyi.core.database.entity.YiYiWorldBookEntry
 import com.wenchen.yiyi.core.state.UserConfigState
-import com.wenchen.yiyi.core.util.storage.FilesUtils
 import com.wenchen.yiyi.core.state.UserState
 import com.wenchen.yiyi.core.util.ui.ToastUtils
-import com.wenchen.yiyi.feature.worldBook.model.WorldBook
-import com.wenchen.yiyi.feature.worldBook.model.WorldBookItem
 import com.wenchen.yiyi.navigation.AppNavigator
 import com.wenchen.yiyi.navigation.routes.WorldBookRoutes
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
 class WorldBookEditViewModel @Inject constructor(
+    private val worldBookRepository: YiYiWorldBookRepository,
+    private val worldBookEntryRepository: YiYiWorldBookEntryRepository,
     navigator: AppNavigator,
     userState: UserState,
     userConfigState: UserConfigState,
@@ -33,95 +33,117 @@ class WorldBookEditViewModel @Inject constructor(
     navigator = navigator,
     userState = userState,
     userConfigState = userConfigState
-){
-    val _worldId = MutableStateFlow("")
-    var worldId: StateFlow<String> = _worldId.asStateFlow()
+) {
+    private val route = savedStateHandle.toRoute<WorldBookRoutes.WorldBookEdit>()
 
-    val _isNewWorld = MutableStateFlow(false)
+    private val _worldId = MutableStateFlow(route.worldId.ifEmpty { NanoIdUtils.randomNanoId() })
+    val worldId: StateFlow<String> = _worldId.asStateFlow()
+
+    private val _isNewWorld = MutableStateFlow(route.isNewWorld)
     val isNewWorld: StateFlow<Boolean> = _isNewWorld.asStateFlow()
 
-    val _worldBook = MutableStateFlow<WorldBook?>(null)
-    val worldBook: StateFlow<WorldBook?> = _worldBook.asStateFlow()
+    private val _worldBook = MutableStateFlow<YiYiWorldBook?>(null)
+    val worldBook: StateFlow<YiYiWorldBook?> = _worldBook.asStateFlow()
 
-    val moshi: Moshi = Moshi.Builder().build()
-    val worldBookAdapter: JsonAdapter<WorldBook> = moshi.adapter(WorldBook::class.java)
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val entries: StateFlow<List<YiYiWorldBookEntry>> = _worldId
+        .flatMapLatest { id ->
+            worldBookEntryRepository.getEntriesByBookIdFlow(id)
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     init {
-        val route = savedStateHandle.toRoute<WorldBookRoutes.WorldBookEdit>()
-        _isNewWorld.value = route.isNewWorld
-        if (isNewWorld.value) {
-            _worldId.value = NanoIdUtils.randomNanoId()
-            // 对于新世界，初始化一个空的 WorldBook
-            _worldBook.value = WorldBook(
-                id = _worldId.value,
-                worldName = "",
-                worldDesc = "",
-                worldItems = emptyList()
-            )
+        if (_isNewWorld.value) {
+            // 如果是新世界，先不插入数据库，在 UI 层管理 metadata，直到点保存
+            // 或者为了支持在新建时就添加条目，我们需要先创建一个占位符
+            _worldBook.value = YiYiWorldBook(id = _worldId.value, name = "")
         } else {
-            _worldId.value = route.worldId
             loadWorldBook()
         }
     }
 
-    fun loadWorldBook() {
+    private fun loadWorldBook() {
         viewModelScope.launch {
-            try {
-                if (!isNewWorld.value) {
-                    val json = FilesUtils.readFile("world_book/${worldId.value}.json")
-                    Timber.tag("WorldBookEditViewModel").d("Loading world book json: $json")
-                    val loadedWorldBook = worldBookAdapter.fromJson(json)
-
-                    if (loadedWorldBook != null) {
-                        _worldBook.value = loadedWorldBook
-                    } else {
-                        // 如果文件不存在或解析失败，创建默认的世界书
-                        val worldList = FilesUtils.listFileNames("world_book")
-                        _worldBook.value = WorldBook(
-                            id = worldId.value,
-                            worldName = "无名世界${worldList.size + 1}",
-                            worldDesc = "",
-                            worldItems = emptyList()
-                        )
-                    }
-                }
-            } catch (e: Exception) {
-                Timber.e(e, "Failed to load world book")
-                // 发生错误时创建默认的世界书
-                val worldList = FilesUtils.listFileNames("world_book")
-                _worldBook.value = WorldBook(
-                    id = worldId.value,
-                    worldName = "无名世界${worldList.size + 1}",
-                    worldDesc = "",
-                    worldItems = emptyList()
-                )
+            val book = worldBookRepository.getBookById(_worldId.value)
+            if (book != null) {
+                _worldBook.value = book
             }
         }
     }
 
-    fun saveWorldBook(
-        name: String,
-        description: String,
-        worldItems: List<WorldBookItem>
-    ) {
+    fun saveWorldBook(name: String, description: String) {
         viewModelScope.launch {
             try {
-                val worldBook = WorldBook(
-                    id = worldId.value,
-                    worldName = name,
-                    worldDesc = description,
-                    worldItems = worldItems
-                )
-                val json = worldBookAdapter.toJson(worldBook)
-                val filePath = FilesUtils.saveToFile(json, "world_book/${worldId.value}.json")
-                if (filePath.isNotEmpty()) {
-                    Timber.tag("WorldBookEditActivity").d("saveWorldBook: $filePath")
+                if (name.isBlank()) {
+                    ToastUtils.showToast("名字不能为空")
+                    return@launch
                 }
-                ToastUtils.showToast("世界保存成功")
+                val now = System.currentTimeMillis()
+                val book = YiYiWorldBook(
+                    id = _worldId.value,
+                    name = name,
+                    description = description,
+                    updateTime = now,
+                    createTime = _worldBook.value?.createTime ?: now
+                )
+                worldBookRepository.insertBook(book)
+                ToastUtils.showToast("保存成功")
                 navigateBack()
             } catch (e: Exception) {
-                ToastUtils.showToast("世界保存失败: ${e.message}")
+                Timber.e(e, "Failed to save world book")
+                ToastUtils.showToast("保存失败")
             }
+        }
+    }
+
+    fun deleteWorldBook() {
+        viewModelScope.launch {
+            try {
+                _worldBook.value?.let {
+                    worldBookRepository.deleteBook(it)
+                    ToastUtils.showToast("删除成功")
+                    navigateBack()
+                }
+            } catch (e: Exception) {
+                ToastUtils.showToast("删除失败")
+            }
+        }
+    }
+
+    fun toggleEntryEnabled(entry: YiYiWorldBookEntry, enabled: Boolean) {
+        viewModelScope.launch {
+            worldBookEntryRepository.updateEntry(entry.copy(enabled = enabled))
+        }
+    }
+
+    fun deleteEntry(entry: YiYiWorldBookEntry) {
+        viewModelScope.launch {
+            worldBookEntryRepository.deleteEntry(entry)
+        }
+    }
+
+    fun navigateToEntryEdit(entryId: String? = null) {
+        // 在跳转到条目编辑前，如果这本书还没在数据库里（新建流程），需要先插入一个占位符，
+        // 否则外键约束会报错。
+        viewModelScope.launch {
+            val existing = worldBookRepository.getBookById(_worldId.value)
+            if (existing == null) {
+                val now = System.currentTimeMillis()
+                worldBookRepository.insertBook(
+                    YiYiWorldBook(
+                        id = _worldId.value,
+                        name = "未命名世界",
+                        createTime = now,
+                        updateTime = now
+                    )
+                )
+            }
+            navigate(
+                WorldBookRoutes.WorldBookEntryEdit(
+                    worldId = _worldId.value,
+                    entryId = entryId
+                )
+            )
         }
     }
 }

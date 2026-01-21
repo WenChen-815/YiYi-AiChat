@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -15,16 +16,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import com.squareup.moshi.Moshi
-import com.squareup.moshi.JsonAdapter
 import com.wenchen.yiyi.core.common.theme.AIChatTheme
 import com.wenchen.yiyi.core.common.theme.BlackBg
 import com.wenchen.yiyi.core.common.theme.WhiteBg
-import com.wenchen.yiyi.feature.worldBook.model.WorldBook
+import com.wenchen.yiyi.core.database.entity.YiYiWorldBook
 import com.wenchen.yiyi.feature.worldBook.viewmodel.WorldBookListViewModel
 import com.wenchen.yiyi.navigation.routes.WorldBookRoutes
 
@@ -38,39 +35,13 @@ internal fun WorldBookListRoute(
     }
 }
 
-@Composable
-private fun WorldBookListScreen(
-    viewmodel: WorldBookListViewModel = hiltViewModel(),
-    navController: NavController
-) {
-    WorldBookListScreenContent(viewmodel, navController)
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WorldBookListScreenContent(
-    viewmodel: WorldBookListViewModel,
+private fun WorldBookListScreen(
+    viewModel: WorldBookListViewModel = hiltViewModel(),
     navController: NavController
 ) {
-    val lifecycleOwner = LocalLifecycleOwner.current
-    var worldBooks by remember { mutableStateOf<List<WorldBook>>(emptyList()) }
-    val moshi: Moshi = Moshi.Builder().build()
-    val worldBookAdapter: JsonAdapter<WorldBook> = moshi.adapter(WorldBook::class.java)
-
-    // 当屏幕恢复时加载世界书列表
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                    viewmodel.loadWorldBooks(worldBookAdapter) { loadedBooks ->
-                        worldBooks = loadedBooks
-                    }
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
-    }
+    val worldBooks by viewModel.worldBooks.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
@@ -84,7 +55,7 @@ fun WorldBookListScreenContent(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    viewmodel.navigate(WorldBookRoutes.WorldBookEdit("", true))
+                    viewModel.navigate(WorldBookRoutes.WorldBookEdit("", true))
                 },
                 containerColor = MaterialTheme.colorScheme.primary,
             ) {
@@ -95,7 +66,7 @@ fun WorldBookListScreenContent(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)  // 使用Scaffold提供的内边距
+                .padding(innerPadding)
                 .padding(16.dp),
         ) {
             if (worldBooks.isEmpty()) {
@@ -109,12 +80,11 @@ fun WorldBookListScreenContent(
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
-                    items(worldBooks.size) { index ->
-                        val worldBook = worldBooks[index]
+                    items(worldBooks, key = { it.id }) { worldBook ->
                         WorldBookItem(
                             worldBook = worldBook,
                             onItemClick = {
-                                viewmodel.navigate(WorldBookRoutes.WorldBookEdit(worldId = worldBook.id))
+                                viewModel.navigate(WorldBookRoutes.WorldBookEdit(worldId = worldBook.id))
                             }
                         )
                     }
@@ -126,22 +96,22 @@ fun WorldBookListScreenContent(
 
 @Composable
 fun WorldBookItem(
-    worldBook: WorldBook,
+    worldBook: YiYiWorldBook,
     onItemClick: () -> Unit,
 ) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
             .background(if (isSystemInDarkTheme()) BlackBg else WhiteBg)
             .clickable { onItemClick() }
-            .clip(RoundedCornerShape(8.dp))
             .padding(16.dp),
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text(
-                text = worldBook.worldName,
+                text = worldBook.name ?: "未命名",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
@@ -151,25 +121,12 @@ fun WorldBookItem(
             Spacer(modifier = Modifier.height(4.dp))
 
             Text(
-                text = worldBook.worldDesc ?: "无描述",
+                text = worldBook.description ?: "无描述",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
-            ) {
-                Text(
-                    text = "物品: ${worldBook.worldItems?.size ?: 0}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
         }
     }
 }

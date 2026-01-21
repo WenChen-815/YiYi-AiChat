@@ -2,108 +2,110 @@ package com.wenchen.yiyi.feature.worldBook.view
 
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.LocalActivity
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material3.*
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import com.wenchen.yiyi.core.designSystem.component.SettingTextFieldItem
 import com.wenchen.yiyi.core.common.theme.AIChatTheme
+import com.wenchen.yiyi.core.common.theme.Gold
+import com.wenchen.yiyi.core.common.theme.Pink
 import com.wenchen.yiyi.core.common.theme.WhiteText
-import com.wenchen.yiyi.core.util.storage.FilesUtils
+import com.wenchen.yiyi.core.database.entity.YiYiWorldBook
+import com.wenchen.yiyi.core.database.entity.YiYiWorldBookEntry
 import com.wenchen.yiyi.core.util.ui.StatusBarUtils
-import com.wenchen.yiyi.feature.worldBook.model.WorldBookItem
 import com.wenchen.yiyi.feature.worldBook.viewmodel.WorldBookEditViewModel
-import androidx.compose.runtime.collectAsState
-import com.wenchen.yiyi.core.util.ui.ToastUtils
-import timber.log.Timber
 
 @Composable
 internal fun WorldBookEditRoute(
     viewModel: WorldBookEditViewModel = hiltViewModel(),
     navController: NavController
 ) {
-    AIChatTheme {
-        WorldBookEditScreen(viewModel, navController)
-    }
-}
+    val worldBook by viewModel.worldBook.collectAsStateWithLifecycle()
+    val entries by viewModel.entries.collectAsStateWithLifecycle()
+    val isNewWorld by viewModel.isNewWorld.collectAsStateWithLifecycle()
 
-//}
-@Composable
-private fun WorldBookEditScreen(
-    viewModel: WorldBookEditViewModel = hiltViewModel(),
-    navController: NavController
-) {
-    WorldBookEditScreenContent(
-        viewModel = viewModel,
-        navController = navController
+    WorldBookEditScreen(
+        isNewWorld = isNewWorld,
+        worldBook = worldBook,
+        entries = entries,
+        onNavigateBack = { viewModel.navigateBack() },
+        onDeleteWorldBook = { viewModel.deleteWorldBook() },
+        onSaveWorldBook = { name, desc -> viewModel.saveWorldBook(name, desc) },
+        onNavigateToEntryEdit = { viewModel.navigateToEntryEdit(it) },
+        onToggleEntryEnabled = { entry, enabled -> viewModel.toggleEntryEnabled(entry, enabled) },
+        onDeleteEntry = { entry -> viewModel.deleteEntry(entry) }
     )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun WorldBookEditScreenContent(
-    viewModel: WorldBookEditViewModel,
-    navController: NavController
+private fun WorldBookEditScreen(
+    isNewWorld: Boolean,
+    worldBook: YiYiWorldBook?,
+    entries: List<YiYiWorldBookEntry>,
+    onNavigateBack: () -> Unit,
+    onDeleteWorldBook: () -> Unit,
+    onSaveWorldBook: (String, String) -> Unit,
+    onNavigateToEntryEdit: (String?) -> Unit,
+    onToggleEntryEnabled: (YiYiWorldBookEntry, Boolean) -> Unit,
+    onDeleteEntry: (YiYiWorldBookEntry) -> Unit
 ) {
-    val activity = LocalActivity.current as ComponentActivity
-    if (isSystemInDarkTheme()) {
-        StatusBarUtils.setStatusBarTextColor(activity, false)
-    } else {
-        StatusBarUtils.setStatusBarTextColor(activity, true)
+    val activity = LocalActivity.current as? ComponentActivity
+    if (activity != null) {
+        StatusBarUtils.setStatusBarTextColor(activity, !isSystemInDarkTheme())
     }
 
     var name by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
-    val worldItems = remember { mutableStateListOf<WorldBookItem>() }
+
+    LaunchedEffect(worldBook) {
+        worldBook?.let {
+            name = it.name ?: ""
+            description = it.description ?: ""
+        }
+    }
 
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-    val scrollState = rememberScrollState()
-    val worldBookState = viewModel.worldBook.collectAsState()
-    // 根据 ViewModel 中的 WorldBook 数据更新 UI 状态
-    LaunchedEffect(worldBookState.value) {
-        worldBookState.value?.let { worldBook ->
-            name = worldBook.worldName
-            description = worldBook.worldDesc ?: ""
-
-            worldItems.clear()
-            worldItems.addAll(worldBook.worldItems ?: emptyList())
-        }
-    }
-    // 删除确认对话框
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
             title = { Text("确认删除") },
             text = { Text("确定要删除这个世界吗？此操作不可撤销。") },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        // 执行删除操作
-                        Timber.tag("WorldBookEditScreen").d("delete worldId: ${viewModel.worldId.value}")
-                        val deleted = FilesUtils.deleteFile("world_book/${viewModel.worldId.value}.json")
-                        if (deleted) {
-                            ToastUtils.showToast("世界删除成功")
-                            viewModel.navigateBack()
-                        } else {
-                            ToastUtils.showToast("世界删除失败")
-                        }
-                        showDeleteDialog = false
-                    }
-                ) {
-                    Text("确认")
+                TextButton(onClick = {
+                    onDeleteWorldBook()
+                    showDeleteDialog = false
+                }) {
+                    Text("确认", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
@@ -113,245 +115,306 @@ private fun WorldBookEditScreenContent(
             }
         )
     }
-//    LaunchedEffect(viewModel.worldId.collectAsState().value) {
-//        launch(Dispatchers.IO) {
-//            try {
-//                if (!viewModel.isNewWorld.value) {
-//                    val json = FilesUtil.readFile("world_book/${viewModel.worldId.value}.json")
-//                    Timber.tag("WorldBookEditScreen").d("json: $json")
-//                    val worldBookAdapter: JsonAdapter<WorldBook> =
-//                        Moshi.Builder().build().adapter(WorldBook::class.java)
-//                    // 转换为 WorldBook 对象
-//                    val worldList = FilesUtil.listFileNames("world_book")
-//                    worldBook = worldBookAdapter.fromJson(json) ?: WorldBook(
-//                        viewModel.worldId.value,
-//                        "无名世界${worldList.size + 1}"
-//                    )
-//                    name = worldBook?.worldName ?: "无名世界${worldList.size + 1}"
-//                    description = worldBook?.worldDesc ?: ""
-//
-//                    //worldItems = worldBook?.worldItems?.toMutableStateList() ?: mutableStateListOf()
-//                    /*
-//                     知识点：对象引用
-//                     使用这种方法会替换worldItems的引用，导致remember的worldItems失效，当数据更新时无法触发Compose的重新渲染
-//                     */
-//
-//                    worldItems.clear() // 清空原有元素
-//                    worldBook?.worldItems?.let { worldItems.addAll(it) } // 添加新元素
-//                }
-//            } catch (e: Exception) {
-//                withContext(Dispatchers.Main) {
-//                    Toast
-//                        .makeText(context, "加载世界数据失败: ${e.message}", Toast.LENGTH_SHORT)
-//                        .show()
-//                }
-//            }
-//        }
-//    }
 
     Scaffold(
         topBar = {
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(top = 36.dp, bottom = 12.dp, start = 16.dp, end = 16.dp),
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.ArrowBackIosNew,
-                    contentDescription = "返回",
-                    modifier =
-                        Modifier
-                            .clickable { viewModel.navigateBack() }
-                            .size(18.dp)
-                            .align(Alignment.CenterStart),
-                )
-                Text(
-                    text = "世界配置",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.align(Alignment.Center),
-                )
-                // 删除按钮 仅在编辑现有世界时显示
-                if (!viewModel.isNewWorld.collectAsState().value) {
+            CenterAlignedTopAppBar(
+                title = {
                     Text(
-                        text = "删除世界",
-                        modifier = Modifier
-                            .clickable { showDeleteDialog = true }
-                            .align(Alignment.CenterEnd)
-                            .padding(8.dp),
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.labelLarge
+                        if (isNewWorld) "新建世界书" else "编辑世界书",
+                        style = MaterialTheme.typography.titleMedium
                     )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.Rounded.ArrowBackIosNew, "返回", modifier = Modifier.size(18.dp))
+                    }
+                },
+                actions = {
+                    if (!isNewWorld) {
+                        TextButton(onClick = { showDeleteDialog = true }) {
+                            Text("删除", color = MaterialTheme.colorScheme.error)
+                        }
+                    }
                 }
-            }
+            )
         },
         bottomBar = {
-            Row(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(top = 4.dp, start = 16.dp, end = 16.dp, bottom = 16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
+                contentAlignment = Alignment.Center
             ) {
                 Button(
-                    onClick = {
-                        viewModel.saveWorldBook(name, description, worldItems.toList())
-                    },
-                    modifier = Modifier.weight(1f),
-                    colors =
-                        ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                        ),
+                    onClick = { onSaveWorldBook(name, description) },
+                    modifier = Modifier
+                        .fillMaxWidth(0.65f)
+                        .height(56.dp),
+                    shape = RoundedCornerShape(28.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                    contentPadding = PaddingValues()
                 ) {
-                    Text("保存世界", color = WhiteText)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(
+                                brush = Brush.horizontalGradient(
+                                    colors = listOf(Pink, Gold)
+                                )
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            "保存",
+                            color = WhiteText,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
-        },
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .imePadding(),
+        }
     ) { padding ->
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .imePadding()
-                    .verticalScroll(scrollState)
-                    .padding(16.dp),
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(horizontal = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            SettingTextFieldItem(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp),
-                singleLine = true,
-                label = "世界名称",
-                labelPadding = PaddingValues(bottom = 6.dp),
-                value = name,
-                onValueChange = { name = it },
-                placeholder = { Text("请输入世界名称") },
-            )
-
-            SettingTextFieldItem(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp)
-                        .heightIn(max = 250.dp),
-                label = "世界描述",
-                labelPadding = PaddingValues(bottom = 6.dp),
-                value = description,
-                onValueChange = { description = it },
-                placeholder = { Text("请输入世界描述") },
-                minLines = 5,
-                maxLines = 15,
-            )
-
-            Text(
-                text = "词条&释义",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(6.dp)
-            )
-
-
-            WorldItem(
-                modifier = Modifier.fillMaxWidth(),
-                isAddOne = true,
-                name = "",
-                desc = "",
-                update = { _, _ -> },
-                addItem = { newName, newDesc ->
-                    worldItems.add(WorldBookItem(newName, newDesc))
-                    Timber.tag("WorldBookEditActivity").d("worldItems: $worldItems")
-                },
-                deleteItem = { _ -> }
-            )
-            // 分割线
-            HorizontalDivider(
-                modifier = Modifier.padding(vertical = 8.dp),
-                color = MaterialTheme.colorScheme.primary,
-            )
-            worldItems.forEach { (name, desc) ->
-                // 知识点：使用key强制重组
-                key(name) {
-                    WorldItem(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 4.dp),
-                        name = name,
-                        desc = desc,
-                        update = { newName, newDesc ->
-                            val index = worldItems.indexOfFirst { it.name == name }
-                            if (index != -1 && newName.isNotEmpty() && newDesc.isNotEmpty()) {
-                                worldItems[index] =
-                                    worldItems[index].copy(name = newName, desc = newDesc)
-                            }
-                        },
-                        addItem = { _, _ -> },
-                        deleteItem = { name ->
-                            worldItems.removeIf { it.name == name }
-                            Timber.tag("WorldBookEditActivity").d("worldItems: $worldItems")
-                        }
-                    )
+            item {
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(
+                            alpha = 0.3f
+                        )
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "名字",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = " * ",
+                            color = Color.Red,
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        TextField(
+                            value = name,
+                            onValueChange = { name = it },
+                            placeholder = { Text("为世界书命名", color = Color.Gray) },
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                disabledContainerColor = Color.Transparent,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent
+                            ),
+                            modifier = Modifier.weight(1f),
+                            singleLine = true
+                        )
+                    }
+                    Row(
+                        modifier = Modifier.padding(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "描述",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = " * ",
+                            color = Color.Red,
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        TextField(
+                            value = description,
+                            onValueChange = { description = it },
+                            placeholder = { Text("描述内容……", color = Color.Gray) },
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                disabledContainerColor = Color.Transparent,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent
+                            ),
+                            modifier = Modifier.weight(1f),
+                            maxLines = 3
+                        )
+                    }
                 }
+            }
+
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "条目",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Text(
+                            "添加",
+                            modifier = Modifier.clickable { onNavigateToEntryEdit(null) },
+                            color = Color.Gray,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+            }
+
+            items(entries, key = { it.entryId }) { entry ->
+                WorldBookEntryItem(
+                    entry = entry,
+                    onEdit = { onNavigateToEntryEdit(entry.entryId) },
+                    onToggle = { onToggleEntryEnabled(entry, it) },
+                    onDelete = { onDeleteEntry(entry) }
+                )
+            }
+
+//            item {
+//                Row(
+//                    modifier = Modifier
+//                        .fillMaxWidth()
+//                        .padding(vertical = 12.dp),
+//                    horizontalArrangement = Arrangement.SpaceBetween
+//                ) {
+//                    Row(
+//                        verticalAlignment = Alignment.CenterVertically,
+//                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+//                    ) {
+//                        Row(verticalAlignment = Alignment.CenterVertically) {
+//                            Icon(
+//                                Icons.Default.PushPin,
+//                                null,
+//                                modifier = Modifier.size(14.dp),
+//                                tint = Color.LightGray
+//                            )
+//                            Text("常驻", fontSize = 12.sp, color = Color.LightGray)
+//                        }
+//                        Row(verticalAlignment = Alignment.CenterVertically) {
+//                            Icon(
+//                                Icons.Default.Key,
+//                                null,
+//                                modifier = Modifier.size(14.dp),
+//                                tint = Color.LightGray
+//                            )
+//                            Text("关键词", fontSize = 12.sp, color = Color.LightGray)
+//                        }
+//                    }
+//                }
+//            }
+        }
+    }
+}
+
+@Composable
+fun WorldBookEntryItem(
+    entry: YiYiWorldBookEntry,
+    onEdit: () -> Unit,
+    onToggle: (Boolean) -> Unit,
+    onDelete: () -> Unit
+) {
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(
+                alpha = 0.5f
+            )
+        ),
+        modifier = Modifier.fillMaxWidth().height(56.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+//            Icon(
+//                if (entry.constant) Icons.Default.PushPin else Icons.Default.Key,
+//                contentDescription = null,
+//                modifier = Modifier.size(16.dp),
+//                tint = MaterialTheme.colorScheme.primary
+//            )
+            Row(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = entry.name ?: "未命名条目",
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = if (entry.constant) "常驻" else "关键词",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (entry.constant) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.background(
+                        shape = RoundedCornerShape(4.dp),
+                        color = if (entry.constant) MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                    ).padding(2.dp)
+                )
+            }
+            IconButton(onClick = onEdit, modifier = Modifier.size(24.dp)) {
+                Icon(Icons.Outlined.Edit, "编辑", modifier = Modifier.size(16.dp), tint = Color.Gray)
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Switch(
+                checked = entry.enabled,
+                onCheckedChange = onToggle,
+                modifier = Modifier.scale(0.7f),
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = Color.White,
+                    checkedTrackColor = MaterialTheme.colorScheme.primary
+                )
+            )
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Box(
+                modifier = Modifier
+                    .size(24.dp)
+                    .clip(CircleShape)
+                    .background(Color.Gray.copy(alpha = 0.2f))
+                    .clickable { onDelete() },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Default.Close, null, modifier = Modifier.size(14.dp), tint = Color.Gray)
             }
         }
     }
 }
 
-
+@Preview(showBackground = true)
 @Composable
-fun WorldItem(
-    modifier: Modifier = Modifier,
-    isAddOne: Boolean = false,
-    name: String,
-    desc: String,
-    update: (String, String) -> Unit,
-    addItem: (String, String) -> Unit,
-    deleteItem: (String) -> Unit,
-) {
-    var lastName by remember { mutableStateOf(name) }
-    var lastDesc by remember { mutableStateOf(desc) }
-    Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        SettingTextFieldItem(
-            value = lastName,
-            label = "",
-            onValueChange = {
-                if (!isAddOne) update(it, desc)
-                lastName = it
-            },
-            modifier = Modifier
-                .weight(1f)
-                .padding(end = 4.dp),
-            placeholder = { Text("请输入") },
-        )
-        SettingTextFieldItem(
-            value = lastDesc,
-            label = "",
-            onValueChange = {
-                if (!isAddOne) update(name, it)
-                lastDesc = it
-            },
-            modifier = Modifier.weight(3f),
-            placeholder = { Text("请输入") },
-        )
-        Text(
-            if (isAddOne) "添加" else "删除",
-            Modifier.clickable {
-                if (isAddOne) {
-                    addItem(lastName, lastDesc)
-                    lastName = ""
-                    lastDesc = ""
-                } else {
-                    deleteItem(name)
-                }
-            },
-            color = MaterialTheme.colorScheme.primary
+private fun WorldBookEditScreenPreview() {
+    AIChatTheme {
+        WorldBookEditScreen(
+            isNewWorld = false,
+            worldBook = YiYiWorldBook(id = "1", name = "我的异世界", description = "这是一个充满魔法的世界"),
+            entries = listOf(
+                YiYiWorldBookEntry(entryId = "11", bookId = "1", name = "魔法", keys = listOf("魔法"), content = "魔法是基础", constant = true, enabled = true),
+                YiYiWorldBookEntry(entryId = "12", bookId = "1", name = "剑士", keys = listOf("剑士"), content = "剑士很强", constant = false, enabled = false)
+            ),
+            onNavigateBack = {},
+            onDeleteWorldBook = {},
+            onSaveWorldBook = { _, _ -> },
+            onNavigateToEntryEdit = {},
+            onToggleEntryEnabled = { _, _ -> },
+            onDeleteEntry = {}
         )
     }
 }

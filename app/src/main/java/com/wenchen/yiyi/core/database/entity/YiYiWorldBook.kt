@@ -1,5 +1,6 @@
 package com.wenchen.yiyi.core.database.entity
 
+import androidx.annotation.Keep
 import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.ForeignKey
@@ -36,6 +37,8 @@ data class YiYiWorldBook(
     ],
     indices = [Index(value = ["bookId"])]
 )
+
+@Keep
 data class YiYiWorldBookEntry(
     @PrimaryKey val entryId: String,
     val bookId: String, // 关联 YiYiWorldBook 的 id
@@ -57,6 +60,7 @@ data class YiYiWorldBookEntry(
     val extensions: WorldBookEntryExtensions = WorldBookEntryExtensions()
 )
 
+@Keep
 @Serializable
 data class WorldBookEntryExtensions(
     val selectiveLogic: Int = 0,
