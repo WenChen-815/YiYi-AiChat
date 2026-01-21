@@ -79,14 +79,22 @@ class WorldBookEditViewModel @Inject constructor(
                     return@launch
                 }
                 val now = System.currentTimeMillis()
+                val existingBook = worldBookRepository.getBookById(_worldId.value)
+
                 val book = YiYiWorldBook(
                     id = _worldId.value,
                     name = name,
                     description = description,
                     updateTime = now,
-                    createTime = _worldBook.value?.createTime ?: now
+                    createTime = existingBook?.createTime ?: now
                 )
-                worldBookRepository.insertBook(book)
+
+                if (existingBook != null) {
+                    worldBookRepository.updateBook(book)
+                } else {
+                    worldBookRepository.insertBook(book)
+                }
+
                 ToastUtils.showToast("保存成功")
                 navigateBack()
             } catch (e: Exception) {
