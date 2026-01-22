@@ -91,7 +91,7 @@ abstract class BaseChatViewModel(
 
     private var isInitialLoading = false
 
-    private val PAGE_SIZE = 5
+    protected val PAGE_SIZE = 5
     private var currentPage = 0
     var chatContext: LimitMutableList<TempChatMessage> =
         limitMutableListOf(15)
@@ -358,36 +358,41 @@ abstract class BaseChatViewModel(
         )
     }
 
-    fun loadInitialData() {
+    suspend fun loadInitialData() {
         if (isInitialLoading) return
         isInitialLoading = true
 
-        viewModelScope.launch {
-            _chatUiState.update { it.copy(isLoading = true) }
+        _chatUiState.update { it.copy(isLoading = true) }
+        
+        val loadedMessages = withContext(Dispatchers.IO) {
             chatMessageRepository.getMessagesByPage(
                 conversation.value.id,
                 PAGE_SIZE,
                 0
-            ).also { messages ->
-                _messages.value = messages
+            )
+        }
+        _messages.value = loadedMessages
+
+        _chatUiState.update { it.copy(isLoading = false) }
+
+        currentPage = 1
+        val totalCount = withContext(Dispatchers.IO) {
+            chatMessageRepository.getTotalMessageCount(conversation.value.id)
+        }
+        _chatUiState.update { it.copy(hasMoreData = totalCount > PAGE_SIZE) }
+
+        val tempMessages = withContext(Dispatchers.IO) {
+            tempChatMessageRepository.getByConversationId(conversation.value.id)
+        }
+        
+        tempMessages.takeLast(userConfigState.userConfig.value?.maxContextMessageSize ?: 15)
+            .let {
+                chatContext.clear()
+                chatContext.addAll(it)
             }
 
-            _chatUiState.update { it.copy(isLoading = false) }
-
-            currentPage = 1
-            val totalCount = chatMessageRepository.getTotalMessageCount(conversation.value.id)
-            _chatUiState.update { it.copy(hasMoreData = totalCount > PAGE_SIZE) }
-
-            isInitialLoading = false
-
-            tempChatMessageRepository.getByConversationId(conversation.value.id)
-                .takeLast(userConfigState.userConfig.value?.maxContextMessageSize ?: 15)
-                .let {
-                    chatContext.clear()
-                    chatContext.addAll(it)
-                }
-            _chatUiState.update { it.copy(initFinished = true) }
-        }
+        isInitialLoading = false
+        _chatUiState.update { it.copy(initFinished = true) }
     }
 
     // 加载更多消息的方法
@@ -556,7 +561,7 @@ abstract class BaseChatViewModel(
         _chatUiState.update { it.copy(receiveNewMessage = true) }
     }
 
-    fun clearChatHistory() {
+    fun clearChatHistory(callBack: () -> Unit = {}) {
         viewModelScope.launch(Dispatchers.IO) {
             chatMessageRepository.deleteMessagesByConversationId(conversation.value.id)
             tempChatMessageRepository.deleteByConversationId(conversation.value.id)
@@ -565,6 +570,7 @@ abstract class BaseChatViewModel(
                 _messages.value = emptyList()
                 chatContext.clear()
             }
+            callBack.invoke()
         }
     }
 

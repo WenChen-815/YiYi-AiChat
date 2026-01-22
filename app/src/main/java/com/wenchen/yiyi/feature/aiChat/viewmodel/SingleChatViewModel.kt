@@ -9,11 +9,15 @@ import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.core.state.UserState
 import com.wenchen.yiyi.core.database.entity.Conversation
 import com.wenchen.yiyi.core.database.entity.ConversationType
+import com.wenchen.yiyi.core.database.entity.ChatMessage
+import com.wenchen.yiyi.core.database.entity.MessageType
+import com.wenchen.yiyi.core.database.entity.TempChatMessage
 import com.wenchen.yiyi.core.util.business.ChatUtils
 import com.wenchen.yiyi.core.util.ui.ToastUtils
 import com.wenchen.yiyi.feature.aiChat.common.AIChatManager
 import com.wenchen.yiyi.navigation.AppNavigator
 import com.wenchen.yiyi.navigation.routes.AiChatRoutes
+import com.aventrix.jnanoid.jnanoid.NanoIdUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -94,11 +98,49 @@ class SingleChatViewModel @Inject constructor(
                             _conversation.value = conversation
                             updateCharacterDisplay()
                             loadInitialData()
+                            checkFirstMessage()
                         }
                     }
             }
         } catch (e: Exception) {
             Timber.tag("SingleChatViewModel").e(e, "解析角色JSON失败")
+        }
+    }
+
+    fun checkFirstMessage(){
+        // 检查消息列表是否为空
+        if (_messages.value.isEmpty()) {
+            Timber.tag("SingleChatViewModel").d("checkFirstMessage: ${currentAICharacter?.first_mes}")
+            currentAICharacter?.first_mes?.takeIf { it.isNotBlank() }?.let { firstMes ->
+                val firstMessage = ChatMessage(
+                    id = NanoIdUtils.randomNanoId(),
+                    content = firstMes,
+                    type = MessageType.ASSISTANT,
+                    characterId = currentAICharacter!!.id,
+                    chatUserId = userConfigState.userConfig.value?.userId ?: "",
+                    conversationId = conversation.value.id,
+                    timestamp = System.currentTimeMillis()
+                )
+                // 插入数据库并更新界面
+                viewModelScope.launch(Dispatchers.IO) {
+                    chatMessageRepository.insertMessage(firstMessage)
+                    tempChatMessageRepository.insert(
+                        TempChatMessage(
+                            id = firstMessage.id,
+                            content = firstMessage.content,
+                            type = firstMessage.type,
+                            characterId = firstMessage.characterId,
+                            chatUserId = firstMessage.chatUserId,
+                            isShow = firstMessage.isShow,
+                            conversationId = firstMessage.conversationId,
+                            timestamp = firstMessage.timestamp
+                        )
+                    )
+                    withContext(Dispatchers.Main) {
+                        addMessage(firstMessage)
+                    }
+                }
+            }
         }
     }
     private fun updateCharacterDisplay() {

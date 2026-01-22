@@ -1,6 +1,7 @@
 package com.wenchen.yiyi.feature.aiChat.view
 
 import android.graphics.Bitmap
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -23,6 +24,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -35,8 +37,6 @@ import com.wenchen.yiyi.core.ui.SettingTextFieldItem
 import com.wenchen.yiyi.core.util.ui.StatusBarUtils
 import com.wenchen.yiyi.core.util.ui.ToastUtils
 import com.wenchen.yiyi.feature.aiChat.viewmodel.CharacterEditViewModel
-import androidx.activity.compose.LocalActivity
-import com.wenchen.yiyi.core.designSystem.component.SpaceHorizontalLarge
 
 @Composable
 internal fun CharacterEditRoute(
@@ -44,11 +44,13 @@ internal fun CharacterEditRoute(
     navController: NavController
 ) {
     val context = LocalContext.current
+    // 角色卡文件导入启动器
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
         uri?.let { viewModel.importCharacterFromImage(context, it) }
     }
+
     CharacterEditScreen(
         viewModel = viewModel,
         onPickImageClick = { launcher.launch("image/*") }
@@ -61,109 +63,82 @@ private fun CharacterEditScreen(
     onPickImageClick: () -> Unit
 ) {
     val activity = LocalActivity.current
+
+    // 观察 ViewModel 中的状态流
     val isNewCharacter by viewModel.isNewCharacter.collectAsState()
-    val parsedCharacter by viewModel.parsedCharacter.collectAsState()
-    val parsedMemory by viewModel.parsedMemory.collectAsState()
-    val characterId by viewModel.characterId.collectAsState()
-    val conversationId by viewModel.conversationId.collectAsState()
+    val character by viewModel.currentCharacter.collectAsState()
+    val memory by viewModel.memory.collectAsState()
+    val memoryCount by viewModel.memoryCount.collectAsState()
+
+    // 导入扩展相关的状态
     val parsedRegexGroup by viewModel.parsedRegexGroup.collectAsState()
     val savaRegexGroupFlag by viewModel.saveRegexGroupFlag.collectAsState()
     val parsedWorldBook by viewModel.parsedWorldBook.collectAsState()
     val saveWorldBookFlag by viewModel.saveWorldBookFlag.collectAsState()
 
-    // 编辑状态
-    var name by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
-    var mesExample by remember { mutableStateOf("") }
-    var memory by remember { mutableStateOf("") }
-    var memoryCount by remember { mutableIntStateOf(0) }
-    var avatarPath by remember { mutableStateOf("") }
-    var backgroundPath by remember { mutableStateOf("") }
-    var chatWorldId by remember { mutableStateOf<List<String>>(emptyList()) }
-
-    // 状态栏
+    // 动态调整状态栏文字颜色（深浅色模式切换）
     val isDark = isSystemInDarkTheme()
     SideEffect {
         activity?.let { StatusBarUtils.setStatusBarTextColor(it, !isDark) }
     }
 
-    // 导入解析
-    LaunchedEffect(parsedCharacter) {
-        parsedCharacter?.let { charaData ->
-            name = charaData.name
-            description = charaData.description
-            mesExample = charaData.mes_example ?: ""
-            memory = parsedMemory ?: ""
-        }
-    }
-
-    // 加载已有数据
-    LaunchedEffect(characterId) {
-        if (isNewCharacter) return@LaunchedEffect
-        viewModel.loadCharacterData(conversationId, characterId) { chara, mem ->
-            name = chara?.name ?: ""
-            description = chara?.description ?: ""
-            mesExample = chara?.mes_example ?: ""
-            memory = mem?.content ?: ""
-            memoryCount = mem?.count ?: 0
-            avatarPath = chara?.avatar ?: ""
-            backgroundPath = chara?.background ?: ""
-        }
-    }
-
+    // 头像选择启动器
     val pickAvatarLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
         viewModel.handleImageResult(activity!!, result, {
             viewModel.avatarBitmap = it
             viewModel.hasNewAvatar = true
-        }, {})
+        }, { error -> ToastUtils.showToast(error) })
     }
 
+    // 背景图选择启动器
     val pickBackgroundLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
         viewModel.handleImageResult(activity!!, result, {
             viewModel.backgroundBitmap = it
             viewModel.hasNewBackground = true
-        }, {})
+        }, { error -> ToastUtils.showToast(error) })
     }
 
     CharacterEditScreenContent(
         isNewCharacter = isNewCharacter,
-        name = name,
-        onNameChange = { name = it },
-        description = description,
-        onDescriptionChange = { description = it },
-        mesExample = mesExample,
-        onMesExampleChange = { mesExample = it },
+        // UI 数据源直接来自 ViewModel 状态
+        name = character?.name ?: "",
+        onNameChange = { newName ->
+            viewModel.updateCharacter { it.copy(name = newName) }
+        },
+        description = character?.description ?: "",
+        onDescriptionChange = { newDesc ->
+            viewModel.updateCharacter { it.copy(description = newDesc) }
+        },
+        mesExample = character?.mes_example ?: "",
+        onMesExampleChange = { newEx ->
+            viewModel.updateCharacter { it.copy(mes_example = newEx) }
+        },
         memory = memory,
-        onMemoryChange = { memory = it },
+        onMemoryChange = { viewModel.updateMemory(it) },
         memoryCount = memoryCount,
         onResetCountClick = {
-            memoryCount = 0
-            ToastUtils.showToast("点击保存以生效")
+            viewModel.updateMemoryCount(0)
+            ToastUtils.showToast("次数已清零，保存后生效")
         },
         avatarBitmap = viewModel.avatarBitmap,
         backgroundBitmap = viewModel.backgroundBitmap,
-        avatarPath = avatarPath,
-        backgroundPath = backgroundPath,
+        avatarPath = character?.avatar ?: "",
+        backgroundPath = character?.background ?: "",
         onAvatarClick = { pickAvatarLauncher.launch(viewModel.createImagePickerIntent()) },
         onAvatarDeleteClick = {
-            viewModel.hasNewAvatar = false
+            viewModel.hasNewAvatar = true // 标记有变动
             viewModel.avatarBitmap = null
         },
         onBackgroundClick = { pickBackgroundLauncher.launch(viewModel.createImagePickerIntent()) },
         onBackgroundDeleteClick = {
-            viewModel.hasNewBackground = false
+            viewModel.hasNewBackground = true // 标记有变动
             viewModel.backgroundBitmap = null
         },
-        onSaveClick = {
-            viewModel.saveCharacter(
-                name, description, null, mesExample, null, null, null, null, null,
-                memory, memoryCount, "", "", "", chatWorldId
-            )
-        },
+        onSaveClick = { viewModel.saveCharacter() },
         onBackClick = { viewModel.navigateBack() },
         onPickImageClick = onPickImageClick,
         parsedRegexGroupName = parsedRegexGroup?.name,
@@ -211,268 +186,301 @@ private fun CharacterEditScreenContent(
 
     Scaffold(
         topBar = {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 36.dp, bottom = 12.dp, start = 16.dp, end = 16.dp),
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.ArrowBackIosNew,
-                    contentDescription = "返回",
-                    modifier = Modifier
-                        .clickable { onBackClick() }
-                        .size(18.dp)
-                        .align(Alignment.CenterStart)
-                )
-                Text(
-                    text = "角色配置",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.align(Alignment.Center)
-                )
-                if (isNewCharacter) {
-                    TextButton(
-                        modifier = Modifier.align(Alignment.CenterEnd),
-                        onClick = onPickImageClick
-                    ) {
-                        Text("导入角色")
+            CenterAlignedTopAppBar(
+                title = { Text("角色配置", style = MaterialTheme.typography.titleMedium) },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(Icons.Rounded.ArrowBackIosNew, contentDescription = "返回", modifier = Modifier.size(18.dp))
+                    }
+                },
+                actions = {
+                    if (isNewCharacter) {
+                        TextButton(onClick = onPickImageClick) {
+                            Text("导入角色")
+                        }
                     }
                 }
-
-            }
+            )
         },
         bottomBar = {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
+            Surface(shadowElevation = 8.dp) {
                 Button(
                     onClick = onSaveClick,
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                        .height(50.dp),
+                    shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text("保存角色", color = TextWhite)
+                    Text("保存角色", style = MaterialTheme.typography.titleMedium)
                 }
             }
         },
-        modifier = Modifier
-            .fillMaxSize()
-            .imePadding(),
+        modifier = Modifier.fillMaxSize().imePadding() // 自动处理软键盘遮挡
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
                 .verticalScroll(scrollState)
-                .padding(16.dp)
+                .padding(horizontal = 16.dp)
         ) {
+            // --- 基础信息编辑 ---
             SettingTextFieldItem(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
-                singleLine = true,
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 label = "角色名称",
                 value = name,
                 onValueChange = onNameChange,
-                placeholder = { Text("请输入角色名称") }
+                singleLine = true
             )
 
             SettingTextFieldItem(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp)
-                    .heightIn(min = 300.dp),
-                label = "角色设定",
+                modifier = Modifier.fillMaxWidth().padding(top = 12.dp).heightIn(min = 200.dp),
+                label = "角色设定 (Description)",
                 value = description,
                 onValueChange = onDescriptionChange,
-                placeholder = { Text("请输入角色设定、身份、外貌、行为规则等...") },
-                minLines = 15,
-                maxLines = 40,
+                placeholder = { Text("输入角色设定、背景和行为准则...") },
+                minLines = 8
             )
 
             SettingTextFieldItem(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp)
-                    .heightIn(max = 250.dp),
-                label = "输出示例",
+                modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                label = "对话示例 (Mes Example)",
                 value = mesExample,
                 onValueChange = onMesExampleChange,
-                placeholder = { Text("请输入输出示例...") },
-                minLines = 3,
-                maxLines = 10,
+                minLines = 4
             )
 
             SettingTextFieldItem(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp)
-                    .heightIn(max = 250.dp),
-                label = "角色记忆",
+                modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                label = "角色记忆 (Memory)",
                 value = memory,
                 onValueChange = onMemoryChange,
-                placeholder = { Text("请输入角色记忆内容...") },
-                minLines = 3,
-                maxLines = 10,
+                placeholder = { Text("此处内容会长期保留在上下文末尾...") },
+                minLines = 3
             )
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            // --- 记忆管理 ---
+            Card(
+                modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
             ) {
-                Text(text = "记忆次数: $memoryCount", style = MaterialTheme.typography.bodyMedium)
-                TextButton(onClick = onResetCountClick) {
-                    Text("重置次数")
-                }
-            }
-
-            Text(
-                text = "角色头像",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
-            )
-            Box(
-                modifier = Modifier
-                    .size(120.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(if (isSystemInDarkTheme()) DarkGray else LightGray)
-                    .clickable { onAvatarClick() },
-                contentAlignment = Alignment.Center
-            ) {
-                if (avatarBitmap != null) {
-                    Image(
-                        bitmap = avatarBitmap.asImageBitmap(),
-                        contentDescription = "角色头像",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                    IconButton(
-                        onClick = onAvatarDeleteClick,
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .size(32.dp)
-                            .offset(8.dp, (-8).dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.RemoveCircleOutline,
-                            contentDescription = "删除头像",
-                            tint = TextSecondaryLight
-                        )
-                    }
-                } else if (avatarPath.isNotEmpty()) {
-                    AsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data(avatarPath.toUri())
-                            .crossfade(true)
-                            .build(),
-                        contentDescription = "角色头像",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(imageVector = Icons.Default.Add, contentDescription = "添加头像")
-                        Text("添加头像", style = MaterialTheme.typography.bodySmall)
-                    }
-                }
-            }
-
-            Text(
-                text = "聊天背景",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
-            )
-            Box(
-                modifier = Modifier
-                    .heightIn(max = 300.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(if (isSystemInDarkTheme()) DarkGray else LightGray)
-                    .clickable { onBackgroundClick() },
-                contentAlignment = Alignment.Center
-            ) {
-                if (backgroundBitmap != null) {
-                    Image(
-                        bitmap = backgroundBitmap.asImageBitmap(),
-                        contentDescription = "背景图",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Fit
-                    )
-                    IconButton(
-                        onClick = onBackgroundDeleteClick,
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .size(32.dp)
-                            .offset(8.dp, (-8).dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.RemoveCircleOutline,
-                            contentDescription = "删除背景",
-                            tint = TextSecondaryLight
-                        )
-                    }
-                } else if (backgroundPath.isNotEmpty()) {
-                    AsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data(backgroundPath.toUri())
-                            .crossfade(true)
-                            .build(),
-                        contentDescription = "背景图",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Fit
-                    )
-                } else {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(imageVector = Icons.Default.Add, contentDescription = "添加背景")
-                        Text("添加背景", style = MaterialTheme.typography.bodySmall)
-                    }
-                }
-            }
-
-            if (parsedRegexGroupName != null) {
-                Text(
-                    text = "正则导入",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
-                )
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.padding(12.dp).fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Checkbox(
-                        checked = savaRegexGroupFlag ?: false,
-                        onCheckedChange = { onSaveRegexGroupChange(it) }
-                    )
-                    Text(
-                        text = "保存正则组: $parsedRegexGroupName",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
+                    Column {
+                        Text("当前记忆轮数", style = MaterialTheme.typography.labelMedium)
+                        Text("$memoryCount 轮", style = MaterialTheme.typography.titleMedium)
+                    }
+                    OutlinedButton(onClick = onResetCountClick) {
+                        Text("重置次数")
+                    }
                 }
+            }
+
+            // --- 媒体内容 ---
+            SectionTitle("角色头像")
+            ImagePickerBox(
+                bitmap = avatarBitmap,
+                path = avatarPath,
+                modifier = Modifier.size(120.dp),
+                onClick = onAvatarClick,
+                onDelete = onAvatarDeleteClick
+            )
+
+            SectionTitle("对话背景")
+            ImagePickerBox(
+                bitmap = backgroundBitmap,
+                path = backgroundPath,
+                modifier = Modifier.fillMaxWidth().height(160.dp),
+                onClick = onBackgroundClick,
+                onDelete = onBackgroundDeleteClick,
+                contentScale = ContentScale.FillWidth
+            )
+
+            // --- 导入扩展选项 ---
+            if (parsedRegexGroupName != null) {
+                ExtensionSaveOption(
+                    title = "保存正则组: $parsedRegexGroupName",
+                    checked = savaRegexGroupFlag ?: false,
+                    onCheckedChange = onSaveRegexGroupChange
+                )
             }
 
             if (parsedWorldBookName != null) {
-                Text(
-                    text = "世界书导入",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
+                ExtensionSaveOption(
+                    title = "保存世界书: $parsedWorldBookName",
+                    checked = saveWorldBookFlag ?: false,
+                    onCheckedChange = onSaveWorldBookChange
                 )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Checkbox(
-                        checked = saveWorldBookFlag ?: false,
-                        onCheckedChange = { onSaveWorldBookChange(it) }
-                    )
-                    Text(
-                        text = "保存世界书: $parsedWorldBookName",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
             }
 
-            Spacer(modifier = Modifier.height(128.dp))
+            Spacer(modifier = Modifier.height(40.dp))
         }
+    }
+}
+
+/**
+ * 通用的图片选择/展示组件
+ */
+@Composable
+private fun ImagePickerBox(
+    bitmap: Bitmap?,
+    path: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+    onDelete: () -> Unit,
+    contentScale: ContentScale = ContentScale.Crop
+) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(if (isSystemInDarkTheme()) DarkGray else LightGray)
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        when {
+            // 优先显示新选择的位图
+            bitmap != null -> {
+                Image(
+                    bitmap = bitmap.asImageBitmap(),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = contentScale
+                )
+                DeleteIconButton(onDelete)
+            }
+            // 其次显示已有路径的图片
+            path.isNotEmpty() -> {
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(path.toUri())
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = contentScale
+                )
+                // 已有图片也可以通过点击重新选择来覆盖，不提供直接删除以防逻辑混乱，建议覆盖
+            }
+            // 最后显示占位符
+            else -> {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(Icons.Default.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Text("点击上传", style = MaterialTheme.typography.labelSmall)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BoxScope.DeleteIconButton(onClick: () -> Unit) {
+    IconButton(
+        onClick = onClick,
+        modifier = Modifier
+            .align(Alignment.TopEnd)
+            .padding(4.dp)
+            .size(24.dp)
+            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.7f), RoundedCornerShape(12.dp))
+    ) {
+        Icon(Icons.Rounded.RemoveCircleOutline, contentDescription = "移除", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+    }
+}
+
+@Composable
+private fun SectionTitle(title: String) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(top = 20.dp, bottom = 8.dp)
+    )
+}
+
+@Composable
+private fun ExtensionSaveOption(title: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Checkbox(checked = checked, onCheckedChange = onCheckedChange)
+        Text(text = title, style = MaterialTheme.typography.bodyMedium)
+    }
+}
+
+@Preview(showBackground = true, name = "新建角色预览")
+@Composable
+private fun CharacterEditNewPreview() {
+    AppTheme {
+        CharacterEditScreenContent(
+            isNewCharacter = true,
+            name = "",
+            onNameChange = {},
+            description = "",
+            onDescriptionChange = {},
+            mesExample = "",
+            onMesExampleChange = {},
+            memory = "",
+            onMemoryChange = {},
+            memoryCount = 0,
+            onResetCountClick = {},
+            avatarBitmap = null,
+            backgroundBitmap = null,
+            avatarPath = "",
+            backgroundPath = "",
+            onAvatarClick = {},
+            onAvatarDeleteClick = {},
+            onBackgroundClick = {},
+            onBackgroundDeleteClick = {},
+            onSaveClick = {},
+            onBackClick = {},
+            onPickImageClick = {},
+            parsedRegexGroupName = null,
+            savaRegexGroupFlag = false,
+            onSaveRegexGroupChange = {},
+            parsedWorldBookName = null,
+            saveWorldBookFlag = false,
+            onSaveWorldBookChange = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "编辑已有角色预览")
+@Composable
+private fun CharacterEditExistPreview() {
+    AppTheme() {
+        CharacterEditScreenContent(
+            isNewCharacter = false,
+            name = "爱莉丝",
+            onNameChange = {},
+            description = "性格温柔，是一名来自异世界的魔法师...",
+            onDescriptionChange = {},
+            mesExample = "爱莉丝：你好，旅行者。今天有什么我可以帮你的吗？",
+            onMesExampleChange = {},
+            memory = "我们昨天在森林里遇到了一只受伤的小猫。",
+            onMemoryChange = {},
+            memoryCount = 12,
+            onResetCountClick = {},
+            avatarBitmap = null,
+            backgroundBitmap = null,
+            avatarPath = "dummy_path",
+            backgroundPath = "dummy_bg_path",
+            onAvatarClick = {},
+            onAvatarDeleteClick = {},
+            onBackgroundClick = {},
+            onBackgroundDeleteClick = {},
+            onSaveClick = {},
+            onBackClick = {},
+            onPickImageClick = {},
+            parsedRegexGroupName = "角色专用正则",
+            savaRegexGroupFlag = true,
+            onSaveRegexGroupChange = {},
+            parsedWorldBookName = "魔法世界设定集",
+            saveWorldBookFlag = true,
+            onSaveWorldBookChange = {}
+        )
     }
 }
