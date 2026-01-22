@@ -1,4 +1,4 @@
-package com.wenchen.yiyi.core.designSystem.component
+package com.wenchen.yiyi.core.ui
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
@@ -9,13 +9,11 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -60,15 +58,15 @@ import com.wenchen.yiyi.core.database.entity.ChatMessage
 import com.wenchen.yiyi.core.database.entity.ConversationType
 import com.wenchen.yiyi.core.database.entity.MessageContentType
 import com.wenchen.yiyi.core.database.entity.MessageType
-import com.wenchen.yiyi.core.designSystem.theme.BlackBg
-import com.wenchen.yiyi.core.designSystem.theme.BlackText
-import com.wenchen.yiyi.core.designSystem.theme.Gold
-import com.wenchen.yiyi.core.designSystem.theme.HalfTransparentBlack
-import com.wenchen.yiyi.core.designSystem.theme.IconBg
-import com.wenchen.yiyi.core.designSystem.theme.WhiteText
+import com.wenchen.yiyi.core.designSystem.theme.BgGreyDark
+import com.wenchen.yiyi.core.designSystem.theme.TextWhite
 import com.wenchen.yiyi.core.util.business.ChatUtils
 import com.wenchen.yiyi.feature.aiChat.viewmodel.BaseChatViewModel
 import kotlinx.coroutines.launch
+import com.wenchen.yiyi.core.designSystem.component.SpaceHorizontalSmall
+import com.wenchen.yiyi.core.designSystem.theme.MaskLight
+import com.wenchen.yiyi.core.designSystem.theme.TextPrimaryLight
+import com.wenchen.yiyi.core.designSystem.theme.TextSecondaryDark
 
 @Composable
 fun DisplayChatMessageItem(
@@ -237,9 +235,9 @@ fun ChatMessageItem(
                 modifier = Modifier
                     .background(
                         when (messageType) {
-                            MessageType.USER -> if (contentType == MessageContentType.TEXT) Gold else Color.Transparent
-                            MessageType.ASSISTANT -> if (contentType == MessageContentType.TEXT) BlackBg else Color.Transparent
-                            MessageType.SYSTEM -> HalfTransparentBlack.copy(0.55f)
+                            MessageType.USER -> if (contentType == MessageContentType.TEXT) MaterialTheme.colorScheme.primary else Color.Transparent
+                            MessageType.ASSISTANT -> if (contentType == MessageContentType.TEXT) BgGreyDark else Color.Transparent
+                            MessageType.SYSTEM -> MaskLight
                         }
                     )
                     .padding(if (contentType == MessageContentType.TEXT) 8.dp else 0.dp)
@@ -259,13 +257,13 @@ fun ChatMessageItem(
                 when (contentType) {
                     MessageContentType.TEXT -> {
                         val color = when (messageType) {
-                            MessageType.USER -> BlackText
-                            MessageType.ASSISTANT, MessageType.SYSTEM -> WhiteText
+                            MessageType.USER -> TextPrimaryLight
+                            MessageType.ASSISTANT, MessageType.SYSTEM -> TextWhite
                         }
                         val specialTextColor = when (messageType) {
                             MessageType.USER -> Color.DarkGray
                             MessageType.ASSISTANT -> Color.LightGray
-                            MessageType.SYSTEM -> WhiteText
+                            MessageType.SYSTEM -> TextWhite
                         }
                         if (messageType == MessageType.ASSISTANT) {
                             val regexReplace = viewModel.regexReplace(content)
@@ -457,7 +455,7 @@ fun ChatMessageItem(
                     Icon(
                         painterResource(id = R.drawable.edit),
                         contentDescription = "编辑",
-                        tint = WhiteText,
+                        tint = TextSecondaryDark,
                         modifier = Modifier
                             .clip(RoundedCornerShape(10.dp))
                             .size(30.dp)
@@ -466,16 +464,16 @@ fun ChatMessageItem(
                                 isEditing.value = true
                                 isMenuVisible = false
                             }
-                            .background(IconBg)
+                            .background(BgGreyDark)
 //                            .hazeEffect(chatWindowHazeState)
                                 .padding(4.dp)
                         )
-                        Spacer(modifier = Modifier.width(10.dp))
+                        SpaceHorizontalSmall()
                         // 删除按钮
                         Icon(
                             painterResource(id = R.drawable.delete),
                             contentDescription = "删除",
-                            tint = WhiteText,
+                            tint = TextWhite,
                             modifier = Modifier
                                 .clip(RoundedCornerShape(10.dp))
                                 .size(30.dp)
@@ -484,7 +482,7 @@ fun ChatMessageItem(
                                     viewModel.deleteOneMessage(messageId)
                                     isMenuVisible = false
                                 }
-                                .background(IconBg)
+                                .background(BgGreyDark)
 //                            .hazeEffect(chatWindowHazeState)
                                 .padding(4.dp)
 

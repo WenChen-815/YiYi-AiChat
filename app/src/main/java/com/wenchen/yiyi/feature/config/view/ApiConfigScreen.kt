@@ -24,9 +24,10 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.wenchen.yiyi.core.designSystem.component.SpaceVerticalSmall
 import com.wenchen.yiyi.core.designSystem.theme.*
-import com.wenchen.yiyi.core.designSystem.component.SettingTextFieldItem
-import com.wenchen.yiyi.core.designSystem.component.SwitchWithText
+import com.wenchen.yiyi.core.ui.SettingTextFieldItem
+import com.wenchen.yiyi.core.ui.SwitchWithText
 import com.wenchen.yiyi.core.model.config.ApiConfig
 import com.wenchen.yiyi.core.model.network.Model
 import com.wenchen.yiyi.feature.config.viewmodel.ApiConfigViewModel
@@ -127,12 +128,12 @@ fun ApiConfigScreen(
                     .padding(16.dp)
                     .height(50.dp)
                     .background(
-                        Brush.horizontalGradient(listOf(Pink, Gold)),
+                        Brush.horizontalGradient(PrimaryGradient),
                         RoundedCornerShape(25.dp)
                     ),
                 colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.ui.graphics.Color.Transparent)
             ) {
-                Text("保存配置", color = WhiteText)
+                Text("保存配置", color = TextWhite)
             }
         }
     ) { padding ->
@@ -273,7 +274,7 @@ fun ApiConfigScreen(
             )
 
             if (imgRecognitionEnabled) {
-                Spacer(Modifier.height(8.dp))
+                SpaceVerticalSmall()
                 // Similar UI for Image API
                 var expandedImg by remember { mutableStateOf(false) }
                 Box(
@@ -428,17 +429,17 @@ fun ModelSelector(
                 .weight(1f)
                 .clickable { onSelectClick() }
                 .padding(16.dp)) {
-            Text(text = selectedModel.ifEmpty { "请选择模型" }, color = WhiteText)
+            Text(text = selectedModel.ifEmpty { "请选择模型" }, color = TextWhite)
         }
         Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.padding(12.dp)) {
             if (!isLoading) {
                 Text(
                     text = "加载",
                     modifier = Modifier.clickable { onLoadClick() },
-                    color = WhiteText
+                    color = TextWhite
                 )
             } else {
-                CircularProgressIndicator(modifier = Modifier.size(24.dp), color = WhiteText)
+                CircularProgressIndicator(modifier = Modifier.size(24.dp), color = TextWhite)
             }
         }
     }

@@ -13,14 +13,20 @@ val PrimaryLight = Color(0xFFFFBF4D)
  * 场景：暗黑主题下的菜单栏、主要按钮、突出文字
  */
 val PrimaryDark = Color(0xFFFFC371)
-val Gold = Color(0xFFFFC371)
 
 /**
  * 品牌次色（普通模式）：#FF6F9B
  * 场景：次要文字
  */
 val SecondaryColor = Color(0xFFFF6F9B)
-val Pink = Color(0xFFFF6F9B)
+
+/**
+ * 主色渐变
+ */
+val PrimaryGradient = listOf(
+    PrimaryDark,
+    SecondaryColor,
+)
 
 /**
  * 危险色/红色：#FF2B2B
@@ -121,6 +127,13 @@ val TextTertiaryDark = Color(0xFF8D8D8D) // 深色模式下的三级文字
  * 适用场景：深色模式下的次要辅助信息、禁用状态文字
  */
 val TextQuaternaryDark = Color(0xFF5E5E5E) // 深色模式下的四级文字
+
+// 字体颜色 - 通用
+/**
+ * 通用灰色字体颜色：#9F9F9F
+ * 适用场景：普通文本、辅助信息、禁用状态文字
+ */
+val TextGray = Color(0xFF9F9F9F)
 
 // 背景色 - 浅色模式
 /**
@@ -230,18 +243,23 @@ val BorderLight = Color(0xFFEEEEEE) // 浅色模式边框
  * 适用场景：深色模式下的分割线、边框、描边等
  */
 val BorderDark = Color(0xFF242424) // 深色模式边框
-val IconBg = Color(0xFF222222)
 
-
-val BlackBg = Color(0xFF111111)
-val GrayBg = Color(0xFF1D1D1F)
-val WhiteBg = Color(0xFFFDFDFD)
-val BlackText = Color(0xFF080808)
-val WhiteText = Color(0xFFFEFEFE)
-val GrayText = Color(0xFF9F9F9F)
-val GrayBorder = Color(0xFF49494F)
-val HalfTransparentBlack = Color(0x70121214)
-val HalfTransparentWhite = Color(0x70F5F5F5)
-val LightGold = Color(0xFFFFE4B9)
+// 其他 - 通用
+/**
+ * 通用浅色灰色：#F4F4F4
+ * 适用场景：浅色模式下的输入框背景
+ */
 val LightGray = Color(0xFFF4F4F4)
+/**
+ * 通用深色灰色：#1F1F1F
+ * 适用场景：深色模式下的输入框背景
+ */
 val DarkGray = Color(0xFF1F1F1F)
+
+/**
+ * 通用半透明白色：#F5F5F5
+ * 适用场景：聊天界面输入框特殊适配
+ */
+val HalfTransparentWhite = Color(0x70F5F5F5)
+
+val LightGold = Color(0xFFFFE4B9)

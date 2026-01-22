@@ -15,11 +15,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.wenchen.yiyi.core.designSystem.theme.BlackBg
+import com.wenchen.yiyi.core.designSystem.component.SpaceVerticalLarge
 import com.wenchen.yiyi.core.designSystem.theme.DarkGray
-import com.wenchen.yiyi.core.designSystem.theme.GrayText
+import com.wenchen.yiyi.core.designSystem.theme.TextGray
 import com.wenchen.yiyi.core.designSystem.theme.LightGray
-import com.wenchen.yiyi.core.designSystem.theme.WhiteBg
 import com.wenchen.yiyi.feature.config.viewmodel.SettingsViewModel
 import com.wenchen.yiyi.navigation.routes.ConfigRoutes
 
@@ -50,9 +49,7 @@ fun SettingsScreen(
                 }
             )
         },
-        modifier = Modifier
-            .fillMaxSize()
-            .background(if (isSystemInDarkTheme()) BlackBg else WhiteBg)
+        modifier = Modifier.fillMaxSize()
     ) { padding ->
         Column(
             modifier = Modifier
@@ -66,7 +63,8 @@ fun SettingsScreen(
                 onClick = { viewModel.navigate(ConfigRoutes.ChatConfig) }
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            SpaceVerticalLarge()
+
 
             SettingNavigationCard(
                 title = "API 配置",
@@ -74,7 +72,7 @@ fun SettingsScreen(
                 onClick = { viewModel.navigate(ConfigRoutes.ApiConfig) }
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            SpaceVerticalLarge()
 
             SettingNavigationCard(
                 title = "正则组",
@@ -108,7 +106,7 @@ fun SettingNavigationCard(
                 Text(
                     text = description,
                     style = MaterialTheme.typography.bodySmall,
-                    color = GrayText
+                    color = TextGray
                 )
             }
             Icon(Icons.Default.ChevronRight, contentDescription = null)

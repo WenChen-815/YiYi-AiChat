@@ -36,9 +36,8 @@ import androidx.compose.ui.window.Popup
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.wenchen.yiyi.core.designSystem.theme.AppTheme
-import com.wenchen.yiyi.core.designSystem.theme.Gold
-import com.wenchen.yiyi.core.designSystem.theme.GrayText
-import com.wenchen.yiyi.core.designSystem.theme.Pink
+import com.wenchen.yiyi.core.designSystem.theme.TextGray
+import com.wenchen.yiyi.core.designSystem.theme.PrimaryGradient
 import com.wenchen.yiyi.core.util.ui.StatusBarUtils
 import com.wenchen.yiyi.feature.main.viewmodel.MainViewModel
 import com.wenchen.yiyi.navigation.routes.AiChatRoutes
@@ -160,7 +159,7 @@ private fun MainScreenContent(
                             modifier = Modifier
                                 .size(48.dp)
                                 .background(
-                                    brush = Brush.horizontalGradient(listOf(Pink, Gold)),
+                                    brush = Brush.horizontalGradient(colors = PrimaryGradient),
                                     shape = CircleShape
                                 )
                         ) {
@@ -245,14 +244,14 @@ private fun RowScope.NavigationTabItem(
         Icon(
             imageVector = if (selected) selectedIcon else icon,
             contentDescription = label,
-            tint = if (selected) MaterialTheme.colorScheme.primary else GrayText,
+            tint = if (selected) MaterialTheme.colorScheme.primary else TextGray,
             modifier = Modifier.size(26.dp)
         )
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,
             fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-            color = if (selected) MaterialTheme.colorScheme.primary else GrayText
+            color = if (selected) MaterialTheme.colorScheme.primary else TextGray
         )
     }
 }

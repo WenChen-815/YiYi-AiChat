@@ -23,7 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.wenchen.yiyi.Application
-import com.wenchen.yiyi.core.designSystem.component.SettingTextFieldItem
+import com.wenchen.yiyi.core.ui.SettingTextFieldItem
 import com.wenchen.yiyi.core.model.network.Model
 
 @Composable
@@ -201,7 +201,7 @@ fun ShowMemoryDialog(
                     )
                     Text(
                         text = "重置次数",
-                        style = MaterialTheme.typography.bodyMedium.copy(com.wenchen.yiyi.core.designSystem.theme.Gold),
+                        style = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.primary),
                         modifier = Modifier
                             .padding(5.dp)
                             .clickable {

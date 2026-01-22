@@ -8,7 +8,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import com.hjq.permissions.permission.PermissionLists
 import com.wenchen.yiyi.core.designSystem.theme.AppTheme
-import com.wenchen.yiyi.core.designSystem.component.UpdateAnnouncementDialog
+import com.wenchen.yiyi.core.ui.UpdateAnnouncementDialog
 import com.wenchen.yiyi.core.log.FloatingLogcatView
 import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.core.util.storage.MMKVUtils

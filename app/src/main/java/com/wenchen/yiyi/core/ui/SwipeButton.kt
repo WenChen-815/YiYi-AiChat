@@ -1,4 +1,4 @@
-package com.wenchen.yiyi.core.designSystem.component
+package com.wenchen.yiyi.core.ui
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi

@@ -29,7 +29,7 @@ import com.wenchen.yiyi.core.database.entity.Conversation
 import com.wenchen.yiyi.core.database.entity.ConversationType
 import com.wenchen.yiyi.core.database.entity.AICharacter
 import com.wenchen.yiyi.core.designSystem.theme.*
-import com.wenchen.yiyi.core.designSystem.component.YiYiChatDrawerItem
+import com.wenchen.yiyi.core.ui.YiYiChatDrawerItem
 import com.wenchen.yiyi.feature.aiChat.viewmodel.BaseChatViewModel
 import com.wenchen.yiyi.navigation.routes.ConfigRoutes
 import dev.chrisbanes.haze.HazeState
@@ -46,7 +46,7 @@ fun NavigationDrawerContent(
     onGotoConversationEdit: () -> Unit,
     onDeleteClick: (AICharacter) -> Unit = {},
     onDeleteGroupClick: (Conversation) -> Unit = {},
-    themeBgColor: Color = HalfTransparentBlack,
+    themeBgColor: Color = MaskLight,
     hazeState: HazeState,
 ) {
     val density = LocalDensity.current.density
@@ -58,7 +58,6 @@ fun NavigationDrawerContent(
         ModalDrawerSheet(
             // 覆盖默认的窗口内边距，允许内容延伸到状态栏
             windowInsets = WindowInsets(0, 0, 0, 0),
-            drawerContentColor = if (isSystemInDarkTheme()) WhiteText else BlackText,
             drawerContainerColor = Color.Transparent,
             modifier = Modifier
                 .clip(RoundedCornerShape(12.dp))
@@ -75,7 +74,7 @@ fun NavigationDrawerContent(
         ) {
             Text(
                 text = "对话设定",
-                style = MaterialTheme.typography.titleMedium.copy(WhiteText),
+                style = MaterialTheme.typography.titleMedium.copy(color = TextWhite),
                 modifier = Modifier.padding(12.dp, 56.dp, 12.dp, 8.dp)
             )
             Column(
@@ -83,7 +82,7 @@ fun NavigationDrawerContent(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(WhiteBg.copy(0.1f)),
+                    .background(BgWhiteLight.copy(0.1f)),
                 verticalArrangement = Arrangement.Bottom
             ) {
                 YiYiChatDrawerItem(
@@ -120,7 +119,7 @@ fun NavigationDrawerContent(
 
             Text(
                 text = "全局设置",
-                style = MaterialTheme.typography.titleMedium.copy(WhiteText),
+                style = MaterialTheme.typography.titleMedium.copy(color = TextWhite),
                 modifier = Modifier.padding(12.dp, 12.dp, 12.dp, 8.dp)
             )
             Column(
@@ -128,7 +127,7 @@ fun NavigationDrawerContent(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(WhiteBg.copy(0.1f)),
+                    .background(BgWhiteLight.copy(0.1f)),
                 verticalArrangement = Arrangement.Bottom
             ) {
                 YiYiChatDrawerItem(
@@ -144,7 +143,7 @@ fun NavigationDrawerContent(
 
             Text(
                 text = "对话设置",
-                style = MaterialTheme.typography.titleMedium.copy(WhiteText),
+                style = MaterialTheme.typography.titleMedium.copy(color = TextWhite),
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
             )
             Column(
@@ -152,7 +151,7 @@ fun NavigationDrawerContent(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(WhiteBg.copy(0.1f)),
+                    .background(BgWhiteLight.copy(0.1f)),
                 verticalArrangement = Arrangement.Bottom
             ) {
                 if (conversation.type == ConversationType.SINGLE) {
@@ -179,7 +178,7 @@ fun NavigationDrawerContent(
 
             Text(
                 text = "更多",
-                style = MaterialTheme.typography.titleMedium.copy(WhiteText),
+                style = MaterialTheme.typography.titleMedium.copy(color = TextWhite),
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
             )
             Column(
@@ -187,7 +186,7 @@ fun NavigationDrawerContent(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(WhiteBg.copy(0.1f)),
+                    .background(BgWhiteLight.copy(0.1f)),
                 verticalArrangement = Arrangement.Bottom
             ) {
                 YiYiChatDrawerItem(

@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.wenchen.yiyi.core.designSystem.theme.*
 import com.wenchen.yiyi.core.database.entity.YiYiRegexGroup
-import com.wenchen.yiyi.core.designSystem.component.SettingTextFieldItem
+import com.wenchen.yiyi.core.ui.SettingTextFieldItem
 import com.wenchen.yiyi.feature.config.viewmodel.RegexConfigViewModel
 
 @Composable
@@ -69,15 +69,13 @@ fun RegexConfigScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { showAddDialog = true },
-                containerColor = Pink,
-                contentColor = WhiteText
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = TextWhite
             ) {
                 Icon(Icons.Default.Add, contentDescription = "新建分组")
             }
         },
-        modifier = Modifier
-            .fillMaxSize()
-            .background(if (isSystemInDarkTheme()) BlackBg else WhiteBg)
+        modifier = Modifier.fillMaxSize()
     ) { padding ->
         LazyColumn(
             modifier = Modifier
@@ -154,13 +152,13 @@ fun RegexGroupItem(
                 Text(
                     text = group.name ?: "未命名分组",
                     style = MaterialTheme.typography.titleMedium,
-                    color = if (isSystemInDarkTheme()) WhiteText else BlackText
+                    color = if (isSystemInDarkTheme()) TextPrimaryDark else TextPrimaryLight
                 )
                 if (!group.description.isNullOrBlank()) {
                     Text(
                         text = group.description,
                         style = MaterialTheme.typography.bodySmall,
-                        color = GrayText,
+                        color = TextGray,
                         modifier = Modifier.padding(top = 4.dp)
                     )
                 }

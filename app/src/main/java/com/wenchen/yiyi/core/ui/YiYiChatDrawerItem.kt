@@ -1,4 +1,4 @@
-package com.wenchen.yiyi.core.designSystem.component
+package com.wenchen.yiyi.core.ui
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.defaultMinSize
@@ -14,7 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
-import com.wenchen.yiyi.core.designSystem.theme.WhiteText
+import com.wenchen.yiyi.core.designSystem.theme.TextWhite
 
 @Composable
 fun YiYiChatDrawerItem(
@@ -33,7 +33,7 @@ fun YiYiChatDrawerItem(
         val (labelRef, descriptionRef, iconRef) = createRefs()
         Text(
             text = label,
-            style = MaterialTheme.typography.bodyLarge.copy(WhiteText),
+            style = MaterialTheme.typography.bodyLarge.copy(TextWhite),
             modifier = Modifier.constrainAs(labelRef) {
                 top.linkTo(parent.top)
                 bottom.linkTo(parent.bottom)
@@ -43,7 +43,7 @@ fun YiYiChatDrawerItem(
         Icon(
             Icons.AutoMirrored.Filled.KeyboardArrowRight,
             contentDescription = null,
-            tint = WhiteText,
+            tint = TextWhite,
             modifier = Modifier.constrainAs(iconRef) {
                 top.linkTo(parent.top)
                 bottom.linkTo(parent.bottom)
@@ -53,7 +53,7 @@ fun YiYiChatDrawerItem(
         if (description != null) {
             Text(
                 text = description,
-                style = MaterialTheme.typography.bodyMedium.copy(WhiteText.copy(0.66f)),
+                style = MaterialTheme.typography.bodyMedium.copy(TextWhite.copy(0.66f)),
                 modifier = Modifier.constrainAs(descriptionRef) {
                     top.linkTo(parent.top)
                     bottom.linkTo(parent.bottom)
@@ -75,7 +75,7 @@ fun YiYiChatDrawerSwitchItem(
         val (labelRef, descriptionRef, switchRef) = createRefs()
         Text(
             text = label,
-            style = MaterialTheme.typography.bodyLarge.copy(WhiteText),
+            style = MaterialTheme.typography.bodyLarge.copy(TextWhite),
             modifier = Modifier.constrainAs(labelRef) {
                 top.linkTo(parent.top)
                 bottom.linkTo(parent.bottom)

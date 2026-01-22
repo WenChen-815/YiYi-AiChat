@@ -31,14 +31,16 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import com.wenchen.yiyi.core.designSystem.theme.Gold
-import com.wenchen.yiyi.core.designSystem.theme.Pink
-import com.wenchen.yiyi.core.designSystem.theme.WhiteText
 import com.wenchen.yiyi.core.database.entity.YiYiWorldBook
 import com.wenchen.yiyi.core.database.entity.YiYiWorldBookEntry
 import com.wenchen.yiyi.core.designSystem.theme.AppTheme
+import com.wenchen.yiyi.core.designSystem.theme.PrimaryGradient
 import com.wenchen.yiyi.core.util.ui.StatusBarUtils
 import com.wenchen.yiyi.feature.worldBook.viewmodel.WorldBookEditViewModel
+import com.wenchen.yiyi.core.designSystem.component.SpaceHorizontalLarge
+import com.wenchen.yiyi.core.designSystem.component.SpaceHorizontalSmall
+import com.wenchen.yiyi.core.designSystem.component.SpaceHorizontalXSmall
+import com.wenchen.yiyi.core.designSystem.theme.TextWhite
 
 @Composable
 internal fun WorldBookEditRoute(
@@ -157,14 +159,14 @@ private fun WorldBookEditScreen(
                             .fillMaxSize()
                             .background(
                                 brush = Brush.horizontalGradient(
-                                    colors = listOf(Pink, Gold)
+                                    colors = PrimaryGradient
                                 )
                             ),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             "保存",
-                            color = WhiteText,
+                            color = TextWhite,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -204,7 +206,7 @@ private fun WorldBookEditScreen(
                             color = Color.Red,
                             style = MaterialTheme.typography.bodyLarge
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
+                        SpaceHorizontalSmall()
                         TextField(
                             value = name,
                             onValueChange = { name = it },
@@ -234,7 +236,7 @@ private fun WorldBookEditScreen(
                             color = Color.Red,
                             style = MaterialTheme.typography.bodyLarge
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
+                        SpaceHorizontalSmall()
                         TextField(
                             value = description,
                             onValueChange = { description = it },
@@ -352,7 +354,7 @@ fun WorldBookEntryItem(
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Medium
                 )
-                Spacer(modifier = Modifier.width(4.dp))
+                SpaceHorizontalXSmall()
                 Text(
                     text = if (entry.constant) "常驻" else "关键词",
                     style = MaterialTheme.typography.labelSmall,
@@ -367,7 +369,7 @@ fun WorldBookEntryItem(
                 Icon(Icons.Outlined.Edit, "编辑", modifier = Modifier.size(16.dp), tint = Color.Gray)
             }
 
-            Spacer(modifier = Modifier.width(16.dp))
+            SpaceHorizontalLarge()
 
             Switch(
                 checked = entry.enabled,
@@ -379,7 +381,7 @@ fun WorldBookEntryItem(
                 )
             )
 
-            Spacer(modifier = Modifier.width(16.dp))
+            SpaceHorizontalLarge()
 
             Box(
                 modifier = Modifier

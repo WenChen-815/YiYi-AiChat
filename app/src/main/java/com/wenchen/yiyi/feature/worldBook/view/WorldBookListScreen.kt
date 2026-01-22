@@ -18,9 +18,10 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import com.wenchen.yiyi.core.designSystem.theme.BlackBg
-import com.wenchen.yiyi.core.designSystem.theme.WhiteBg
 import com.wenchen.yiyi.core.database.entity.YiYiWorldBook
+import com.wenchen.yiyi.core.designSystem.component.SpaceVerticalXSmall
+import com.wenchen.yiyi.core.designSystem.theme.DarkGray
+import com.wenchen.yiyi.core.designSystem.theme.LightGray
 import com.wenchen.yiyi.feature.worldBook.viewmodel.WorldBookListViewModel
 import com.wenchen.yiyi.navigation.routes.WorldBookRoutes
 
@@ -100,7 +101,7 @@ fun WorldBookItem(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
-            .background(if (isSystemInDarkTheme()) BlackBg else WhiteBg)
+            .background(if (isSystemInDarkTheme()) DarkGray else LightGray.copy(alpha = 0.5f))
             .clickable { onItemClick() }
             .padding(16.dp),
     ) {
@@ -115,7 +116,7 @@ fun WorldBookItem(
                 overflow = TextOverflow.Ellipsis,
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
+            SpaceVerticalXSmall()
 
             Text(
                 text = worldBook.description ?: "无描述",

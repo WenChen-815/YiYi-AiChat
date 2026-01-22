@@ -1,17 +1,15 @@
-package com.wenchen.yiyi.core.designSystem.component
+package com.wenchen.yiyi.core.ui
 
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.width
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import com.wenchen.yiyi.core.designSystem.theme.Gold
-import com.wenchen.yiyi.core.designSystem.theme.WhiteText
+import com.wenchen.yiyi.core.designSystem.theme.TextWhite
+import com.wenchen.yiyi.core.designSystem.component.SpaceHorizontalSmall
 
 @Composable
 fun SwitchWithText(
@@ -25,13 +23,13 @@ fun SwitchWithText(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(text = text)
-        Spacer(modifier = Modifier.width(8.dp))
+        SpaceHorizontalSmall()
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
-                checkedThumbColor = WhiteText,
-                checkedTrackColor = Gold
+                checkedThumbColor = TextWhite,
+                checkedTrackColor = MaterialTheme.colorScheme.primary
             )
         )
     }

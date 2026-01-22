@@ -37,11 +37,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
-import com.wenchen.yiyi.core.designSystem.component.DisplayChatMessageItem
-import com.wenchen.yiyi.core.designSystem.component.BlinkingReplyIndicator
-import com.wenchen.yiyi.core.designSystem.theme.BlackBg
-import com.wenchen.yiyi.core.designSystem.theme.HalfTransparentBlack
-import com.wenchen.yiyi.core.designSystem.theme.WhiteBg
+import com.wenchen.yiyi.core.ui.DisplayChatMessageItem
+import com.wenchen.yiyi.core.ui.BlinkingReplyIndicator
 import com.wenchen.yiyi.core.util.ui.ThemeColorExtractor
 import com.wenchen.yiyi.core.util.ui.ToastUtils
 import com.wenchen.yiyi.feature.aiChat.viewmodel.SingleChatViewModel
@@ -56,6 +53,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import kotlin.collections.map
+import com.wenchen.yiyi.core.designSystem.component.SpaceVerticalLarge
+import com.wenchen.yiyi.core.designSystem.theme.BgGreyDark
+import com.wenchen.yiyi.core.designSystem.theme.MaskLight
 
 @Composable
 internal fun SingleChatRoute(
@@ -104,7 +104,7 @@ private fun SingleChatScreenContent(
         )
     }
     var bgBitmap by remember { mutableStateOf<Bitmap?>(null) }
-    var colors by remember { mutableStateOf(listOf(BlackBg)) }
+    var colors by remember { mutableStateOf(listOf(BgGreyDark)) }
     // 异步加载背景图片
     LaunchedEffect(chatUiState.currentCharacter?.background) {
         val background = chatUiState.currentCharacter?.background
@@ -175,7 +175,7 @@ private fun SingleChatScreenContent(
                 )
             },
             modifier = Modifier
-                .background(BlackBg)
+                .background(BgGreyDark)
                 .hazeSource(chatWindowHazeState),
         ) {
             // 确保聊天界面使用LTR布局方向
@@ -199,7 +199,7 @@ private fun SingleChatScreenContent(
                                     Brush.verticalGradient(
                                         colors =
                                             listOf(
-                                                HalfTransparentBlack.copy(0.65f),
+                                                MaskLight,
                                                 Color.Transparent,
                                                 Color.Transparent,
                                                 Color.Transparent,
@@ -249,7 +249,6 @@ private fun SingleChatScreenContent(
                             launcher.launch(intent)
                         },
                         modifier = Modifier.fillMaxSize(),
-                        themeBgColor = colors[0],
                         chatWindowHazeState = chatWindowHazeState
                     )
                 }
@@ -305,7 +304,6 @@ fun ChatScreen(
     onOpenDrawer: () -> Unit,
     onPickImage: () -> Unit,
     modifier: Modifier = Modifier,
-    themeBgColor: Color = if (isSystemInDarkTheme()) BlackBg else WhiteBg,
     chatWindowHazeState: HazeState,
 ) {
     val chatUiState by viewModel.chatUiState.collectAsState()
@@ -426,7 +424,7 @@ fun ChatScreen(
                             }
                         }
                     }
-                    Spacer(Modifier.height(16.dp))
+                    SpaceVerticalLarge()
                     if (chatUiState.isAiReplying) {
                         Row(
                             modifier = Modifier
@@ -463,7 +461,6 @@ fun ChatScreen(
                     isAiReplying = chatUiState.isAiReplying,
                     isSendSystemMessage = isSendSystemMessage,
                     onSendSysMsgClick = { isSendSystemMessage = !isSendSystemMessage },
-                    themeBgColor = themeBgColor,
                 )
             }
         },

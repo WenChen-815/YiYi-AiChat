@@ -40,7 +40,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.unit.dp
 import com.wenchen.yiyi.core.database.entity.ConversationType
-import com.wenchen.yiyi.core.designSystem.component.YiYiTextField
+import com.wenchen.yiyi.core.ui.YiYiTextField
 import com.wenchen.yiyi.core.designSystem.theme.*
 import com.wenchen.yiyi.feature.aiChat.viewmodel.BaseChatViewModel
 
@@ -57,7 +57,6 @@ fun ChatInputArea(
     onSendSysMsgClick: () -> Unit,
     isSendSystemMessage: Boolean,
     isAiReplying: Boolean,
-    themeBgColor: Color = if (isSystemInDarkTheme()) BlackBg else WhiteBg,
 ) {
     val chatUiState by viewModel.chatUiState.collectAsState()
     val conversation by viewModel.conversation.collectAsState()
@@ -93,7 +92,7 @@ fun ChatInputArea(
             ) {
                 Text(
                     text = "→| 继续",
-                    style = MaterialTheme.typography.labelLarge.copy(color = WhiteText)
+                    style = MaterialTheme.typography.labelLarge.copy(color = TextWhite)
                 )
             }
             // 重新生成
@@ -113,7 +112,7 @@ fun ChatInputArea(
             ) {
                 Text(
                     text = "重新生成",
-                    style = MaterialTheme.typography.labelLarge.copy(color = WhiteText)
+                    style = MaterialTheme.typography.labelLarge.copy(color = TextWhite)
                 )
             }
             // 系统消息切换按钮
@@ -146,7 +145,7 @@ fun ChatInputArea(
             ) {
                 Text(
                     text = "发送旁白",
-                    style = MaterialTheme.typography.labelLarge.copy(color = WhiteText)
+                    style = MaterialTheme.typography.labelLarge.copy(color = TextWhite)
                 )
             }
         }
@@ -154,7 +153,6 @@ fun ChatInputArea(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(8.dp))
-                .background(themeBgColor)
                 .background(HalfTransparentWhite)
                 .padding(5.dp, 3.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -167,7 +165,7 @@ fun ChatInputArea(
                     Text(
                         if (conversation.type == ConversationType.SINGLE) "向${chatUiState.currentCharacter?.name ?: "[未选择角色]"}发送消息"
                         else "在群聊发送消息",
-                        style = MaterialTheme.typography.bodyLarge.copy(color = WhiteText.copy(0.6f))
+                        style = MaterialTheme.typography.bodyLarge.copy(color = TextWhite.copy(0.6f))
                     )
                 },
                 colors = TextFieldDefaults.colors(
@@ -179,7 +177,7 @@ fun ChatInputArea(
                     disabledIndicatorColor = Color.Transparent,   // 禁用时的下划线颜色
 //                    cursorColor = WhiteText,  // 获得焦点时的光标颜色
                 ),
-                textStyle = MaterialTheme.typography.bodyLarge.copy(color = WhiteText),
+                textStyle = MaterialTheme.typography.bodyLarge.copy(color = TextWhite),
                 maxLines = 4,
                 minLines = 1,
                 contentPadding = PaddingValues(3.dp, 2.dp)
@@ -193,18 +191,18 @@ fun ChatInputArea(
                     Icon(
                         Icons.Rounded.ArrowUpward,
                         contentDescription = "发送",
-                        tint = WhiteText,
+                        tint = TextSecondaryDark,
                         modifier = Modifier
                             .size(28.dp)
                             .clip(CircleShape)
-                            .background(Gold)
+                            .background(MaterialTheme.colorScheme.primary)
                             .padding(4.dp)
                     )
                 } else {
                     Icon(
                         Icons.Rounded.AddCircleOutline,
                         contentDescription = "发送图片",
-                        tint = WhiteText
+                        tint = TextSecondaryDark
                     )
                 }
             }

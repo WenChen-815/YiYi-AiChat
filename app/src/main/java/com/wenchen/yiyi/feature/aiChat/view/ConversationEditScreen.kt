@@ -48,13 +48,13 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.wenchen.yiyi.core.database.entity.AIChatMemory
 import com.wenchen.yiyi.core.database.entity.ConversationType
-import com.wenchen.yiyi.core.designSystem.component.SettingTextFieldItem
-import com.wenchen.yiyi.core.designSystem.theme.BlackText
+import com.wenchen.yiyi.core.ui.SettingTextFieldItem
+import com.wenchen.yiyi.core.designSystem.theme.TextSecondaryLight
 import com.wenchen.yiyi.core.designSystem.theme.DarkGray
-import com.wenchen.yiyi.core.designSystem.theme.GrayText
+import com.wenchen.yiyi.core.designSystem.theme.TextGray
 import com.wenchen.yiyi.core.designSystem.theme.LightGold
 import com.wenchen.yiyi.core.designSystem.theme.LightGray
-import com.wenchen.yiyi.core.designSystem.theme.WhiteText
+import com.wenchen.yiyi.core.designSystem.theme.TextPrimaryDark
 import com.wenchen.yiyi.core.util.ui.StatusBarUtils
 import com.wenchen.yiyi.feature.aiChat.viewmodel.ConversationEditViewModel
 import com.wenchen.yiyi.core.database.entity.YiYiWorldBook
@@ -63,6 +63,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.compose.runtime.collectAsState
 import com.aventrix.jnanoid.jnanoid.NanoIdUtils
+import com.wenchen.yiyi.core.designSystem.component.SpaceVerticalLarge
+import com.wenchen.yiyi.core.designSystem.component.SpaceVerticalSmall
+import com.wenchen.yiyi.core.designSystem.theme.TextWhite
 import com.wenchen.yiyi.core.util.ui.ToastUtils
 import com.wenchen.yiyi.feature.aiChat.viewmodel.ConversationEditUiState
 
@@ -146,7 +149,6 @@ private fun ConversationEditScreen(
                 enabledRegexGroups,
             )
         },
-        onCancelClick = { viewModel.navigateBack() },
         onAvatarClick = {
             val intent = viewModel.createImagePickerIntent()
             pickAvatarLauncher.launch(intent)
@@ -178,7 +180,6 @@ fun ConversationEditScreenContent(
     isCreateNew: Boolean,
     conversationId: String,
     onSaveClick: (String, String, String, String, List<String>, String, String, Map<String, Float>, Map<String, List<String>>, List<String>) -> Unit,
-    onCancelClick: () -> Unit,
     onAvatarClick: () -> Unit,
     onBackgroundClick: () -> Unit,
     avatarBitmap: Bitmap?,
@@ -269,19 +270,6 @@ fun ConversationEditScreenContent(
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Button(
-                    onClick = onCancelClick,
-                    modifier = Modifier.weight(1f),
-                    colors =
-                        ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.secondary,
-                        ),
-                ) {
-                    Text("取消编辑", color = WhiteText)
-                }
-
-                Spacer(modifier = Modifier.width(16.dp))
-
-                Button(
                     onClick = {
                         onSaveClick(
                             name,
@@ -302,7 +290,7 @@ fun ConversationEditScreenContent(
                             containerColor = MaterialTheme.colorScheme.primary,
                         ),
                 ) {
-                    Text("保存对话", color = WhiteText)
+                    Text("保存对话", color = TextWhite)
                 }
             }
         },
@@ -347,7 +335,7 @@ fun ConversationEditScreenContent(
                         )
                         Text(
                             text = "（右划管理角色）",
-                            style = MaterialTheme.typography.labelMedium.copy(GrayText),
+                            style = MaterialTheme.typography.labelMedium.copy(TextGray),
                         )
                     }
 
@@ -394,7 +382,7 @@ fun ConversationEditScreenContent(
                             ) {
                                 Text(
                                     text = "查看\n记忆",
-                                    color = WhiteText,
+                                    color = TextWhite,
                                     style = MaterialTheme.typography.bodySmall
                                 )
                             }
@@ -415,7 +403,7 @@ fun ConversationEditScreenContent(
                             ) {
                                 Text(
                                     text = "删除\n角色",
-                                    color = WhiteText,
+                                    color = TextWhite,
                                     style = MaterialTheme.typography.bodySmall
                                 )
                             }
@@ -462,7 +450,7 @@ fun ConversationEditScreenContent(
                                     Text(
                                         text = allCharacter.find { it.id == characterId }?.name
                                             ?: characterId,
-                                        style = MaterialTheme.typography.bodyMedium.copy(WhiteText),
+                                        style = MaterialTheme.typography.bodyMedium.copy(TextWhite),
                                         modifier = Modifier.weight(1f),
                                     )
 
@@ -472,11 +460,11 @@ fun ConversationEditScreenContent(
                                     ) {
                                         val colors =
                                             SliderDefaults.colors(
-                                                activeTrackColor = WhiteText,
+                                                activeTrackColor = TextWhite,
                                                 inactiveTrackColor = LightGold,
-                                                thumbColor = WhiteText,
+                                                thumbColor = TextWhite,
                                                 activeTickColor = Color.Transparent,
-                                                inactiveTickColor = Color.White,
+                                                inactiveTickColor = TextWhite,
                                             )
                                         Slider(
                                             value = chance,
@@ -490,7 +478,7 @@ fun ConversationEditScreenContent(
                                             thumb = {
                                                 Canvas(modifier = Modifier.size(24.dp)) {
                                                     drawCircle(
-                                                        color = WhiteText,
+                                                        color = TextWhite,
                                                         radius = 7.dp.toPx(),
                                                     )
                                                 }
@@ -521,7 +509,7 @@ fun ConversationEditScreenContent(
                                             Text(
                                                 text = "${(chance * 100).toInt()}%",
                                                 style = MaterialTheme.typography.bodySmall.copy(
-                                                    WhiteText
+                                                        TextWhite
                                                 ),
                                             )
                                         }
@@ -553,7 +541,7 @@ fun ConversationEditScreenContent(
                                     characterKeywordsMap =
                                         characterKeywordsMap + (characterId to keywordsList)
                                 },
-                                placeholder = { Text("输入关键词，用/分隔", color = GrayText) },
+                                placeholder = { Text("输入关键词，用/分隔", color = TextGray) },
                             )
                         }
                         if (isMemoryDialogVisible) {
@@ -642,7 +630,7 @@ fun ConversationEditScreenContent(
                             Icon(
                                 imageVector = Icons.Rounded.RemoveCircleOutline,
                                 contentDescription = "删除头像",
-                                tint = BlackText,
+                                tint = TextSecondaryLight,
                             )
                         }
                     } else if (avatarPath.isNotEmpty()) {
@@ -708,7 +696,7 @@ fun ConversationEditScreenContent(
                             Icon(
                                 imageVector = Icons.Rounded.RemoveCircleOutline,
                                 contentDescription = "删除背景",
-                                tint = BlackText,
+                                tint = TextSecondaryLight,
                             )
                         }
                     } else if (backgroundPath.isNotEmpty()) {
@@ -801,7 +789,7 @@ fun ConversationEditScreenContent(
                     Text(
                         text = if (selectedNames.isEmpty()) "未选择世界" else selectedNames.joinToString(", "),
                         modifier = Modifier.fillMaxWidth(),
-                        color = WhiteText
+                        color = TextWhite
                     )
                 }
             }
@@ -844,7 +832,7 @@ fun ConversationEditScreenContent(
                             Text(
                                 text = group.description!!,
                                 style = MaterialTheme.typography.labelSmall,
-                                color = GrayText
+                                color = TextGray
                             )
                         }
                     }
@@ -1004,7 +992,7 @@ fun ShowMemoryDialog(
                     label = { Text("记忆内容") },
                     modifier = Modifier.fillMaxWidth()
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                SpaceVerticalSmall()
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("记忆次数：")
                     Button(onClick = { if (memoryCount > 0) memoryCount-- }) { Text("-") }

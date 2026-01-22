@@ -29,8 +29,9 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.wenchen.yiyi.core.designSystem.theme.*
 import com.wenchen.yiyi.core.database.entity.YiYiRegexScript
-import com.wenchen.yiyi.core.designSystem.component.SettingTextFieldItem
-import com.wenchen.yiyi.core.designSystem.component.SwitchWithText
+import com.wenchen.yiyi.core.designSystem.component.SpaceVerticalSmall
+import com.wenchen.yiyi.core.ui.SettingTextFieldItem
+import com.wenchen.yiyi.core.ui.SwitchWithText
 import com.wenchen.yiyi.feature.config.viewmodel.RegexDetailViewModel
 
 @Composable
@@ -84,15 +85,13 @@ fun RegexDetailScreen(
                     editingScript = YiYiRegexScript(id = "", groupId = groupId)
                     showEditDialog = true
                 },
-                containerColor = Pink,
-                contentColor = WhiteText
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = TextWhite
             ) {
                 Icon(Icons.Default.Add, contentDescription = "添加规则")
             }
         },
-        modifier = Modifier
-            .fillMaxSize()
-            .background(if (isSystemInDarkTheme()) BlackBg else WhiteBg)
+        modifier = Modifier.fillMaxSize()
     ) { padding ->
         LazyColumn(
             modifier = Modifier
@@ -111,7 +110,7 @@ fun RegexDetailScreen(
                 )
                 HorizontalDivider(
                     modifier = Modifier.padding(vertical = 8.dp),
-                    color = if (isSystemInDarkTheme()) GrayBorder else LightGray
+                    color = if (isSystemInDarkTheme()) DarkGray else LightGray
                 )
                 Text(
                     text = "规则列表",
@@ -228,18 +227,18 @@ fun RegexScriptItem(
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            SpaceVerticalSmall()
 
             Text(
                 text = "查找: ${script.findRegex}",
                 style = MaterialTheme.typography.bodySmall,
-                color = GrayText,
+                color = TextGray,
                 maxLines = 1
             )
             Text(
                 text = "替换: ${script.replaceString}",
                 style = MaterialTheme.typography.bodySmall,
-                color = GrayText,
+                color = TextGray,
                 maxLines = 1
             )
 

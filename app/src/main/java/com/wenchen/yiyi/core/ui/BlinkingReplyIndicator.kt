@@ -1,4 +1,4 @@
-package com.wenchen.yiyi.core.designSystem.component
+package com.wenchen.yiyi.core.ui
 
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -14,8 +14,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import com.wenchen.yiyi.core.designSystem.theme.HalfTransparentBlack
-import com.wenchen.yiyi.core.designSystem.theme.WhiteText
+import com.wenchen.yiyi.core.designSystem.theme.MaskLight
+import com.wenchen.yiyi.core.designSystem.theme.TextWhite
 
 @Composable
 fun BlinkingReplyIndicator(text: String) {
@@ -31,8 +31,8 @@ fun BlinkingReplyIndicator(text: String) {
 
     Text(
         text = text,
-        color = WhiteText.copy(alpha = alpha),
+        color = TextWhite.copy(alpha = alpha),
         style = MaterialTheme.typography.bodyMedium,
-        modifier = Modifier.clip(MaterialTheme.shapes.small).background(HalfTransparentBlack).padding(4.dp)
+        modifier = Modifier.clip(MaterialTheme.shapes.small).background(MaskLight).padding(4.dp)
     )
 }

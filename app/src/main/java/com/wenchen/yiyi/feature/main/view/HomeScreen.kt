@@ -30,7 +30,8 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import coil3.compose.AsyncImage
 import com.wenchen.yiyi.core.database.entity.AICharacter
-import com.wenchen.yiyi.core.designSystem.theme.GrayText
+import com.wenchen.yiyi.core.designSystem.component.SpaceHorizontalSmall
+import com.wenchen.yiyi.core.designSystem.theme.TextGray
 import com.wenchen.yiyi.feature.main.viewmodel.HomeViewModel
 import com.wenchen.yiyi.navigation.routes.AiChatRoutes
 
@@ -100,7 +101,7 @@ fun HomeScreen(
                 Text(
                     text = if (searchQuery.isEmpty()) "暂无角色，请点击下方 + 号添加" else "未找到匹配的角色",
                     style = MaterialTheme.typography.bodyLarge,
-                    color = GrayText
+                    color = TextGray
                 )
             }
         } else {
@@ -202,7 +203,7 @@ fun CharacterCard(
                             .background(Color.White),
                         contentScale = ContentScale.Crop
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    SpaceHorizontalSmall()
                     Text(
                         text = character.name,
                         style = MaterialTheme.typography.titleMedium,

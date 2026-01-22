@@ -1,4 +1,4 @@
-package com.wenchen.yiyi.core.designSystem.component
+package com.wenchen.yiyi.core.ui
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.spring
@@ -12,6 +12,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.wenchen.yiyi.core.designSystem.component.SpaceVerticalLarge
+import com.wenchen.yiyi.core.designSystem.component.SpaceVerticalMedium
+import com.wenchen.yiyi.core.designSystem.component.SpaceVerticalSmall
 import com.wenchen.yiyi.core.util.storage.MMKVUtils
 
 /**
@@ -47,7 +50,8 @@ fun UpdateAnnouncementDialog(
                         color = MaterialTheme.colorScheme.primary
                     )
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    // 使用统一定义的间距组件
+                    SpaceVerticalMedium()
 
                     Text(
                         text = announcement,
@@ -56,7 +60,7 @@ fun UpdateAnnouncementDialog(
                         color = MaterialTheme.colorScheme.onSurface
                     )
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    SpaceVerticalLarge()
 
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -73,7 +77,7 @@ fun UpdateAnnouncementDialog(
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    SpaceVerticalSmall()
 
                     Button(
                         onClick = {

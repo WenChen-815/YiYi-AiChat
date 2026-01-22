@@ -28,9 +28,9 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.unit.dp
-import com.wenchen.yiyi.core.designSystem.theme.GrayBg
-import com.wenchen.yiyi.core.designSystem.theme.WhiteText
+import com.wenchen.yiyi.core.designSystem.theme.BgWhiteDark
 import com.wenchen.yiyi.core.database.entity.AICharacter
+import com.wenchen.yiyi.core.designSystem.theme.TextWhite
 
 /**
  * 角色卡片
@@ -62,7 +62,7 @@ fun OutputCharacterView(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(GrayBg)
+                        .background(BgWhiteDark)
                         .clip(RoundedCornerShape(8.dp, 8.dp, 9.dp, 9.dp))
                 )
             } else if (backgroundBitmap != null) {
@@ -85,8 +85,8 @@ fun OutputCharacterView(
                                 Color.Transparent,
                                 Color.Transparent,
                                 Color.Transparent,
-                                GrayBg.copy(alpha = 0.9f),
-                                GrayBg,
+                                BgWhiteDark.copy(alpha = 0.9f),
+                                BgWhiteDark,
                             ),
                             startY = 0f,
                             endY = Float.POSITIVE_INFINITY,
@@ -134,7 +134,7 @@ fun OutputCharacterView(
                             }
                             Text(
                                 text = character.name,
-                                style = MaterialTheme.typography.bodyMedium.copy(color = WhiteText),
+                                style = MaterialTheme.typography.bodyMedium.copy(color = TextWhite),
                                 maxLines = 1,
                             )
                         }

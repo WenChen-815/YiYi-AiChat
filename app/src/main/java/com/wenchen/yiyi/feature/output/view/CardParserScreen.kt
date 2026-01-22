@@ -1,7 +1,9 @@
 package com.wenchen.yiyi.feature.output.view
 
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -17,8 +19,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import com.wenchen.yiyi.core.designSystem.component.SpaceVerticalSmall
+import com.wenchen.yiyi.core.designSystem.component.SpaceVerticalXLarge
 import com.wenchen.yiyi.feature.output.viewmodel.CardParserViewModel
 
+@RequiresApi(Build.VERSION_CODES.Q)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CardParserScreen(
@@ -68,7 +73,7 @@ fun CardParserScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+             SpaceVerticalXLarge()
 
             Text(
                 text = "解析结果 (原始文本):",
@@ -76,7 +81,7 @@ fun CardParserScreen(
                 modifier = Modifier.align(Alignment.Start)
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            SpaceVerticalSmall()
 
             Box(
                 modifier = Modifier

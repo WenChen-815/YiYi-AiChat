@@ -26,6 +26,9 @@ import androidx.navigation.NavController
 import com.wenchen.yiyi.core.designSystem.theme.AppTheme
 import com.wenchen.yiyi.core.database.entity.WorldBookEntryExtensions
 import com.wenchen.yiyi.core.database.entity.YiYiWorldBookEntry
+import com.wenchen.yiyi.core.designSystem.component.SpaceHorizontalSmall
+import com.wenchen.yiyi.core.designSystem.component.SpaceVerticalSmall
+import com.wenchen.yiyi.core.designSystem.component.SpaceVerticalXXLarge
 import com.wenchen.yiyi.feature.worldBook.viewmodel.WorldBookEntryEditViewModel
 import kotlinx.coroutines.launch
 
@@ -112,7 +115,7 @@ private fun WorldBookEntryEditContent(
             text = {
                 Column {
                     Text("请输入 0-100 之间的数字")
-                    Spacer(modifier = Modifier.height(8.dp))
+                    SpaceVerticalSmall()
                     OutlinedTextField(
                         value = tempProbability,
                         onValueChange = { input ->
@@ -217,7 +220,7 @@ private fun WorldBookEntryEditContent(
                 ) {
                     Text("名字", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     Text(" * ", color = Color.Red)
-                    Spacer(modifier = Modifier.width(8.dp))
+                    SpaceHorizontalSmall()
                     TextField(
                         value = entry.name ?: "",
                         onValueChange = { newName ->
@@ -247,7 +250,7 @@ private fun WorldBookEntryEditContent(
                         Text("内容", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                         Text(" * ", color = Color.Red)
                     }
-                    Spacer(modifier = Modifier.height(8.dp))
+                    SpaceVerticalSmall()
                     TextField(
                         value = entry.content ?: "",
                         onValueChange = { newContent ->
@@ -312,7 +315,7 @@ private fun WorldBookEntryEditContent(
                 }
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            SpaceVerticalXXLarge()
         }
     }
 }

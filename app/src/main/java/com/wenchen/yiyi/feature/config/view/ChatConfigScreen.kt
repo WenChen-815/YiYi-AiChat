@@ -39,10 +39,11 @@ import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import com.wenchen.yiyi.core.designSystem.component.SpaceVerticalXLarge
 import com.wenchen.yiyi.core.designSystem.theme.*
 import com.wenchen.yiyi.core.util.ui.StatusBarUtils
-import com.wenchen.yiyi.core.designSystem.component.SettingTextFieldItem
-import com.wenchen.yiyi.core.designSystem.component.SwitchWithText
+import com.wenchen.yiyi.core.ui.SettingTextFieldItem
+import com.wenchen.yiyi.core.ui.SwitchWithText
 import com.wenchen.yiyi.feature.config.viewmodel.ChatConfigViewModel
 
 @Composable
@@ -205,18 +206,17 @@ fun ChatConfigScreenContent(
                         .fillMaxWidth()
                         .height(50.dp)
                         .background(
-                            brush = Brush.horizontalGradient(colors = listOf(Pink, Gold)),
+                            brush = Brush.horizontalGradient(colors = PrimaryGradient),
                             shape = RoundedCornerShape(25.dp)
                         ),
                     colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.ui.graphics.Color.Transparent)
                 ) {
-                    Text("保存", style = MaterialTheme.typography.bodyLarge.copy(color = WhiteText))
+                    Text("保存", style = MaterialTheme.typography.bodyLarge.copy(color = TextWhite))
                 }
             }
         },
         modifier = Modifier
             .fillMaxSize()
-            .background(if (isSystemInDarkTheme()) BlackBg else WhiteBg)
             .imePadding()
     ) { padding ->
         Column(
@@ -344,7 +344,7 @@ fun ChatConfigScreenContent(
             )
             Text(
                 text = "此功能不再内置，需要自行在提示词中提示AI使用分隔符",
-                style = MaterialTheme.typography.labelSmall.copy(GrayText)
+                style = MaterialTheme.typography.labelSmall.copy(TextGray)
             )
 
             SwitchWithText(
@@ -355,7 +355,7 @@ fun ChatConfigScreenContent(
             )
             Text(
                 text = "关闭后AI将无法得知当前时间，按需启用",
-                style = MaterialTheme.typography.labelSmall.copy(GrayText)
+                style = MaterialTheme.typography.labelSmall.copy(TextGray)
             )
 
             SwitchWithText(
@@ -366,7 +366,7 @@ fun ChatConfigScreenContent(
             )
             Text(
                 text = "开启后回复将实时显示。若模型不支持则此选项无效",
-                style = MaterialTheme.typography.labelSmall.copy(GrayText)
+                style = MaterialTheme.typography.labelSmall.copy(TextGray)
             )
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
@@ -378,7 +378,7 @@ fun ChatConfigScreenContent(
                 modifier = Modifier.padding(top = 16.dp)
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            SpaceVerticalXLarge()
         }
     }
 }

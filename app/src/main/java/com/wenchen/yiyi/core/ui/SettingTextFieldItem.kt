@@ -1,4 +1,4 @@
-package com.wenchen.yiyi.core.designSystem.component
+package com.wenchen.yiyi.core.ui
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
@@ -13,8 +13,9 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.wenchen.yiyi.core.designSystem.theme.BorderDark
+import com.wenchen.yiyi.core.designSystem.theme.BorderLight
 import com.wenchen.yiyi.core.designSystem.theme.DarkGray
-import com.wenchen.yiyi.core.designSystem.theme.GrayBorder
 import com.wenchen.yiyi.core.designSystem.theme.LightGray
 
 @Composable
@@ -47,7 +48,7 @@ fun SettingTextFieldItem(
             colors = TextFieldDefaults.colors(
                 focusedContainerColor = if (isSystemInDarkTheme()) DarkGray else LightGray,
                 unfocusedContainerColor = if (isSystemInDarkTheme()) DarkGray else LightGray,
-                unfocusedIndicatorColor = GrayBorder.copy(0.5f) // 边框颜色
+                unfocusedIndicatorColor = if (isSystemInDarkTheme()) BorderDark else BorderLight
             ),
             placeholder = placeholder,
             maxLines = maxLines,
@@ -89,7 +90,7 @@ fun SettingTextFieldItem(
             colors = TextFieldDefaults.colors(
                 focusedContainerColor = if (isSystemInDarkTheme()) DarkGray else LightGray,
                 unfocusedContainerColor = if (isSystemInDarkTheme()) DarkGray else LightGray,
-                unfocusedIndicatorColor = GrayBorder.copy(0.5f) // 边框颜色
+                unfocusedIndicatorColor = if (isSystemInDarkTheme()) BorderDark else BorderLight
             ),
             placeholder = placeholder,
             maxLines = maxLines,

@@ -42,9 +42,9 @@ import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import com.wenchen.yiyi.core.designSystem.theme.AppTheme
-import com.wenchen.yiyi.core.designSystem.theme.GrayBg
-import com.wenchen.yiyi.core.designSystem.theme.WhiteText
+import com.wenchen.yiyi.core.designSystem.theme.BgWhiteDark
 import com.wenchen.yiyi.core.database.entity.AICharacter
+import com.wenchen.yiyi.core.designSystem.theme.TextWhite
 import com.wenchen.yiyi.feature.output.viewmodel.OutputViewModel
 
 @Composable
@@ -188,7 +188,7 @@ fun CharacterItem(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(GrayBg)
+                        .background(BgWhiteDark)
                         .clip(RoundedCornerShape(8.dp, 8.dp, 9.dp, 9.dp))
                 )
             } else {
@@ -216,8 +216,8 @@ fun CharacterItem(
                                 Color.Transparent,
                                 Color.Transparent,
                                 Color.Transparent,
-                                GrayBg.copy(alpha = 0.9f),
-                                GrayBg,
+                                BgWhiteDark.copy(alpha = 0.9f),
+                                BgWhiteDark,
                             ),
                             startY = 0f, // 渐变起点Y坐标
                             endY = Float.POSITIVE_INFINITY, // 渐变终点Y坐标
@@ -272,7 +272,7 @@ fun CharacterItem(
                             }
                             Text(
                                 text = character.name,
-                                style = MaterialTheme.typography.bodyMedium.copy(color = WhiteText),
+                                style = MaterialTheme.typography.bodyMedium.copy(color = TextWhite),
                                 maxLines = 1,
                             )
                         }

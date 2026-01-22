@@ -28,11 +28,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
-import com.wenchen.yiyi.core.designSystem.component.DisplayChatMessageItem
-import com.wenchen.yiyi.core.designSystem.component.BlinkingReplyIndicator
-import com.wenchen.yiyi.core.designSystem.theme.BlackBg
-import com.wenchen.yiyi.core.designSystem.theme.HalfTransparentBlack
-import com.wenchen.yiyi.core.designSystem.theme.WhiteBg
+import com.wenchen.yiyi.core.ui.DisplayChatMessageItem
+import com.wenchen.yiyi.core.ui.BlinkingReplyIndicator
 import com.wenchen.yiyi.core.util.ui.ThemeColorExtractor
 import com.wenchen.yiyi.core.util.ui.ToastUtils
 import com.wenchen.yiyi.feature.aiChat.viewmodel.GroupChatViewModel
@@ -41,6 +38,9 @@ import dev.chrisbanes.haze.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import com.wenchen.yiyi.core.designSystem.component.SpaceVerticalLarge
+import com.wenchen.yiyi.core.designSystem.theme.BgGreyDark
+import com.wenchen.yiyi.core.designSystem.theme.MaskLight
 
 @Composable
 internal fun GroupChatRoute(
@@ -92,7 +92,7 @@ fun GroupChatScreenContent(
     }
 
     var bgBitmap by remember { mutableStateOf<Bitmap?>(null) }
-    var colors by remember { mutableStateOf(listOf(BlackBg)) }
+    var colors by remember { mutableStateOf(listOf(BgGreyDark)) }
     // 异步加载背景图片
     LaunchedEffect(conversation.backgroundPath) {
         val backgroundPath = conversation.backgroundPath
@@ -159,7 +159,7 @@ fun GroupChatScreenContent(
                 )
             },
             modifier = Modifier
-                .background(BlackBg)
+                .background(BgGreyDark)
                 .hazeSource(chatWindowHazeState),
         ) {
             // 确保聊天界面使用LTR布局方向
@@ -183,7 +183,7 @@ fun GroupChatScreenContent(
                                     Brush.verticalGradient(
                                         colors =
                                             listOf(
-                                                HalfTransparentBlack.copy(0.65f),
+                                                MaskLight,
                                                 Color.Transparent,
                                                 Color.Transparent,
                                                 Color.Transparent,
@@ -233,7 +233,6 @@ fun GroupChatScreenContent(
                             launcher.launch(intent)
                         },
                         modifier = Modifier.fillMaxSize(),
-                        themeBgColor = colors[0],
                         chatWindowHazeState = chatWindowHazeState,
                     )
                 }
@@ -295,7 +294,6 @@ fun GroupChatContent(
     onOpenDrawer: () -> Unit,
     onPickImage: () -> Unit,
     modifier: Modifier = Modifier,
-    themeBgColor: Color = if (isSystemInDarkTheme()) BlackBg else WhiteBg,
     chatWindowHazeState: HazeState
 ) {
     val chatUiState by viewModel.chatUiState.collectAsState()
@@ -403,7 +401,7 @@ fun GroupChatContent(
                             }
                         }
                     }
-                    Spacer(Modifier.height(16.dp))
+                    SpaceVerticalLarge()
                     if (chatUiState.isAiReplying) {
                         Row(
                             modifier = Modifier
@@ -440,7 +438,6 @@ fun GroupChatContent(
                     isAiReplying = chatUiState.isAiReplying,
                     isSendSystemMessage = isSendSystemMessage,
                     onSendSysMsgClick = { isSendSystemMessage = !isSendSystemMessage },
-                    themeBgColor = themeBgColor,
                 )
             }
         },

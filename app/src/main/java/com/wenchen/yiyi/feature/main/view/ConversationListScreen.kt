@@ -30,6 +30,8 @@ import com.wenchen.yiyi.feature.main.viewmodel.ConversationListViewModel
 import com.wenchen.yiyi.Application
 import com.wenchen.yiyi.core.util.business.ChatUtils
 import com.wenchen.yiyi.navigation.routes.AiChatRoutes
+import com.wenchen.yiyi.core.designSystem.component.SpaceHorizontalLarge
+import com.wenchen.yiyi.core.designSystem.component.SpaceHorizontalXSmall
 
 @Composable
 fun ConversationListScreen(
@@ -146,7 +148,7 @@ fun ConversationListItem(
                 }
             }
 
-            Spacer(modifier = Modifier.width(16.dp))
+            SpaceHorizontalLarge()
 
             Column(modifier = Modifier.weight(1f)) {
                 Row(
@@ -179,7 +181,7 @@ fun ConversationListItem(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(2.dp))
+                SpaceHorizontalXSmall()
 
                 Text(
                     text = lastMessage.ifEmpty { "点击开启对话" },

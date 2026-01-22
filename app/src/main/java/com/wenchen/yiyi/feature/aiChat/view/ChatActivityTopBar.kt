@@ -37,9 +37,10 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.wenchen.yiyi.core.database.entity.ConversationType
-import com.wenchen.yiyi.core.designSystem.theme.HalfTransparentBlack
-import com.wenchen.yiyi.core.designSystem.theme.WhiteBg
-import com.wenchen.yiyi.core.designSystem.theme.WhiteText
+import com.wenchen.yiyi.core.designSystem.theme.BgWhiteLight
+import com.wenchen.yiyi.core.designSystem.theme.MaskLight
+import com.wenchen.yiyi.core.designSystem.theme.TextPrimaryDark
+import com.wenchen.yiyi.core.designSystem.theme.TextWhite
 import com.wenchen.yiyi.feature.aiChat.viewmodel.BaseChatViewModel
 
 @Composable
@@ -100,7 +101,7 @@ fun ChatActivityTopBar(
                     .offset(x = titleOffsetX.dp)
                     .alpha(titleAlpha)
                     .clip(RoundedCornerShape(24.dp))
-                    .background(HalfTransparentBlack.copy(alpha = 0.8f)),
+                    .background(MaskLight),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -127,7 +128,7 @@ fun ChatActivityTopBar(
                                     .offset(x = offsetX)
                                     .size(36.dp)
                                     .clip(CircleShape)
-                                    .border(1.0f.dp, WhiteBg.copy(alpha = 0.7f), CircleShape),
+                                    .border(1.0f.dp, BgWhiteLight.copy(alpha = 0.7f), CircleShape),
                         )
                         offsetX += 9.dp
                     }
@@ -140,7 +141,7 @@ fun ChatActivityTopBar(
                                 .offset(x = offsetX)
                                 .size(36.dp)
                                 .clip(CircleShape)
-                                .border(1.0f.dp, WhiteBg.copy(alpha = 0.7f), CircleShape),
+                                .border(1.0f.dp, BgWhiteLight.copy(alpha = 0.7f), CircleShape),
                     )
                 }
             }
@@ -148,12 +149,12 @@ fun ChatActivityTopBar(
                 if (conversation.type == ConversationType.SINGLE) {
                     Text(
                         text = chatUiState.currentCharacter?.name ?: "未选择角色",
-                        style = MaterialTheme.typography.titleMedium.copy(color = WhiteText),
+                        style = MaterialTheme.typography.titleMedium.copy(color = TextPrimaryDark),
                     )
                 } else if (conversation.type == ConversationType.GROUP) {
                     Text(
                         text = conversation.name,
-                        style = MaterialTheme.typography.titleMedium.copy(color = WhiteText),
+                        style = MaterialTheme.typography.titleMedium.copy(color = TextPrimaryDark),
                     )
                 }
             }
@@ -163,13 +164,13 @@ fun ChatActivityTopBar(
         Icon(
             imageVector = Icons.Rounded.ArrowBackIosNew,
             contentDescription = "打开抽屉",
-            tint = WhiteText.copy(alpha = 0.8f),
+            tint = TextWhite,
             modifier =
                 Modifier
                     .offset(x = iconOffsetX.dp)
                     .alpha(iconAlpha)
                     .clip(RoundedCornerShape(13.dp, 0.dp, 0.dp, 13.dp))
-                    .background(HalfTransparentBlack)
+                    .background(MaskLight)
                     .padding(start = 10.dp, end = 24.dp, top = 4.dp, bottom = 4.dp)
                     .clickable { onOpenDrawer() },
         )

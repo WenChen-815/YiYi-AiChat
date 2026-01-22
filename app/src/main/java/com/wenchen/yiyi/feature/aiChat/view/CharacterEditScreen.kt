@@ -31,11 +31,12 @@ import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.wenchen.yiyi.core.designSystem.theme.*
-import com.wenchen.yiyi.core.designSystem.component.SettingTextFieldItem
+import com.wenchen.yiyi.core.ui.SettingTextFieldItem
 import com.wenchen.yiyi.core.util.ui.StatusBarUtils
 import com.wenchen.yiyi.core.util.ui.ToastUtils
 import com.wenchen.yiyi.feature.aiChat.viewmodel.CharacterEditViewModel
 import androidx.activity.compose.LocalActivity
+import com.wenchen.yiyi.core.designSystem.component.SpaceHorizontalLarge
 
 @Composable
 internal fun CharacterEditRoute(
@@ -69,7 +70,6 @@ private fun CharacterEditScreen(
     val savaRegexGroupFlag by viewModel.saveRegexGroupFlag.collectAsState()
     val parsedWorldBook by viewModel.parsedWorldBook.collectAsState()
     val saveWorldBookFlag by viewModel.saveWorldBookFlag.collectAsState()
-    val allWorldBook by viewModel.allWorldBooks.collectAsState()
 
     // 编辑状态
     var name by remember { mutableStateOf("") }
@@ -164,7 +164,6 @@ private fun CharacterEditScreen(
                 memory, memoryCount, "", "", "", chatWorldId
             )
         },
-        onCancelClick = { viewModel.navigateBack() },
         onBackClick = { viewModel.navigateBack() },
         onPickImageClick = onPickImageClick,
         parsedRegexGroupName = parsedRegexGroup?.name,
@@ -199,7 +198,6 @@ private fun CharacterEditScreenContent(
     onBackgroundClick: () -> Unit,
     onBackgroundDeleteClick: () -> Unit,
     onSaveClick: () -> Unit,
-    onCancelClick: () -> Unit,
     onBackClick: () -> Unit,
     onPickImageClick: () -> Unit,
     parsedRegexGroupName: String?,
@@ -250,19 +248,11 @@ private fun CharacterEditScreenContent(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Button(
-                    onClick = onCancelClick,
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
-                ) {
-                    Text("取消编辑", color = WhiteText)
-                }
-                Spacer(modifier = Modifier.width(16.dp))
-                Button(
                     onClick = onSaveClick,
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
-                    Text("保存角色", color = WhiteText)
+                    Text("保存角色", color = TextWhite)
                 }
             }
         },
@@ -368,7 +358,7 @@ private fun CharacterEditScreenContent(
                         Icon(
                             imageVector = Icons.Rounded.RemoveCircleOutline,
                             contentDescription = "删除头像",
-                            tint = BlackText
+                            tint = TextSecondaryLight
                         )
                     }
                 } else if (avatarPath.isNotEmpty()) {
@@ -419,7 +409,7 @@ private fun CharacterEditScreenContent(
                         Icon(
                             imageVector = Icons.Rounded.RemoveCircleOutline,
                             contentDescription = "删除背景",
-                            tint = BlackText
+                            tint = TextSecondaryLight
                         )
                     }
                 } else if (backgroundPath.isNotEmpty()) {
@@ -482,7 +472,7 @@ private fun CharacterEditScreenContent(
                 }
             }
 
-            Spacer(modifier = Modifier.height(100.dp))
+            Spacer(modifier = Modifier.height(128.dp))
         }
     }
 }
