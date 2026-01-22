@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import com.wenchen.yiyi.core.common.theme.AIChatTheme
+import com.wenchen.yiyi.core.designSystem.theme.AppTheme
 import com.wenchen.yiyi.core.database.entity.WorldBookEntryExtensions
 import com.wenchen.yiyi.core.database.entity.YiYiWorldBookEntry
 import com.wenchen.yiyi.feature.worldBook.viewmodel.WorldBookEntryEditViewModel
@@ -350,7 +350,7 @@ fun EntrySettingRow(
 @Preview(showBackground = true, name = "条目编辑预览")
 @Composable
 private fun WorldBookEntryEditPreview() {
-    AIChatTheme {
+     AppTheme {
         WorldBookEntryEditContent(
             entry = YiYiWorldBookEntry(
                 entryId = "1",

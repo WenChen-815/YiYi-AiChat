@@ -24,7 +24,7 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.wenchen.yiyi.core.common.theme.*
+import com.wenchen.yiyi.core.designSystem.theme.*
 import com.wenchen.yiyi.core.designSystem.component.SettingTextFieldItem
 import com.wenchen.yiyi.core.designSystem.component.SwitchWithText
 import com.wenchen.yiyi.core.model.config.ApiConfig

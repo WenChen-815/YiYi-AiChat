@@ -23,8 +23,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -32,14 +30,12 @@ import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import com.wenchen.yiyi.core.common.theme.*
+import com.wenchen.yiyi.core.designSystem.theme.*
 import com.wenchen.yiyi.core.designSystem.component.SettingTextFieldItem
 import com.wenchen.yiyi.core.util.ui.StatusBarUtils
 import com.wenchen.yiyi.core.util.ui.ToastUtils
 import com.wenchen.yiyi.feature.aiChat.viewmodel.CharacterEditViewModel
-import com.wenchen.yiyi.core.database.entity.YiYiWorldBook
 import androidx.activity.compose.LocalActivity
-import androidx.compose.foundation.lazy.LazyColumn
 
 @Composable
 internal fun CharacterEditRoute(
@@ -52,12 +48,10 @@ internal fun CharacterEditRoute(
     ) { uri ->
         uri?.let { viewModel.importCharacterFromImage(context, it) }
     }
-    AIChatTheme {
-        CharacterEditScreen(
-            viewModel = viewModel,
-            onPickImageClick = { launcher.launch("image/*") }
-        )
-    }
+    CharacterEditScreen(
+        viewModel = viewModel,
+        onPickImageClick = { launcher.launch("image/*") }
+    )
 }
 
 @Composable
@@ -86,8 +80,6 @@ private fun CharacterEditScreen(
     var avatarPath by remember { mutableStateOf("") }
     var backgroundPath by remember { mutableStateOf("") }
     var chatWorldId by remember { mutableStateOf<List<String>>(emptyList()) }
-
-    var isWorldSheetVisible by remember { mutableStateOf(false) }
 
     // 状态栏
     val isDark = isSystemInDarkTheme()
@@ -175,17 +167,6 @@ private fun CharacterEditScreen(
         onCancelClick = { viewModel.navigateBack() },
         onBackClick = { viewModel.navigateBack() },
         onPickImageClick = onPickImageClick,
-        chatWorldId = chatWorldId,
-        allWorldBook = allWorldBook,
-        isWorldSheetVisible = isWorldSheetVisible,
-        onWorldSheetVisibleChange = { isWorldSheetVisible = it },
-        onWorldSelected = { world ->
-            chatWorldId = if (chatWorldId.contains(world.id)) {
-                chatWorldId - world.id
-            } else {
-                chatWorldId + world.id
-            }
-        },
         parsedRegexGroupName = parsedRegexGroup?.name,
         savaRegexGroupFlag = savaRegexGroupFlag,
         onSaveRegexGroupChange = viewModel::onSaveRegexGroupChange,
@@ -221,11 +202,6 @@ private fun CharacterEditScreenContent(
     onCancelClick: () -> Unit,
     onBackClick: () -> Unit,
     onPickImageClick: () -> Unit,
-    chatWorldId: List<String>,
-    allWorldBook: List<YiYiWorldBook>,
-    isWorldSheetVisible: Boolean,
-    onWorldSheetVisibleChange: (Boolean) -> Unit,
-    onWorldSelected: (YiYiWorldBook) -> Unit,
     parsedRegexGroupName: String?,
     savaRegexGroupFlag: Boolean?,
     onSaveRegexGroupChange: (Boolean) -> Unit,
@@ -420,8 +396,7 @@ private fun CharacterEditScreenContent(
             )
             Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
+                    .heightIn(max = 300.dp)
                     .clip(RoundedCornerShape(12.dp))
                     .background(if (isSystemInDarkTheme()) DarkGray else LightGray)
                     .clickable { onBackgroundClick() },
@@ -432,7 +407,7 @@ private fun CharacterEditScreenContent(
                         bitmap = backgroundBitmap.asImageBitmap(),
                         contentDescription = "背景图",
                         modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
+                        contentScale = ContentScale.Fit
                     )
                     IconButton(
                         onClick = onBackgroundDeleteClick,
@@ -455,7 +430,7 @@ private fun CharacterEditScreenContent(
                             .build(),
                         contentDescription = "背景图",
                         modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
+                        contentScale = ContentScale.Fit
                     )
                 } else {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -463,28 +438,6 @@ private fun CharacterEditScreenContent(
                         Text("添加背景", style = MaterialTheme.typography.bodySmall)
                     }
                 }
-            }
-
-            Text(
-                text = "世界书选择",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
-            )
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.primary)
-                    .clickable { onWorldSheetVisibleChange(true) }
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                val selectedNames = allWorldBook.filter { it.id in chatWorldId }.map { it.name ?: "未命名世界" }
-                Text(
-                    text = if (selectedNames.isEmpty()) "未选择世界" else selectedNames.joinToString(", "),
-                    color = WhiteText,
-                    modifier = Modifier.weight(1f)
-                )
             }
 
             if (parsedRegexGroupName != null) {
@@ -530,47 +483,6 @@ private fun CharacterEditScreenContent(
             }
 
             Spacer(modifier = Modifier.height(100.dp))
-        }
-    }
-
-    if (isWorldSheetVisible) {
-        ModalBottomSheet(
-            onDismissRequest = { onWorldSheetVisibleChange(false) },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-        ) {
-            val screenHeight = with(LocalDensity.current) {
-                LocalWindowInfo.current.containerSize.height.toDp()
-            }
-            if (allWorldBook.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(text = "暂无可选世界", style = MaterialTheme.typography.bodyMedium)
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = screenHeight * 0.6f)
-                ) {
-                    items(allWorldBook.size) { index ->
-                        val world = allWorldBook[index]
-                        ListItem(
-                            headlineContent = { Text(world.name ?: "未命名世界") },
-                            trailingContent = {
-                                Checkbox(
-                                    checked = chatWorldId.contains(world.id),
-                                    onCheckedChange = null
-                                )
-                            },
-                            modifier = Modifier.clickable { onWorldSelected(world) }
-                        )
-                    }
-                }
-            }
         }
     }
 }

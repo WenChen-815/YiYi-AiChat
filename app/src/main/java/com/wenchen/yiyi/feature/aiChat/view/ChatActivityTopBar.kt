@@ -37,9 +37,9 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.wenchen.yiyi.core.database.entity.ConversationType
-import com.wenchen.yiyi.core.common.theme.HalfTransparentBlack
-import com.wenchen.yiyi.core.common.theme.WhiteBg
-import com.wenchen.yiyi.core.common.theme.WhiteText
+import com.wenchen.yiyi.core.designSystem.theme.HalfTransparentBlack
+import com.wenchen.yiyi.core.designSystem.theme.WhiteBg
+import com.wenchen.yiyi.core.designSystem.theme.WhiteText
 import com.wenchen.yiyi.feature.aiChat.viewmodel.BaseChatViewModel
 
 @Composable

@@ -14,8 +14,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import com.wenchen.yiyi.core.common.theme.HalfTransparentBlack
-import com.wenchen.yiyi.core.common.theme.WhiteText
+import com.wenchen.yiyi.core.designSystem.theme.HalfTransparentBlack
+import com.wenchen.yiyi.core.designSystem.theme.WhiteText
 
 @Composable
 fun BlinkingReplyIndicator(text: String) {

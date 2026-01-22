@@ -41,7 +41,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.unit.dp
 import com.wenchen.yiyi.core.database.entity.ConversationType
 import com.wenchen.yiyi.core.designSystem.component.YiYiTextField
-import com.wenchen.yiyi.core.common.theme.*
+import com.wenchen.yiyi.core.designSystem.theme.*
 import com.wenchen.yiyi.feature.aiChat.viewmodel.BaseChatViewModel
 
 @Composable

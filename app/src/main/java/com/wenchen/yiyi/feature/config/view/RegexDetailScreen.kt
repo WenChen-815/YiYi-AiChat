@@ -13,9 +13,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.Draw
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material3.*
@@ -30,7 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.wenchen.yiyi.core.common.theme.*
+import com.wenchen.yiyi.core.designSystem.theme.*
 import com.wenchen.yiyi.core.database.entity.YiYiRegexScript
 import com.wenchen.yiyi.core.designSystem.component.SettingTextFieldItem
 import com.wenchen.yiyi.core.designSystem.component.SwitchWithText
@@ -348,7 +345,7 @@ fun RegexScriptEditDialog(
 @Preview(showBackground = true)
 @Composable
 fun RegexDetailScreenPreview() {
-    AIChatTheme {
+     AppTheme {
         RegexDetailScreen(
             groupId = "1",
             groupName = "正则分组",

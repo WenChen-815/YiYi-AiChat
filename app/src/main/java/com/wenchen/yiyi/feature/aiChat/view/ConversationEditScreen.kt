@@ -49,13 +49,12 @@ import coil3.request.crossfade
 import com.wenchen.yiyi.core.database.entity.AIChatMemory
 import com.wenchen.yiyi.core.database.entity.ConversationType
 import com.wenchen.yiyi.core.designSystem.component.SettingTextFieldItem
-import com.wenchen.yiyi.core.common.theme.AIChatTheme
-import com.wenchen.yiyi.core.common.theme.BlackText
-import com.wenchen.yiyi.core.common.theme.DarkGray
-import com.wenchen.yiyi.core.common.theme.GrayText
-import com.wenchen.yiyi.core.common.theme.LightGold
-import com.wenchen.yiyi.core.common.theme.LightGray
-import com.wenchen.yiyi.core.common.theme.WhiteText
+import com.wenchen.yiyi.core.designSystem.theme.BlackText
+import com.wenchen.yiyi.core.designSystem.theme.DarkGray
+import com.wenchen.yiyi.core.designSystem.theme.GrayText
+import com.wenchen.yiyi.core.designSystem.theme.LightGold
+import com.wenchen.yiyi.core.designSystem.theme.LightGray
+import com.wenchen.yiyi.core.designSystem.theme.WhiteText
 import com.wenchen.yiyi.core.util.ui.StatusBarUtils
 import com.wenchen.yiyi.feature.aiChat.viewmodel.ConversationEditViewModel
 import com.wenchen.yiyi.core.database.entity.YiYiWorldBook
@@ -72,9 +71,7 @@ internal fun ConversationEditRoute(
     viewModel: ConversationEditViewModel = hiltViewModel(),
     navController: NavController
 ) {
-    AIChatTheme {
-        ConversationEditScreen(viewModel, navController)
-    }
+    ConversationEditScreen(viewModel, navController)
 }
 
 @Composable

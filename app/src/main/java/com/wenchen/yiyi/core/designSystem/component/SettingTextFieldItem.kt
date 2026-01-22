@@ -13,9 +13,9 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.wenchen.yiyi.core.common.theme.DarkGray
-import com.wenchen.yiyi.core.common.theme.GrayBorder
-import com.wenchen.yiyi.core.common.theme.LightGray
+import com.wenchen.yiyi.core.designSystem.theme.DarkGray
+import com.wenchen.yiyi.core.designSystem.theme.GrayBorder
+import com.wenchen.yiyi.core.designSystem.theme.LightGray
 
 @Composable
 fun SettingTextFieldItem(

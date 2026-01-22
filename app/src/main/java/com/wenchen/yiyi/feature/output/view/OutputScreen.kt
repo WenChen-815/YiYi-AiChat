@@ -41,9 +41,9 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
-import com.wenchen.yiyi.core.common.theme.AIChatTheme
-import com.wenchen.yiyi.core.common.theme.GrayBg
-import com.wenchen.yiyi.core.common.theme.WhiteText
+import com.wenchen.yiyi.core.designSystem.theme.AppTheme
+import com.wenchen.yiyi.core.designSystem.theme.GrayBg
+import com.wenchen.yiyi.core.designSystem.theme.WhiteText
 import com.wenchen.yiyi.core.database.entity.AICharacter
 import com.wenchen.yiyi.feature.output.viewmodel.OutputViewModel
 
@@ -288,7 +288,7 @@ fun CharacterItem(
 @Composable
 fun OutputScreenPreview() {
     val characters = emptyList<AICharacter>()
-    AIChatTheme {
+    AppTheme {
         OutputScreenContent(
             characters = characters,
             selectedIndex = listOf(0, 1, 2),

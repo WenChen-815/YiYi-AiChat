@@ -1,4 +1,4 @@
-package com.wenchen.yiyi.core.common.theme
+package com.wenchen.yiyi.core.designSystem.theme
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape

@@ -18,9 +18,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import com.wenchen.yiyi.core.common.theme.AIChatTheme
-import com.wenchen.yiyi.core.common.theme.BlackBg
-import com.wenchen.yiyi.core.common.theme.WhiteBg
+import com.wenchen.yiyi.core.designSystem.theme.BlackBg
+import com.wenchen.yiyi.core.designSystem.theme.WhiteBg
 import com.wenchen.yiyi.core.database.entity.YiYiWorldBook
 import com.wenchen.yiyi.feature.worldBook.viewmodel.WorldBookListViewModel
 import com.wenchen.yiyi.navigation.routes.WorldBookRoutes
@@ -30,9 +29,7 @@ internal fun WorldBookListRoute(
     viewModel: WorldBookListViewModel = hiltViewModel(),
     navController: NavController
 ) {
-    AIChatTheme {
         WorldBookListScreen(viewModel, navController)
-    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

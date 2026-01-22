@@ -12,9 +12,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Key
-import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material3.*
@@ -34,12 +31,12 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import com.wenchen.yiyi.core.common.theme.AIChatTheme
-import com.wenchen.yiyi.core.common.theme.Gold
-import com.wenchen.yiyi.core.common.theme.Pink
-import com.wenchen.yiyi.core.common.theme.WhiteText
+import com.wenchen.yiyi.core.designSystem.theme.Gold
+import com.wenchen.yiyi.core.designSystem.theme.Pink
+import com.wenchen.yiyi.core.designSystem.theme.WhiteText
 import com.wenchen.yiyi.core.database.entity.YiYiWorldBook
 import com.wenchen.yiyi.core.database.entity.YiYiWorldBookEntry
+import com.wenchen.yiyi.core.designSystem.theme.AppTheme
 import com.wenchen.yiyi.core.util.ui.StatusBarUtils
 import com.wenchen.yiyi.feature.worldBook.viewmodel.WorldBookEditViewModel
 
@@ -401,7 +398,7 @@ fun WorldBookEntryItem(
 @Preview(showBackground = true)
 @Composable
 private fun WorldBookEditScreenPreview() {
-    AIChatTheme {
+    AppTheme {
         WorldBookEditScreen(
             isNewWorld = false,
             worldBook = YiYiWorldBook(id = "1", name = "我的异世界", description = "这是一个充满魔法的世界"),

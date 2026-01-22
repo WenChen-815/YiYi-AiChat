@@ -8,14 +8,18 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -25,17 +29,11 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import coil3.compose.AsyncImage
-import com.wenchen.yiyi.core.designSystem.component.NoBorderTextField
 import com.wenchen.yiyi.core.database.entity.AICharacter
-import com.wenchen.yiyi.core.common.theme.BlackText
-import com.wenchen.yiyi.core.common.theme.GrayBg
-import com.wenchen.yiyi.core.common.theme.GrayText
-import com.wenchen.yiyi.core.common.theme.WhiteText
+import com.wenchen.yiyi.core.designSystem.theme.GrayText
 import com.wenchen.yiyi.feature.main.viewmodel.HomeViewModel
 import com.wenchen.yiyi.navigation.routes.AiChatRoutes
-import timber.log.Timber
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     context: Context,
@@ -43,14 +41,10 @@ fun HomeScreen(
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current,
 ) {
     var searchQuery by remember { mutableStateOf("") }
-    // 从ViewModel获取角色列表数据
     val characters by viewModel.characters.collectAsState()
-    // 控制删除确认对话框的显示状态
     var showDeleteDialog by remember { mutableStateOf(false) }
-    // 保存待删除的角色
     var characterToDelete by remember { mutableStateOf<AICharacter?>(null) }
 
-    // 添加生命周期观察者，当界面恢复时刷新数据
     DisposableEffect(lifecycleOwner) {
         val observer =
             LifecycleEventObserver { _, event ->
@@ -65,63 +59,68 @@ fun HomeScreen(
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     Column(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .padding(10.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp),
     ) {
-        // 搜索框
-        NoBorderTextField(
+        // Modern Search Bar
+        OutlinedTextField(
             value = searchQuery,
             onValueChange = { query ->
                 searchQuery = query
                 viewModel.searchCharacters(query)
             },
-            modifier = Modifier.padding(bottom = 16.dp),
-            placeholder = {
-                Text(
-                    "搜索角色",
-                    style = MaterialTheme.typography.bodyMedium.copy(color = GrayText),
-                )
-            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 12.dp),
+            placeholder = { Text("搜索你喜欢的角色...", style = MaterialTheme.typography.bodyMedium) },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
             singleLine = true,
-            keyboardOptions =
-                KeyboardOptions(
-                    imeAction = ImeAction.Done,
-                ),
-            textStyle = MaterialTheme.typography.bodyLarge.copy(color = BlackText),
+            shape = RoundedCornerShape(24.dp),
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                disabledContainerColor = Color.Transparent,
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+            ),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
         )
 
-        // 角色列表
         if (characters.isEmpty()) {
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
             ) {
-                Text("暂无角色，请添加新角色")
+                Text(
+                    text = if (searchQuery.isEmpty()) "暂无角色，请点击下方 + 号添加" else "未找到匹配的角色",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = GrayText
+                )
             }
         } else {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
                 modifier = Modifier.fillMaxSize(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
+                contentPadding = PaddingValues(bottom = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 items(characters.size, key = { index -> characters[index].id }) { index ->
-                    CharacterItem(
+                    CharacterCard(
                         character = characters[index],
-                        onItemClick = { character ->
-                            viewModel.navigate(AiChatRoutes.SingleChat(character.id))
-                        },
+                        onClick = { viewModel.navigate(AiChatRoutes.SingleChat(it.id)) }
                     )
                 }
             }
         }
     }
-    // 删除确认对话框
+
     if (showDeleteDialog && characterToDelete != null) {
         AlertDialog(
             onDismissRequest = {
@@ -133,128 +132,93 @@ fun HomeScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        characterToDelete?.let { character ->
-                            Timber.tag("HomeScreen").d("删除角色: ${character.name}")
-                            viewModel.deleteCharacter(character)
-                        }
+                        characterToDelete?.let { viewModel.deleteCharacter(it) }
                         showDeleteDialog = false
                         characterToDelete = null
                     },
-                ) {
-                    Text("确定")
-                }
+                ) { Text("确定", color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(
-                    onClick = {
-                        showDeleteDialog = false
-                        characterToDelete = null
-                    },
-                ) {
-                    Text("取消")
-                }
+                TextButton(onClick = { showDeleteDialog = false }) { Text("取消") }
             },
         )
     }
 }
 
 @Composable
-fun CharacterItem(
+fun CharacterCard(
     character: AICharacter,
-    onItemClick: (AICharacter) -> Unit,
+    onClick: (AICharacter) -> Unit,
 ) {
     Card(
-        shape = RoundedCornerShape(8.dp),
-        colors =
-            CardDefaults.cardColors(
-                containerColor = Color.Transparent, // 设置Card本身透明
-            ),
-        // 上面的colors针对Card本身，而modifier.background针对所处控件的内容区域（默认是透明的）,两者的作用不同
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .heightIn(max = 300.dp),
-        //        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        onClick = { onItemClick(character) },
+        modifier = Modifier
+            .fillMaxWidth()
+            .aspectRatio(0.65f) // 设置宽高比为 0.65:1
+            .shadow(4.dp, RoundedCornerShape(16.dp)),
+        shape = RoundedCornerShape(16.dp),
+        onClick = { onClick(character) }
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
+            // Background Image
             AsyncImage(
                 model = character.background,
-                contentDescription = "角色背景",
+                contentDescription = null,
                 contentScale = ContentScale.Crop,
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .clip(RoundedCornerShape(8.dp, 8.dp, 9.dp, 9.dp)),
+                modifier = Modifier.fillMaxSize()
             )
+
+            // Gradient Overlay
             Box(
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .background(
-                            brush =
-                                Brush.verticalGradient(
-                                    colors =
-                                        listOf(
-                                            Color.Transparent,
-                                            Color.Transparent,
-                                            Color.Transparent,
-                                            GrayBg.copy(alpha = 0.9f),
-                                            GrayBg,
-                                        ),
-                                    startY = 0f, // 渐变起点Y坐标
-                                    endY = Float.POSITIVE_INFINITY, // 渐变终点Y坐标
-                                ),
-                        ),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                Color.Black.copy(alpha = 0.2f),
+                                Color.Black.copy(alpha = 0.8f)
+                            ),
+                            startY = 300f
+                        )
+                    )
             )
+
+            // Content
             Column(
-                modifier =
-                    Modifier
-                        .background(Color.Transparent)
-                        .fillMaxWidth()
-                        .align(Alignment.BottomCenter),
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(12.dp)
             ) {
                 Row(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(bottom = 4.dp)
                 ) {
-                    // 角色信息
-                    Column(
-                        modifier =
-                            Modifier
-                                .weight(1f)
-                                .padding(8.dp, 8.dp),
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(bottom = 4.dp),
-                        ) {
-                            AsyncImage(
-                                model = character.avatar,
-                                contentDescription = "角色头像",
-                                contentScale = ContentScale.Crop,
-                                modifier =
-                                    Modifier
-                                        .padding(end = 4.dp)
-                                        .size(24.dp)
-                                        .clip(CircleShape),
-                            )
-                            Text(
-                                text = character.name,
-                                style = MaterialTheme.typography.bodyMedium.copy(color = WhiteText),
-                                maxLines = 1,
-                            )
-                        }
-                        Text(
-                            text = character.description,
-                            style = MaterialTheme.typography.bodySmall.copy(color = WhiteText),
-                            maxLines = 3,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
+                    AsyncImage(
+                        model = character.avatar,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(28.dp)
+                            .clip(CircleShape)
+                            .background(Color.White),
+                        contentScale = ContentScale.Crop
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = character.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
+                Text(
+                    text = character.description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White.copy(alpha = 0.8f),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
         }
     }

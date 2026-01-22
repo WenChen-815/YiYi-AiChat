@@ -39,10 +39,9 @@ import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import com.wenchen.yiyi.core.designSystem.component.DisplayChatMessageItem
 import com.wenchen.yiyi.core.designSystem.component.BlinkingReplyIndicator
-import com.wenchen.yiyi.core.common.theme.AIChatTheme
-import com.wenchen.yiyi.core.common.theme.BlackBg
-import com.wenchen.yiyi.core.common.theme.HalfTransparentBlack
-import com.wenchen.yiyi.core.common.theme.WhiteBg
+import com.wenchen.yiyi.core.designSystem.theme.BlackBg
+import com.wenchen.yiyi.core.designSystem.theme.HalfTransparentBlack
+import com.wenchen.yiyi.core.designSystem.theme.WhiteBg
 import com.wenchen.yiyi.core.util.ui.ThemeColorExtractor
 import com.wenchen.yiyi.core.util.ui.ToastUtils
 import com.wenchen.yiyi.feature.aiChat.viewmodel.SingleChatViewModel
@@ -63,9 +62,7 @@ internal fun SingleChatRoute(
     viewModel: SingleChatViewModel = hiltViewModel(),
     navController: NavController
 ) {
-    AIChatTheme {
-        SingleChatScreen(viewModel, navController)
-    }
+    SingleChatScreen(viewModel, navController)
 }
 
 

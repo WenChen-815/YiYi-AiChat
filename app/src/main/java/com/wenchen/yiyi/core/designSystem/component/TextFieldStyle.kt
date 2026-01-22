@@ -34,7 +34,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.wenchen.yiyi.core.common.theme.editTextBackground
+import com.wenchen.yiyi.core.designSystem.theme.editTextBackground
 
 /**
  * 使用BasicTextField自定义的文本输入框，可以完全控制内边距等样式。

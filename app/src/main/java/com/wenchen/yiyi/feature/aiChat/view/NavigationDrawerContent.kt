@@ -28,7 +28,7 @@ import androidx.compose.ui.unit.dp
 import com.wenchen.yiyi.core.database.entity.Conversation
 import com.wenchen.yiyi.core.database.entity.ConversationType
 import com.wenchen.yiyi.core.database.entity.AICharacter
-import com.wenchen.yiyi.core.common.theme.*
+import com.wenchen.yiyi.core.designSystem.theme.*
 import com.wenchen.yiyi.core.designSystem.component.YiYiChatDrawerItem
 import com.wenchen.yiyi.feature.aiChat.viewmodel.BaseChatViewModel
 import com.wenchen.yiyi.navigation.routes.ConfigRoutes

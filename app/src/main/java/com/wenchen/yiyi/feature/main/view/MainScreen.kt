@@ -7,38 +7,25 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.rounded.ArrowCircleUp
 import androidx.compose.material.icons.rounded.Book
+import androidx.compose.material.icons.rounded.ChatBubble
+import androidx.compose.material.icons.rounded.ChatBubbleOutline
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.PersonOutline
 import androidx.compose.material.icons.rounded.Settings
-import androidx.compose.material3.BottomAppBar
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -48,19 +35,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.wenchen.yiyi.core.designSystem.component.IconWithText
-import com.wenchen.yiyi.core.common.theme.AIChatTheme
-import com.wenchen.yiyi.core.common.theme.Gold
-import com.wenchen.yiyi.core.common.theme.GrayText
-import com.wenchen.yiyi.core.common.theme.Pink
-import com.wenchen.yiyi.core.common.theme.WhiteBg
-import com.wenchen.yiyi.core.common.theme.WhiteText
+import com.wenchen.yiyi.core.designSystem.theme.AppTheme
+import com.wenchen.yiyi.core.designSystem.theme.Gold
+import com.wenchen.yiyi.core.designSystem.theme.GrayText
+import com.wenchen.yiyi.core.designSystem.theme.Pink
 import com.wenchen.yiyi.core.util.ui.StatusBarUtils
 import com.wenchen.yiyi.feature.main.viewmodel.MainViewModel
 import com.wenchen.yiyi.navigation.routes.AiChatRoutes
 import com.wenchen.yiyi.navigation.routes.ConfigRoutes
 import com.wenchen.yiyi.navigation.routes.OutputRoutes
 import com.wenchen.yiyi.navigation.routes.WorldBookRoutes
+import kotlinx.coroutines.launch
 
 /**
  * 主页面路由
@@ -102,238 +87,135 @@ private fun MainScreenContent(
     } else {
         StatusBarUtils.setStatusBarTextColor(activity as ComponentActivity, true)
     }
+
+    val pagerState = rememberPagerState(pageCount = { 2 })
+    val scope = rememberCoroutineScope()
     var showAddPopup by remember { mutableStateOf(false) }
-    val currentPosition = viewModel.currentTab
+
     Scaffold(
         topBar = {
-            when (currentPosition) {
-                0 ->
-                    TopAppBar(
-                        title = {
-                            Text(
-                                text = "角色列表",
-                                style = MaterialTheme.typography.headlineSmall.copy(
-                                    MaterialTheme.colorScheme.onBackground,
-                                ),
-                            )
-                        },
-                        actions = {
-                            IconWithText(
-                                icon = Icons.Rounded.ArrowCircleUp,
-                                iconTint = MaterialTheme.colorScheme.primary,
-                                text = "导出",
-                                modifier = Modifier
-                                    .clickable {
-                                        viewModel.navigate(OutputRoutes.Output)
-                                    }
-                                    .padding(horizontal = 8.dp),
-                                iconModifier = Modifier.size(24.dp),
-                                textModifier = Modifier.padding(top = 4.dp),
-                                textStyle = MaterialTheme.typography.labelSmall.copy(MaterialTheme.colorScheme.primary)
-                            )
-                            IconWithText(
-                                icon = Icons.Rounded.Book,
-                                iconTint = MaterialTheme.colorScheme.primary,
-                                text = "世界",
-                                modifier = Modifier
-                                    .clickable {
-                                        viewModel.navigate(WorldBookRoutes.WorldBookList)
-                                    }
-                                    .padding(horizontal = 8.dp),
-                                iconModifier = Modifier.size(24.dp),
-                                textModifier = Modifier.padding(top = 4.dp),
-                                textStyle = MaterialTheme.typography.labelSmall.copy(MaterialTheme.colorScheme.primary)
-                            )
-                            IconWithText(
-                                icon = Icons.Rounded.Settings,
-                                iconTint = MaterialTheme.colorScheme.primary,
-                                text = "设置",
-                                modifier = Modifier
-                                    .clickable {
-                                        viewModel.navigate(ConfigRoutes.Settings)
-                                    }
-                                    .padding(horizontal = 8.dp),
-                                iconModifier = Modifier.size(24.dp),
-                                textModifier = Modifier.padding(top = 4.dp),
-                                textStyle = MaterialTheme.typography.labelSmall.copy(MaterialTheme.colorScheme.primary)
-                            )
-                        },
-                        colors =
-                            TopAppBarDefaults.topAppBarColors(
-                                containerColor = Color.Transparent,
-                            ),
+            TopAppBar(
+                title = {
+                    Text(
+                        text = if (pagerState.currentPage == 0) "角色列表" else "聊天列表",
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                     )
-
-                1 ->
-                    TopAppBar(
-                        title = {
-                            Text(
-                                text = "聊天列表",
-                                style = MaterialTheme.typography.headlineSmall.copy(
-                                    MaterialTheme.colorScheme.onBackground,
-                                ),
-                            )
-                        },
-                        actions = {
-                            TextButton(onClick = {
-                                viewModel.navigate(AiChatRoutes.ConversationEdit("", true))
-                            }) {
-                                Text("创建群组")
+                },
+                actions = {
+                    if (pagerState.currentPage == 0) {
+                        Row {
+                            IconButton(onClick = { viewModel.navigate(OutputRoutes.Output) }) {
+                                Icon(Icons.Rounded.ArrowCircleUp, contentDescription = "导出", tint = MaterialTheme.colorScheme.primary)
                             }
-                        },
-                        colors =
-                            TopAppBarDefaults.topAppBarColors(
-                                containerColor = Color.Transparent,
-                            ),
-                    )
-            }
+                            IconButton(onClick = { viewModel.navigate(WorldBookRoutes.WorldBookList) }) {
+                                Icon(Icons.Rounded.Book, contentDescription = "世界", tint = MaterialTheme.colorScheme.primary)
+                            }
+                            IconButton(onClick = { viewModel.navigate(ConfigRoutes.Settings) }) {
+                                Icon(Icons.Rounded.Settings, contentDescription = "设置", tint = MaterialTheme.colorScheme.primary)
+                            }
+                        }
+                    } else {
+                        TextButton(onClick = {
+                            viewModel.navigate(AiChatRoutes.ConversationEdit("", true))
+                        }) {
+                            Text("创建群组")
+                        }
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
+            )
         },
         bottomBar = {
-            BottomAppBar(
-                containerColor = MaterialTheme.colorScheme.background,
-                modifier =
-                    Modifier
-//                        .background(MaterialTheme.colorScheme.primary) // 这样设置是无效的，应该用containerColor
-                        .fillMaxWidth()
-                        .height(66.dp),
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .shadow(16.dp),
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 8.dp
             ) {
                 Row(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceAround,
-                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .navigationBarsPadding()
+                        .height(64.dp)
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .weight(1f)
-                            .clickable(
-                                indication = null,
-                                interactionSource = remember { MutableInteractionSource() }
-                            ) { viewModel.updateTab(0) },
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = "角色",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = when (currentPosition) {
-                                    0 -> FontWeight.Bold
-                                    else -> FontWeight.Normal
-                                }
-                            ),
-                            color = if (currentPosition == 0) MaterialTheme.colorScheme.onBackground else GrayText,
-                        )
-                    }
-
-                    // 中间新增按钮
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "新增",
-                        tint = WhiteText,
-                        modifier =
-                            Modifier
-                                .size(48.dp, 36.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(
-                                    brush =
-                                        Brush.horizontalGradient(
-                                            colors = listOf(Pink, Gold),
-                                        ),
-                                )
-                                .clickable { showAddPopup = true },
+                    // Character Tab
+                    NavigationTabItem(
+                        selected = pagerState.currentPage == 0,
+                        icon = Icons.Rounded.PersonOutline,
+                        selectedIcon = Icons.Rounded.Person,
+                        label = "角色",
+                        onClick = { scope.launch { pagerState.animateScrollToPage(0) } }
                     )
-                    // 弹出菜单
-                    if (showAddPopup) {
-                        Popup(
-                            alignment = Alignment.TopCenter,
-                            onDismissRequest = { showAddPopup = false }
-                        ) {
-                            Card(
-                                modifier = Modifier
-                                    .padding(bottom = 48.dp)
-                                    .width(150.dp),
-                                shape = RoundedCornerShape(8.dp),
-                                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                                colors = CardDefaults.cardColors().copy(
-                                    containerColor = WhiteBg
+
+                    // Middle Add Button
+                    Box(contentAlignment = Alignment.Center) {
+                        FloatingActionButton(
+                            onClick = { showAddPopup = true },
+                            shape = CircleShape,
+                            containerColor = Color.Transparent,
+                            elevation = FloatingActionButtonDefaults.elevation(0.dp),
+                            modifier = Modifier
+                                .size(48.dp)
+                                .background(
+                                    brush = Brush.horizontalGradient(listOf(Pink, Gold)),
+                                    shape = CircleShape
                                 )
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = "新增", tint = Color.White)
+                        }
+
+                        if (showAddPopup) {
+                            Popup(
+                                alignment = Alignment.TopCenter,
+                                onDismissRequest = { showAddPopup = false }
                             ) {
-                                Column(
-                                    modifier = Modifier.padding(8.dp)
+                                Card(
+                                    modifier = Modifier
+                                        .padding(bottom = 72.dp)
+                                        .width(160.dp),
+                                    shape = RoundedCornerShape(16.dp),
+                                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                                 ) {
-                                    // 新增角色选项
-                                    Text(
-                                        text = "新增角色",
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .clickable {
-                                                showAddPopup = false
-                                                viewModel.navigate(
-                                                    AiChatRoutes.CharacterEdit(
-                                                        "",
-                                                        true
-                                                    )
-                                                )
-                                            }
-                                            .padding(12.dp),
-                                        style = MaterialTheme.typography.bodyLarge.copy(
-                                            MaterialTheme.colorScheme.primary
-                                        )
-                                    )
-
-                                    HorizontalDivider()
-
-                                    // 新增世界选项
-                                    Text(
-                                        text = "新增世界",
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .clickable {
-                                                showAddPopup = false
-                                                viewModel.navigate(WorldBookRoutes.WorldBookEdit("", true))
-                                            }
-                                            .padding(12.dp),
-                                        style = MaterialTheme.typography.bodyLarge.copy(
-                                            MaterialTheme.colorScheme.primary
-                                        )
-                                    )
+                                    Column {
+                                        PopupMenuItem("新增角色") {
+                                            showAddPopup = false
+                                            viewModel.navigate(AiChatRoutes.CharacterEdit("", true))
+                                        }
+                                        HorizontalDivider(modifier = Modifier.padding(horizontal = 12.dp))
+                                        PopupMenuItem("新增世界") {
+                                            showAddPopup = false
+                                            viewModel.navigate(WorldBookRoutes.WorldBookEdit("", true))
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
-                    Box(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .weight(1f)
-                            .clickable(
-                                indication = null,
-                                interactionSource = remember { MutableInteractionSource() }
-                            ) { viewModel.updateTab(1) },
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = "聊天",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = when (currentPosition) {
-                                    1 -> FontWeight.Bold
-                                    else -> FontWeight.Normal
-                                }
-                            ),
-                            color = if (currentPosition == 1) MaterialTheme.colorScheme.onBackground else GrayText,
-                        )
-                    }
+
+                    // Chat Tab
+                    NavigationTabItem(
+                        selected = pagerState.currentPage == 1,
+                        icon = Icons.Rounded.ChatBubbleOutline,
+                        selectedIcon = Icons.Rounded.ChatBubble,
+                        label = "聊天",
+                        onClick = { scope.launch { pagerState.animateScrollToPage(1) } }
+                    )
                 }
             }
-        },
+        }
     ) { padding ->
-        Box(
-            modifier =
-                Modifier
-                    .background(MaterialTheme.colorScheme.background)
-                    .padding(padding),
-        ) {
-            when (currentPosition) {
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            userScrollEnabled = true
+        ) { page ->
+            when (page) {
                 0 -> HomeScreen(LocalContext.current)
                 1 -> ConversationListScreen(LocalContext.current)
             }
@@ -341,26 +223,57 @@ private fun MainScreenContent(
     }
 }
 
-/**
- * 主页面界面浅色主题预览
- */
-@Preview(showBackground = true)
 @Composable
-internal fun MainScreenPreview() {
-    AIChatTheme {
-        MainScreen(
+private fun RowScope.NavigationTabItem(
+    selected: Boolean,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    selectedIcon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    onClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .weight(1f)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick
+            ),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            imageVector = if (selected) selectedIcon else icon,
+            contentDescription = label,
+            tint = if (selected) MaterialTheme.colorScheme.primary else GrayText,
+            modifier = Modifier.size(26.dp)
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+            color = if (selected) MaterialTheme.colorScheme.primary else GrayText
         )
     }
 }
 
-/**
- * 主页面界面深色主题预览
- */
+@Composable
+private fun PopupMenuItem(text: String, onClick: () -> Unit) {
+    Text(
+        text = text,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(16.dp),
+        style = MaterialTheme.typography.bodyLarge,
+        color = MaterialTheme.colorScheme.onSurface
+    )
+}
+
 @Preview(showBackground = true)
 @Composable
-internal fun MainScreenPreviewDark() {
-    AIChatTheme(darkTheme = true) {
-        MainScreen(
-        )
+internal fun MainScreenPreview() {
+    AppTheme {
+        MainScreen()
     }
 }

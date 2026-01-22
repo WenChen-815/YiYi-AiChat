@@ -201,7 +201,7 @@ fun ShowMemoryDialog(
                     )
                     Text(
                         text = "重置次数",
-                        style = MaterialTheme.typography.bodyMedium.copy(com.wenchen.yiyi.core.common.theme.Gold),
+                        style = MaterialTheme.typography.bodyMedium.copy(com.wenchen.yiyi.core.designSystem.theme.Gold),
                         modifier = Modifier
                             .padding(5.dp)
                             .clickable {

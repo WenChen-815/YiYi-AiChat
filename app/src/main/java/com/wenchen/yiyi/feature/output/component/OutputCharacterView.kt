@@ -28,8 +28,8 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.unit.dp
-import com.wenchen.yiyi.core.common.theme.GrayBg
-import com.wenchen.yiyi.core.common.theme.WhiteText
+import com.wenchen.yiyi.core.designSystem.theme.GrayBg
+import com.wenchen.yiyi.core.designSystem.theme.WhiteText
 import com.wenchen.yiyi.core.database.entity.AICharacter
 
 /**
