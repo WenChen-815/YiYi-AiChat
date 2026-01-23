@@ -267,8 +267,24 @@ fun ChatMessageItem(
                         }
                         if (messageType == MessageType.ASSISTANT) {
                             val regexReplace = viewModel.regexReplace(content)
+                            HtmlWebView(
+                                modifier = Modifier.fillMaxWidth(),
+                                id = messageId, // 使用唯一片段ID
+                                html = regexReplace,
+                                textColor = color,
+                                height = viewModel.findSegmentHeight(messageId, 0),
+                                onHeight = { height ->
+                                    viewModel.rememberSegmentHeight(messageId, 0, height)
+                                },
+                                onLongClick = { offset ->
+                                    val paddingPx = with(density) { 8.dp.toPx() }
+                                    touchPosition = Offset(offset.x + paddingPx, offset.y + paddingPx)
+                                    isMenuVisible = true
+                                }
+                            )
+                            /*
                             // 拆分内容
-                            val segments = remember(regexReplace) { splitMessageContent(regexReplace) }
+//                            val segments = remember(regexReplace) { splitMessageContent(regexReplace) }
 
                             Column {
                                 segments.forEachIndexed { index, segment ->
@@ -303,6 +319,7 @@ fun ChatMessageItem(
                                     }
                                 }
                             }
+                            */
                         } else {
                             // 对于USER和SYSTEM消息，使用常规的StyledBracketText
                             StyledBracketText(
@@ -314,53 +331,6 @@ fun ChatMessageItem(
                                 )
                             )
                         }
-                        // 识别 HTML 的简单启发式算法
-//                        val isHtmlContent = remember(content) {
-//                            val trimmed = content.trim()
-//                            (trimmed.contains("<") && trimmed.contains(">")) ||
-//                                    trimmed.contains("class=") ||
-//                                    trimmed.contains("style=")
-//                        }
-//                        if (isHtmlContent) {
-//                            HtmlWebView(
-//                                id = messageId,
-//                                html = content,
-//                                textColor = color,
-//                                height = viewModel.findMessageItemHeight(messageId),
-//                                modifier = Modifier.fillMaxWidth(),
-//                                onHeight = { height ->
-//                                    // 处理高度回调
-//                                    viewModel.rememberMessageItemHeight(messageId, height)
-//                                },
-//                                onLongClick = { offset ->
-//                                    // 因为 WebView 放在带有 padding(8.dp) 的 Column 中
-//                                    // touchPosition 需要加上这个偏移量，以匹配 Column 的坐标系
-//                                    val paddingPx = with(density) { 8.dp.toPx() }
-//                                    touchPosition = Offset(
-//                                        x = offset.x + paddingPx,
-//                                        y = offset.y + paddingPx
-//                                    )
-//                                    isMenuVisible = true
-//                                }
-//                            )
-//                        }
-//                        else {
-//                            val specialTextColor = when (messageType) {
-//                                MessageType.USER -> Color.DarkGray
-//                                MessageType.ASSISTANT -> Color.LightGray
-//                                MessageType.SYSTEM -> WhiteText
-//                            }
-//                            StyledBracketText(
-//                                text = content.trim(),
-//                                normalTextStyle = MaterialTheme.typography.bodyLarge.copy(color = color),
-//                                specialTextStyle = MaterialTheme.typography.bodyLarge.copy(
-//                                    color = specialTextColor,
-//                                    fontStyle = FontStyle.Italic
-//                                )
-//                            )
-//                        }
-
-
                     }
 
                     MessageContentType.IMAGE -> {
