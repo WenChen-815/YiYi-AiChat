@@ -1,4 +1,4 @@
-package com.wenchen.yiyi.feature.worldBook.viewmodel
+package com.wenchen.yiyi.feature.config.viewmodel
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope

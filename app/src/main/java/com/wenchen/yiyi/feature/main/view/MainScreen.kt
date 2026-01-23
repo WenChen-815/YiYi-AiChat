@@ -106,9 +106,6 @@ private fun MainScreenContent(
                             IconButton(onClick = { viewModel.navigate(OutputRoutes.Output) }) {
                                 Icon(Icons.Rounded.ArrowCircleUp, contentDescription = "导出", tint = MaterialTheme.colorScheme.primary)
                             }
-                            IconButton(onClick = { viewModel.navigate(WorldBookRoutes.WorldBookList) }) {
-                                Icon(Icons.Rounded.Book, contentDescription = "世界", tint = MaterialTheme.colorScheme.primary)
-                            }
                             IconButton(onClick = { viewModel.navigate(ConfigRoutes.Settings) }) {
                                 Icon(Icons.Rounded.Settings, contentDescription = "设置", tint = MaterialTheme.colorScheme.primary)
                             }

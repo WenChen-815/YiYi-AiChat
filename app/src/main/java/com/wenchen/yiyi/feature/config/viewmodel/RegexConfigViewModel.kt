@@ -10,6 +10,7 @@ import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.core.state.UserState
 import com.wenchen.yiyi.navigation.AppNavigator
 import com.wenchen.yiyi.navigation.routes.ConfigRoutes
+import com.wenchen.yiyi.navigation.routes.RegexRoutes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -54,6 +55,6 @@ class RegexConfigViewModel @Inject constructor(
     }
 
     fun navigateToDetail(groupId: String, groupName: String) {
-        navigate(ConfigRoutes.RegexDetail(groupId))
+        navigate(RegexRoutes.RegexDetail(groupId))
     }
 }

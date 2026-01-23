@@ -1,4 +1,4 @@
-package com.wenchen.yiyi.feature.worldBook.view
+package com.wenchen.yiyi.feature.config.view
 
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.LocalActivity
@@ -36,7 +36,7 @@ import com.wenchen.yiyi.core.database.entity.YiYiWorldBookEntry
 import com.wenchen.yiyi.core.designSystem.theme.AppTheme
 import com.wenchen.yiyi.core.designSystem.theme.PrimaryGradient
 import com.wenchen.yiyi.core.util.ui.StatusBarUtils
-import com.wenchen.yiyi.feature.worldBook.viewmodel.WorldBookEditViewModel
+import com.wenchen.yiyi.feature.config.viewmodel.WorldBookEditViewModel
 import com.wenchen.yiyi.core.designSystem.component.SpaceHorizontalLarge
 import com.wenchen.yiyi.core.designSystem.component.SpaceHorizontalSmall
 import com.wenchen.yiyi.core.designSystem.component.SpaceHorizontalXSmall

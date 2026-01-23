@@ -1,4 +1,4 @@
-package com.wenchen.yiyi.feature.worldBook.view
+package com.wenchen.yiyi.feature.config.view
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
@@ -29,7 +29,7 @@ import com.wenchen.yiyi.core.database.entity.YiYiWorldBookEntry
 import com.wenchen.yiyi.core.designSystem.component.SpaceHorizontalSmall
 import com.wenchen.yiyi.core.designSystem.component.SpaceVerticalSmall
 import com.wenchen.yiyi.core.designSystem.component.SpaceVerticalXXLarge
-import com.wenchen.yiyi.feature.worldBook.viewmodel.WorldBookEntryEditViewModel
+import com.wenchen.yiyi.feature.config.viewmodel.WorldBookEntryEditViewModel
 import kotlinx.coroutines.launch
 
 @Composable

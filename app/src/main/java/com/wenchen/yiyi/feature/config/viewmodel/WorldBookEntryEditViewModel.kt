@@ -1,4 +1,4 @@
-package com.wenchen.yiyi.feature.worldBook.viewmodel
+package com.wenchen.yiyi.feature.config.viewmodel
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
@@ -6,11 +6,9 @@ import androidx.navigation.toRoute
 import com.aventrix.jnanoid.jnanoid.NanoIdUtils
 import com.wenchen.yiyi.core.base.viewmodel.BaseViewModel
 import com.wenchen.yiyi.core.data.repository.YiYiWorldBookEntryRepository
-import com.wenchen.yiyi.core.database.entity.WorldBookEntryExtensions
 import com.wenchen.yiyi.core.database.entity.YiYiWorldBookEntry
 import com.wenchen.yiyi.core.state.UserConfigState
 import com.wenchen.yiyi.core.state.UserState
-import com.wenchen.yiyi.core.util.ui.ToastUtils
 import com.wenchen.yiyi.navigation.AppNavigator
 import com.wenchen.yiyi.navigation.routes.WorldBookRoutes
 import dagger.hilt.android.lifecycle.HiltViewModel

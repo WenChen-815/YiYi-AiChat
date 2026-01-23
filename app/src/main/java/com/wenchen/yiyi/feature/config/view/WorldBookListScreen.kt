@@ -1,4 +1,4 @@
-package com.wenchen.yiyi.feature.worldBook.view
+package com.wenchen.yiyi.feature.config.view
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -22,7 +22,7 @@ import com.wenchen.yiyi.core.database.entity.YiYiWorldBook
 import com.wenchen.yiyi.core.designSystem.component.SpaceVerticalXSmall
 import com.wenchen.yiyi.core.designSystem.theme.DarkGray
 import com.wenchen.yiyi.core.designSystem.theme.LightGray
-import com.wenchen.yiyi.feature.worldBook.viewmodel.WorldBookListViewModel
+import com.wenchen.yiyi.feature.config.viewmodel.WorldBookListViewModel
 import com.wenchen.yiyi.navigation.routes.WorldBookRoutes
 
 @Composable

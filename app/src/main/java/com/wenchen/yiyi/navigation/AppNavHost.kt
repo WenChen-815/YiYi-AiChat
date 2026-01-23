@@ -29,7 +29,6 @@ import com.wenchen.yiyi.feature.aiChat.navigation.aiChatGraph
 import com.wenchen.yiyi.feature.config.navigation.configGraph
 import com.wenchen.yiyi.feature.main.navigation.mainGraph
 import com.wenchen.yiyi.feature.output.navigation.outputGraph
-import com.wenchen.yiyi.feature.worldBook.navigation.worldBookGraph
 import com.wenchen.yiyi.navigation.routes.MainRoutes
 import kotlinx.coroutines.flow.collectLatest
 
@@ -89,7 +88,6 @@ fun AppNavHost(
                 mainGraph(navController, this@SharedTransitionLayout)
                 configGraph(navController, this@SharedTransitionLayout)
                 aiChatGraph(navController, this@SharedTransitionLayout)
-                worldBookGraph(navController, this@SharedTransitionLayout)
                 outputGraph(navController, this@SharedTransitionLayout)
             }
         }

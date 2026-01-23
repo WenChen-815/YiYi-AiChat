@@ -5,31 +5,26 @@ import androidx.compose.animation.SharedTransitionScope
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
-import com.wenchen.yiyi.feature.config.view.ApiConfigRoute
-import com.wenchen.yiyi.feature.config.view.ChatConfigRoute
-import com.wenchen.yiyi.feature.config.view.SettingsRoute
-import com.wenchen.yiyi.navigation.routes.ConfigRoutes
+import com.wenchen.yiyi.feature.config.view.RegexConfigRoute
+import com.wenchen.yiyi.feature.config.view.RegexDetailRoute
+import com.wenchen.yiyi.navigation.routes.RegexRoutes
 
 /**
- * 注册设置页面路由
+ * 注册正则页面路由
  *
  * @param navController NavHostController
  * @param sharedTransitionScope 共享转场作用域
  */
 @OptIn(ExperimentalSharedTransitionApi::class)
-fun NavGraphBuilder.configScreen(
+fun NavGraphBuilder.regexScreen(
     navController: NavHostController,
     sharedTransitionScope: SharedTransitionScope
 ) {
-    composable<ConfigRoutes.Settings> {
-        SettingsRoute()
+    composable<RegexRoutes.RegexConfig> {
+        RegexConfigRoute()
     }
 
-    composable<ConfigRoutes.ChatConfig> {
-        ChatConfigRoute(navController = navController)
-    }
-
-    composable<ConfigRoutes.ApiConfig> {
-        ApiConfigRoute(navController = navController)
+    composable<RegexRoutes.RegexDetail> {
+        RegexDetailRoute()
     }
 }

@@ -16,6 +16,12 @@ fun NavGraphBuilder.configGraph(
     navController: NavHostController,
     sharedTransitionScope: SharedTransitionScope
 ) {
-    // 只调用页面级导航函数，不包含其他逻辑
-     configScreen(navController, sharedTransitionScope)
+    // 设置相关界面
+    configScreen(navController, sharedTransitionScope)
+
+    // 世界书相关界面
+    worldBookScreen(navController, sharedTransitionScope)
+
+    // 正则表达式相关界面
+    regexScreen(navController, sharedTransitionScope)
 }

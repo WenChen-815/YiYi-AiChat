@@ -21,6 +21,8 @@ import com.wenchen.yiyi.core.designSystem.theme.TextGray
 import com.wenchen.yiyi.core.designSystem.theme.LightGray
 import com.wenchen.yiyi.feature.config.viewmodel.SettingsViewModel
 import com.wenchen.yiyi.navigation.routes.ConfigRoutes
+import com.wenchen.yiyi.navigation.routes.RegexRoutes
+import com.wenchen.yiyi.navigation.routes.WorldBookRoutes
 
 @Composable
 internal fun SettingsRoute(
@@ -75,9 +77,17 @@ fun SettingsScreen(
             SpaceVerticalLarge()
 
             SettingNavigationCard(
+                title = "世界书",
+                description = "管理世界书",
+                onClick = { viewModel.navigate(WorldBookRoutes.WorldBookList) }
+            )
+
+            SpaceVerticalLarge()
+
+            SettingNavigationCard(
                 title = "正则组",
                 description = "管理正则表达式分组及替换规则",
-                onClick = { viewModel.navigate(ConfigRoutes.RegexConfig) }
+                onClick = { viewModel.navigate(RegexRoutes.RegexConfig) }
             )
         }
     }

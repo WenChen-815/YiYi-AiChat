@@ -1,17 +1,17 @@
-package com.wenchen.yiyi.feature.worldBook.navigation
+package com.wenchen.yiyi.feature.config.navigation
 
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
-import com.wenchen.yiyi.feature.worldBook.view.WorldBookEditRoute
-import com.wenchen.yiyi.feature.worldBook.view.WorldBookEntryEditRoute
-import com.wenchen.yiyi.feature.worldBook.view.WorldBookListRoute
+import com.wenchen.yiyi.feature.config.view.WorldBookEditRoute
+import com.wenchen.yiyi.feature.config.view.WorldBookEntryEditRoute
+import com.wenchen.yiyi.feature.config.view.WorldBookListRoute
 import com.wenchen.yiyi.navigation.routes.WorldBookRoutes
 
 /**
- * 注册世界相关页面路由
+ * 注册世界页面路由
  *
  * @param navController NavHostController
  * @param sharedTransitionScope 共享转场作用域
