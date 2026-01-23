@@ -77,8 +77,7 @@ fun HomeScreen(
                 viewModel.searchCharacters(query)
             },
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 12.dp),
+                .fillMaxWidth(),
             placeholder = { Text("搜索你喜欢的角色...", style = MaterialTheme.typography.bodyMedium) },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
             singleLine = true,

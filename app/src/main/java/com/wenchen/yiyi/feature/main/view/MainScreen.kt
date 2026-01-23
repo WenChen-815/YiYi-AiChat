@@ -132,7 +132,7 @@ private fun MainScreenContent(
                 Row(
                     modifier = Modifier
                         .navigationBarsPadding()
-                        .height(64.dp)
+                        .height(48.dp)
                         .fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
