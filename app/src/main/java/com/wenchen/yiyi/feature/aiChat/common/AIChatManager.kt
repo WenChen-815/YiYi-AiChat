@@ -280,8 +280,9 @@ class AIChatManager @Inject constructor(
                         }
                         if (shouldApply) { // 如果确定应用此条目
                             if (appliedEntryIds.add(entry.entryId)) { // 确保条目ID未被添加过（避免重复）
-                                val displayName = entry.name ?: entry.entryId // 使用条目名称，如果没有则使用ID作为显示名
-                                worldItemBuilder.append("[$displayName]: ${entry.content ?: ""}\n") // 将条目内容添加到世界项构建器中
+                                // 对世界书条目内容进行占位符替换
+                                val content = (entry.content ?: "").replacePlaceholders(conversation, aiCharacter)
+                                worldItemBuilder.append("$content\n") // 将条目内容添加到世界项构建器中
                             }
                         }
                     } else {
@@ -307,18 +308,24 @@ class AIChatManager @Inject constructor(
 
         // 3. 处理消息历史并进行关键词匹配
         for (message in oldMessages) {
+            // 对历史消息内容进行占位符替换
+            val processedContent = message.content.replacePlaceholders(conversation, aiCharacter)
+            
             if (message.type == MessageType.ASSISTANT && message.characterId == aiCharacter.id) {
-                messages.add(Message("assistant", chatUtils.parseMessage(message).cleanedContent))
+                // 对于 AI 回复，需要解析并处理清洗后的内容
+                val parsedContent = chatUtils.parseMessage(message).cleanedContent.replacePlaceholders(conversation, aiCharacter)
+                messages.add(Message("assistant", parsedContent))
             } else {
-                messages.add(Message("user", message.content))
+                messages.add(Message("user", processedContent))
             }
 
-            // 匹配关键词
+            // 匹配关键词（基于原始内容或处理后的内容，通常关键词不含占位符）
             pattern?.findAll(message.content)?.forEach { matchResult -> // 在消息内容中查找所有匹配关键词模式的内容
                 val matchedKey = matchResult.value // 获取匹配到的具体关键词
                 val entry = keyToEntry[matchedKey] // 根据匹配到的关键词查找对应的世界书条目
                 if (entry != null && appliedEntryIds.add(entry.entryId)) { // 如果找到了对应的条目且该条目尚未被添加过
-                    worldItemBuilder.append("${entry.content ?: ""}\n") // 将匹配到的条目内容追加到世界项构建器中
+                    val entryContent = (entry.content ?: "").replacePlaceholders(conversation, aiCharacter)
+                    worldItemBuilder.append("$entryContent\n") // 将匹配到的条目内容追加到世界项构建器中
                 }
             }
         }
@@ -369,21 +376,21 @@ class AIChatManager @Inject constructor(
             
             // 融合后的描述字段
             if (aiCharacter.description.isNotBlank()) {
-                append("\n# [YOUR ROLE]${aiCharacter.name}\n## 角色设定\n${aiCharacter.description}")
+                append("\n# [YOUR ROLE]${aiCharacter.name}\n## 角色设定\n${aiCharacter.description.replacePlaceholders(conversation, aiCharacter)}")
             }
             
             // 其他可选字段
             aiCharacter.personality?.takeIf { it.isNotBlank() }?.let {
-                append("\n## 角色性格\n$it")
+                append("\n## 角色性格\n${it.replacePlaceholders(conversation, aiCharacter)}")
             }
             aiCharacter.scenario?.takeIf { it.isNotBlank() }?.let {
-                append("\n## 角色场景\n$it")
+                append("\n## 角色场景\n${it.replacePlaceholders(conversation, aiCharacter)}")
             }
 
             append("\n# [MEMORY]以下为角色[${aiCharacter.name}]的记忆:\n ===MEMORY START===\n$history\n ===MEMORY END===\n")
             
             if (aiCharacter.mes_example?.isNotBlank() == true) {
-                append("\n# [EXAMPLE]输出示例\n${aiCharacter.mes_example}\n")
+                append("\n# [EXAMPLE]输出示例\n${aiCharacter.mes_example.replacePlaceholders(conversation, aiCharacter)}\n")
             }
 //            append(
 //                """
@@ -396,10 +403,10 @@ class AIChatManager @Inject constructor(
             
             // 系统提示和历史指令
             aiCharacter.system_prompt?.takeIf { it.isNotBlank() }?.let {
-                append("\n$it")
+                append("\n${it.replacePlaceholders(conversation, aiCharacter)}")
             }
             aiCharacter.post_history_instructions?.takeIf { it.isNotBlank() }?.let {
-                append("\n$it")
+                append("\n${it.replacePlaceholders(conversation, aiCharacter)}")
             }
         }.trim()
         
@@ -649,28 +656,56 @@ class AIChatManager @Inject constructor(
             val messages = mutableListOf<Message>()
             val currentDate =
                 SimpleDateFormat("yyyy-MM-dd EEEE HH:mm:ss", Locale.getDefault()).format(Date())
-            val summaryRequest = StringBuilder()
-            summaryRequest.append("""
-                # [角色定义] 
-                你现在是 ${aiCharacter.name}
-                # [任务目标] 
-                请以${aiCharacter.name}的第一人称（“我”）视角，结合角色的性格特点，将提供的[对话片段]提炼成一段深刻的心里话或回忆。
-                # [当前时间] [$currentDate]
-                # [总结要求]
-                【深度执行】直接回复一段话，请勿回复多余内容
+            val summaryPrompt: String
+            val historyMessage = summaryMessages.joinToString("\n") { it.content }
+//            Timber.tag(TAG).e("即将总结: $historyMessage")
+            // 早期additionalSummaryRequirement是作为额外总结要求加入预设的提示词中的
+            // 现在则是判断这个字段是否有内容，如果有则替换原来预设的提示词，以达到用户自定义总结格式
+            // 由于字段对用户不可见，懒得改名了😄
+            if (conversation.additionalSummaryRequirement?.isNotBlank() ?: false) {
+                summaryPrompt = conversation.additionalSummaryRequirement?.trim() ?: ""
+            } else {
+                summaryPrompt = """
+                # [Role 角色设定]
+                    你是一个绝对客观、冷得像机器一样的“剧情记录员”。你的任务是阅读对话历史，提取出两人之间发生的实质性互动，并将其压缩为精简的“记忆条目”。
+                    
+                # [Task 任务要求] 请分析对话内容，生成一份记忆清单。请严格遵守以下规则：
+                    - 极度客观：只陈述发生的动作、说过的关键台词和产生的后果。不要进行文学修饰，不要发表道德评判，不要写模糊的心理描写（除非是明确表达出来的情绪）。
+                    - 保留关键台词：如果是具有侮辱性、命令性、定义性或标志性的对话，必须用引号原文摘录（例如：“笨蛋”、“真乖”等）。这是为了保留互动的“颗粒度”。
+                    - 动作具体化：不要只说“他们互动了”，要明确说是“扇巴掌”、“牵手”、“言语辱骂”等具体行为。
+                    - 结构统一：每一条记忆都需要记录 [主动方] 对 [被动方] 进行了 [具体行为/评价] ([附带的台词或细节])。
+                    - 包含状态定义：如果对话中出现了对两人关系的重新定义（如确立主奴关系、给予特定称呼），必须单独列出。
+                    
+                # [Input Data 待分析对话]
+                    <Conversation_History>
+                        {{historyMessage}}
+                    </Conversation_History>
+                    
+                # [Output Format 输出格式]
+                    - 请以 Markdown 无序列表输出，每一行代表一个独立的交互事件：
+
+                # [Output Example 输出示例]
+                    <example-1>
+                        - A辱骂B是垃圾、废物。
+                        - A强迫B完成了羞辱性的动作舔鞋底，B很意外A的内心如此黑暗。
+                        - A对B的服从表现出满意，并给予了口头奖励（“做得好”）。
+                    </example-1>
+                    <example-2>
+                        - A牵起了B的手，说“我们会长长久久”。
+                        - B为A做了一大碗清汤面，味道很淡，但他们吃的很开心。
+                        - A趁机拿出了求婚戒指，B难掩内心激动，伸手让A戴上戒指。
+                    </example-2>
+                    <example-3>
+                        - A、B、C三人来到了新的据点，这里很陈旧，但所幸仍然坚固。
+                        - C给A和B分配了任务，A需要马上加固门窗，B需要尽快生起火堆，三个人各自分工目标明确，准备度过今夜。
+                        - 三人围坐在火堆前，拿出了末日下的“稀罕货”——啤酒，
+                    </example-3>
                 """.trimIndent()
-            )
-            if (conversation.additionalSummaryRequirement?.isNotBlank() == true) {
-                summaryRequest.append("""
-                    ${conversation.additionalSummaryRequirement}
-                    """.trimIndent())
             }
-            summaryRequest.append("\n# 以下为需要总结的对话片段：".trimIndent())
-            // 添加历史消息
-            for (message in summaryMessages) {
-                summaryRequest.append("\n${message.content}")
-            }
-            messages.add(Message("system", summaryRequest.toString()))
+            // 在发送给 API 之前应用占位符替换
+            val finalSummaryRequest = summaryPrompt.replace("{{historyMessage}}", historyMessage).replacePlaceholders(conversation, aiCharacter)
+            messages.add(Message("system", finalSummaryRequest))
+            
             // 使用CompletableDeferred来等待API调用完成
             val apiCompleted = CompletableDeferred<Boolean>()
             val chatRequest = ChatRequest(userConfig?.selectedModel ?: "", messages, 0.3f)
@@ -685,13 +720,13 @@ class AIChatManager @Inject constructor(
                     val newMemoryContent =
                         """
                         ## 记忆片段 [${currentDate}]
-                        **摘要**:$aiResponse
+                        $aiResponse
                     """.trimIndent()
                     CoroutineScope(Dispatchers.IO).launch {
 //                        Timber.tag(TAG).d("总结成功 delete :${summaryMessages.map { it.content }}")
                         // 删除已总结的临时消息
                         tempChatMessageRepository.deleteMessagesByIds(summaryMessages.map { it.id })
-                        Timber.tag(TAG).d("aiMemory :$aiMemory")
+//                        Timber.tag(TAG).d("aiMemory :$aiMemory")
                         if (aiMemory == null) {
                             aiMemory = AIChatMemory(
                                 id = NanoIdUtils.randomNanoId(),
@@ -702,15 +737,15 @@ class AIChatManager @Inject constructor(
                                 createdAt = System.currentTimeMillis()
                             )
                             val result = aiChatMemoryRepository.insert(aiMemory)
-                            Timber.tag(TAG).d("总结成功 insert :$result")
+                            Timber.tag(TAG).d("总结成功[Insert]: $result")
                         } else {
                             aiMemory.content =
                                 if (aiMemory.content.isNotEmpty()) "${aiMemory.content}\n\n$newMemoryContent" else newMemoryContent
                             aiMemory.count += 1
                             val result = aiChatMemoryRepository.update(aiMemory)
-                            Timber.tag(TAG).d("总结成功 update :$result")
+                            Timber.tag(TAG).d("总结成功[Update]: $result")
                         }
-                        callback?.invoke()
+                        callback.invoke()
                         apiCompleted.complete(true)
                     }
                 },
@@ -726,8 +761,20 @@ class AIChatManager @Inject constructor(
 
     suspend fun getSummaryMessages(conversation: Conversation): List<TempChatMessage> {
         val allHistory = tempChatMessageRepository.getByConversationId(conversation.id)
-        val maxContextMessageSize = Application.globalUserConfigState.userConfig.value?.maxContextMessageSize ?: 10
-        return allHistory.subList(0, (allHistory.size - maxContextMessageSize).coerceAtLeast(0))
+        val maxContext = Application.globalUserConfigState.userConfig.value?.maxContextMessageSize ?: 10
+
+        // 计算可以被总结的消息结束索引
+        val endIndex = (allHistory.size - maxContext).coerceAtLeast(0)
+
+        // 添加详细日志，帮助排查配置问题
+        Timber.tag(TAG).d("获取总结消息: 历史总数=${allHistory.size}, 保留上下文=$maxContext, 待总结数=$endIndex")
+
+        if (endIndex == 0) {
+            Timber.tag(TAG).w("警告: 待总结的消息数量为0，请检查设置中的'触发总结数'是否大于'上下文保留数'")
+            return emptyList()
+        }
+
+        return allHistory.subList(0, endIndex)
     }
 
     /**
@@ -816,6 +863,14 @@ class AIChatManager @Inject constructor(
                 }
             }
         )
+    }
+
+    /**
+     * 替换文本中的占位符 {{user}} 和 {{char}}
+     */
+    private fun String.replacePlaceholders(conversation: Conversation, aiCharacter: AICharacter): String {
+        return this.replace("{{user}}", conversation.playerName)
+            .replace("{{char}}", aiCharacter.name)
     }
 
     interface AIChatMessageListener {

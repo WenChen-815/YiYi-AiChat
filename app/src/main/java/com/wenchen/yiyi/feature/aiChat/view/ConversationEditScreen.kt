@@ -859,11 +859,11 @@ fun ConversationEditScreenContent(
                         .fillMaxWidth()
                         .padding(top = 8.dp)
                         .heightIn(max = 250.dp),
-                label = "额外总结需求",
+                label = "总结提示词",
                 labelPadding = PaddingValues(bottom = 6.dp),
                 value = additionalSummaryRequirement,
                 onValueChange = { additionalSummaryRequirement = it },
-                placeholder = { Text("非必填：AI总结时会关注这里的额外要求，尽可能保留你希望的内容") },
+                placeholder = { Text("非必填：为支持自定义总结需求，此处填写的提示词会替换内置的总结提示词，确保包含{{historyMessage}}占位符用于引用对话历史。") },
                 minLines = 3,
                 maxLines = 10,
             )
