@@ -17,7 +17,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -30,6 +29,7 @@ import com.wenchen.yiyi.core.ui.SettingTextFieldItem
 import com.wenchen.yiyi.core.ui.SwitchWithText
 import com.wenchen.yiyi.core.model.config.ApiConfig
 import com.wenchen.yiyi.core.model.network.Model
+import com.wenchen.yiyi.core.ui.BottomGradientButton
 import com.wenchen.yiyi.feature.config.viewmodel.ApiConfigViewModel
 
 @Composable
@@ -106,12 +106,12 @@ fun ApiConfigScreen(
             )
         },
         bottomBar = {
-            Button(
+            BottomGradientButton(
                 onClick = {
                     if (apiKey.isEmpty() || baseUrl.isEmpty()) {
                         Toast.makeText(context, "请填写完整的API Key和中转地址", Toast.LENGTH_SHORT)
                             .show()
-                        return@Button
+                        return@BottomGradientButton
                     }
                     viewModel.updateUserConfig(
                         apiConfigs,
@@ -123,22 +123,13 @@ fun ApiConfigScreen(
                     )
                     Toast.makeText(context, "保存API配置", Toast.LENGTH_SHORT).show()
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-                    .height(50.dp)
-                    .background(
-                        Brush.horizontalGradient(PrimaryGradient),
-                        RoundedCornerShape(25.dp)
-                    ),
-                colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.ui.graphics.Color.Transparent)
-            ) {
-                Text("保存配置", color = TextWhite)
-            }
+                text = "保存"
+            )
         }
     ) { padding ->
         Column(
             modifier = Modifier
+                .fillMaxSize()
                 .padding(padding)
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState())

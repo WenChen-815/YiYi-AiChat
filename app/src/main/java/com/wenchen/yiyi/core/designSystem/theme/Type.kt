@@ -85,73 +85,73 @@ val Typography = Typography(
     ),
 
     /**
-     * 中黑体 · 16sp / 20sp
+     * 中黑体 · 17sp / 20sp
      * 使用场景：模块标题、弹窗标题
      */
     titleLarge = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Medium,
-        fontSize = 16.sp,
+        fontSize = 17.sp,
         lineHeight = 20.sp,
         letterSpacing = 0.sp
     ),
 
     /**
-     * 中黑体 · 14sp / 20sp
+     * 中黑体 · 15sp / 20sp
      * 使用场景：列表项标题、辅助性标题
      */
     titleMedium = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Medium,
-        fontSize = 14.sp,
+        fontSize = 15.sp,
         lineHeight = 20.sp,
         letterSpacing = 0.sp
     ),
 
     /**
-     * 中黑体 · 12sp / 18sp
+     * 中黑体 · 13sp / 18sp
      * 使用场景：段落内小标题、二级描述
      */
     titleSmall = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Medium,
-        fontSize = 12.sp,
+        fontSize = 13.sp,
         lineHeight = 18.sp,
         letterSpacing = 0.sp
     ),
 
     /**
-     * 常规体 · 14sp / 22sp
+     * 常规体 · 15sp / 22sp
      * 使用场景：正文内容、段落文字
      */
     bodyLarge = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Normal, // 常规体
-        fontSize = 14.sp,
+        fontSize = 15.sp,
         lineHeight = 22.sp,
         letterSpacing = 0.sp
     ),
 
     /**
-     * 常规体 · 12sp / 18sp
+     * 常规体 · 13sp / 18sp
      * 使用场景：底部导航栏文字、辅助性文字、标签文字
      */
     bodyMedium = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Normal, // 常规体
-        fontSize = 12.sp,
+        fontSize = 13.sp,
         lineHeight = 18.sp,
         letterSpacing = 0.sp
     ),
 
     /**
-     * 常规体 · 11sp / 16sp
+     * 常规体 · 12sp / 16sp
      * 使用场景：次级正文、辅助段落
      */
     bodySmall = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Normal,
-        fontSize = 11.sp,
+        fontSize = 12.sp,
         lineHeight = 16.sp,
         letterSpacing = 0.sp
     ),

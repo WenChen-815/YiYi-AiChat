@@ -22,25 +22,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.wenchen.yiyi.core.database.entity.YiYiWorldBook
 import com.wenchen.yiyi.core.database.entity.YiYiWorldBookEntry
 import com.wenchen.yiyi.core.designSystem.theme.AppTheme
-import com.wenchen.yiyi.core.designSystem.theme.PrimaryGradient
 import com.wenchen.yiyi.core.util.ui.StatusBarUtils
 import com.wenchen.yiyi.feature.config.viewmodel.WorldBookEditViewModel
 import com.wenchen.yiyi.core.designSystem.component.SpaceHorizontalLarge
 import com.wenchen.yiyi.core.designSystem.component.SpaceHorizontalSmall
 import com.wenchen.yiyi.core.designSystem.component.SpaceHorizontalXSmall
-import com.wenchen.yiyi.core.designSystem.theme.TextWhite
+import com.wenchen.yiyi.core.ui.BottomGradientButton
 
 @Composable
 internal fun WorldBookEditRoute(
@@ -129,47 +126,17 @@ private fun WorldBookEditScreen(
             )
         },
         bottomBar = {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(24.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Button(
-                    onClick = { onSaveWorldBook(name, description) },
-                    modifier = Modifier
-                        .fillMaxWidth(0.65f)
-                        .height(56.dp),
-                    shape = RoundedCornerShape(28.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                    contentPadding = PaddingValues()
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(
-                                brush = Brush.horizontalGradient(
-                                    colors = PrimaryGradient
-                                )
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            "保存",
-                            color = TextWhite,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-            }
+            BottomGradientButton(
+                onClick = { onSaveWorldBook(name, description) },
+                text = "保存"
+            )
         }
     ) { padding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = 20.dp),
+                .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {

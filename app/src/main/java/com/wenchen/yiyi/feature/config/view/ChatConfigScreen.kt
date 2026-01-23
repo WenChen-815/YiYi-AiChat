@@ -28,7 +28,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -41,6 +40,7 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.wenchen.yiyi.core.designSystem.component.SpaceVerticalXLarge
 import com.wenchen.yiyi.core.designSystem.theme.*
+import com.wenchen.yiyi.core.ui.BottomGradientButton
 import com.wenchen.yiyi.core.util.ui.StatusBarUtils
 import com.wenchen.yiyi.core.ui.SettingTextFieldItem
 import com.wenchen.yiyi.core.ui.SwitchWithText
@@ -178,49 +178,32 @@ fun ChatConfigScreenContent(
             )
         },
         bottomBar = {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Button(
-                    onClick = {
-                        val finalAvatarPath =
-                            viewModel.saveUserAvatar(hasNewUserAvatar.value, userAvatarBitmap.value)
-                        viewModel.updateUserConfig(
-                            userId = userId,
-                            userName = userName,
-                            userAvatarPath = finalAvatarPath,
-                            maxContextCount = maxContextCount,
-                            summarizeCount = summarizeCount,
-                            maxSummarizeCount = maxSummarizeCount,
-                            enableSeparator = enableSeparator,
-                            enableTimePrefix = enableTimePrefix,
-                            enableStreamOutput = enableStreamOutput,
-                            showLogcatView = showLogcatView
-                        )
-                        Toast.makeText(context, "配置保存成功", Toast.LENGTH_SHORT).show()
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp)
-                        .background(
-                            brush = Brush.horizontalGradient(colors = PrimaryGradient),
-                            shape = RoundedCornerShape(25.dp)
-                        ),
-                    colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.ui.graphics.Color.Transparent)
-                ) {
-                    Text("保存", style = MaterialTheme.typography.bodyLarge.copy(color = TextWhite))
-                }
-            }
+            BottomGradientButton(
+                onClick = {
+                    val finalAvatarPath =
+                        viewModel.saveUserAvatar(hasNewUserAvatar.value, userAvatarBitmap.value)
+                    viewModel.updateUserConfig(
+                        userId = userId,
+                        userName = userName,
+                        userAvatarPath = finalAvatarPath,
+                        maxContextCount = maxContextCount,
+                        summarizeCount = summarizeCount,
+                        maxSummarizeCount = maxSummarizeCount,
+                        enableSeparator = enableSeparator,
+                        enableTimePrefix = enableTimePrefix,
+                        enableStreamOutput = enableStreamOutput,
+                        showLogcatView = showLogcatView
+                    )
+                    Toast.makeText(context, "配置保存成功", Toast.LENGTH_SHORT).show()
+                },
+                text = "保存"
+            )
         },
-        modifier = Modifier
-            .fillMaxSize()
-            .imePadding()
+        modifier = Modifier.fillMaxSize().imePadding()
     ) { padding ->
         Column(
             modifier = Modifier
+                .fillMaxSize()
                 .padding(padding)
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState())

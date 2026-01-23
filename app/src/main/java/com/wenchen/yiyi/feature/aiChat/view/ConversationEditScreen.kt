@@ -54,7 +54,6 @@ import com.wenchen.yiyi.core.designSystem.theme.DarkGray
 import com.wenchen.yiyi.core.designSystem.theme.TextGray
 import com.wenchen.yiyi.core.designSystem.theme.LightGold
 import com.wenchen.yiyi.core.designSystem.theme.LightGray
-import com.wenchen.yiyi.core.designSystem.theme.TextPrimaryDark
 import com.wenchen.yiyi.core.util.ui.StatusBarUtils
 import com.wenchen.yiyi.feature.aiChat.viewmodel.ConversationEditViewModel
 import com.wenchen.yiyi.core.database.entity.YiYiWorldBook
@@ -63,9 +62,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.compose.runtime.collectAsState
 import com.aventrix.jnanoid.jnanoid.NanoIdUtils
-import com.wenchen.yiyi.core.designSystem.component.SpaceVerticalLarge
 import com.wenchen.yiyi.core.designSystem.component.SpaceVerticalSmall
 import com.wenchen.yiyi.core.designSystem.theme.TextWhite
+import com.wenchen.yiyi.core.ui.BottomGradientButton
 import com.wenchen.yiyi.core.util.ui.ToastUtils
 import com.wenchen.yiyi.feature.aiChat.viewmodel.ConversationEditUiState
 
@@ -239,74 +238,44 @@ fun ConversationEditScreenContent(
 
     Scaffold(
         topBar = {
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(top = 36.dp, bottom = 12.dp, start = 16.dp, end = 16.dp),
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.ArrowBackIosNew,
-                    contentDescription = "返回",
-                    modifier =
-                        Modifier
-                            .clickable { viewModel.navigateBack() }
-                            .size(18.dp)
-                            .align(Alignment.CenterStart),
-                )
-                Text(
-                    text = "对话配置",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.align(Alignment.Center),
-                )
-            }
+            TopAppBar(
+                title = { Text("对话配置") },
+                navigationIcon = {
+                    IconButton(onClick = { viewModel.navigateBack() }) {
+                        Icon(Icons.Rounded.ArrowBackIosNew, contentDescription = "返回", modifier = Modifier.size(18.dp))
+                    }
+                },
+            )
         },
         bottomBar = {
-            Row(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(top = 4.dp, start = 16.dp, end = 16.dp, bottom = 16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Button(
-                    onClick = {
-                        onSaveClick(
-                            name,
-                            playerName,
-                            playGender,
-                            playerDescription,
-                            chatWorldId,
-                            chatSceneDescription,
-                            additionalSummaryRequirement,
-                            chooseCharacterMap,
-                            characterKeywordsMap,
-                            enabledRegexGroups,
-                        )
-                    },
-                    modifier = Modifier.weight(1f),
-                    colors =
-                        ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                        ),
-                ) {
-                    Text("保存对话", color = TextWhite)
-                }
-            }
+            BottomGradientButton(
+                onClick = {
+                    onSaveClick(
+                        name,
+                        playerName,
+                        playGender,
+                        playerDescription,
+                        chatWorldId,
+                        chatSceneDescription,
+                        additionalSummaryRequirement,
+                        chooseCharacterMap,
+                        characterKeywordsMap,
+                        enabledRegexGroups,
+                    )
+                },
+                text = "保存对话"
+            )
         },
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .imePadding(),
+        modifier = Modifier
+            .fillMaxSize()
+            .imePadding(),
     ) { padding ->
         Column(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .imePadding()
-                    .verticalScroll(scrollState)
-                    .padding(16.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(16.dp)
+                .verticalScroll(scrollState),
         ) {
             if (isCreateNew || conversation?.type == ConversationType.GROUP) {
                 SettingTextFieldItem(
@@ -509,7 +478,7 @@ fun ConversationEditScreenContent(
                                             Text(
                                                 text = "${(chance * 100).toInt()}%",
                                                 style = MaterialTheme.typography.bodySmall.copy(
-                                                        TextWhite
+                                                    TextWhite
                                                 ),
                                             )
                                         }
@@ -785,9 +754,12 @@ fun ConversationEditScreenContent(
                         .weight(1f)
                         .clickable { setWorldSheetVisible(true) }
                         .padding(16.dp)) {
-                    val selectedNames = allWorldBooks.filter { it.id in chatWorldId }.map { it.name ?: "未命名世界" }
+                    val selectedNames = allWorldBooks.filter { it.id in chatWorldId }
+                        .map { it.name ?: "未命名世界" }
                     Text(
-                        text = if (selectedNames.isEmpty()) "未选择世界" else selectedNames.joinToString(", "),
+                        text = if (selectedNames.isEmpty()) "未选择世界" else selectedNames.joinToString(
+                            ", "
+                        ),
                         modifier = Modifier.fillMaxWidth(),
                         color = TextWhite
                     )
@@ -966,7 +938,10 @@ fun ShowMemoryDialog(
         // 在这里从数据库加载记忆
         coroutineScope.launch(Dispatchers.IO) {
             try {
-                val memory = viewModel.getChatMemoryByCharacterIdAndConversationId(characterId, conversationId)
+                val memory = viewModel.getChatMemoryByCharacterIdAndConversationId(
+                    characterId,
+                    conversationId
+                )
                 if (memory != null) {
                     withContext(Dispatchers.Main) {
                         memoryContent = memory.content

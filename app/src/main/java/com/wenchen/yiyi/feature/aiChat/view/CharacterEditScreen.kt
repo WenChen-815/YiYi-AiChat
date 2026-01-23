@@ -33,6 +33,7 @@ import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.wenchen.yiyi.core.designSystem.theme.*
+import com.wenchen.yiyi.core.ui.BottomGradientButton
 import com.wenchen.yiyi.core.ui.SettingTextFieldItem
 import com.wenchen.yiyi.core.util.ui.StatusBarUtils
 import com.wenchen.yiyi.core.util.ui.ToastUtils
@@ -186,8 +187,8 @@ private fun CharacterEditScreenContent(
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("角色配置", style = MaterialTheme.typography.titleMedium) },
+            TopAppBar(
+                title = { Text("角色配置") },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.Rounded.ArrowBackIosNew, contentDescription = "返回", modifier = Modifier.size(18.dp))
@@ -203,18 +204,10 @@ private fun CharacterEditScreenContent(
             )
         },
         bottomBar = {
-            Surface(shadowElevation = 8.dp) {
-                Button(
-                    onClick = onSaveClick,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                        .height(50.dp),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text("保存角色", style = MaterialTheme.typography.titleMedium)
-                }
-            }
+            BottomGradientButton(
+                onClick = onSaveClick,
+                text = "保存角色"
+            )
         },
         modifier = Modifier.fillMaxSize().imePadding() // 自动处理软键盘遮挡
     ) { padding ->
@@ -222,8 +215,8 @@ private fun CharacterEditScreenContent(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .padding(16.dp)
                 .verticalScroll(scrollState)
-                .padding(horizontal = 16.dp)
         ) {
             // --- 基础信息编辑 ---
             SettingTextFieldItem(
