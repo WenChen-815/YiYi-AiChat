@@ -116,7 +116,12 @@ private fun SingleChatScreenContent(
                     backgroundPath = background,
                     onResult = { bitmap ->
                         bgBitmap = bitmap
-                        colors = ThemeColorExtractor.extract(bgBitmap!!, maxValue = 1f)
+                        colors = if (bitmap != null) { // 添加空值检查
+                            ThemeColorExtractor.extract(bitmap, maxValue = 1f)
+                        } else {
+                            // 如果bitmap为null，使用默认颜色
+                            listOf(BgGreyDark)
+                        }
                     }
                 )
             } catch (e: Exception) {
@@ -249,7 +254,8 @@ private fun SingleChatScreenContent(
                             launcher.launch(intent)
                         },
                         modifier = Modifier.fillMaxSize(),
-                        chatWindowHazeState = chatWindowHazeState
+                        chatWindowHazeState = chatWindowHazeState,
+                        themeColor = colors[0]
                     )
                 }
             }
@@ -305,6 +311,7 @@ fun ChatScreen(
     onPickImage: () -> Unit,
     modifier: Modifier = Modifier,
     chatWindowHazeState: HazeState,
+    themeColor: Color
 ) {
     val chatUiState by viewModel.chatUiState.collectAsState()
     val messages by viewModel.messages.collectAsState()
@@ -461,6 +468,7 @@ fun ChatScreen(
                     isAiReplying = chatUiState.isAiReplying,
                     isSendSystemMessage = isSendSystemMessage,
                     onSendSysMsgClick = { isSendSystemMessage = !isSendSystemMessage },
+                    themeColor = themeColor
                 )
             }
         },

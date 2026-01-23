@@ -57,6 +57,7 @@ fun ChatInputArea(
     onSendSysMsgClick: () -> Unit,
     isSendSystemMessage: Boolean,
     isAiReplying: Boolean,
+    themeColor: Color
 ) {
     val chatUiState by viewModel.chatUiState.collectAsState()
     val conversation by viewModel.conversation.collectAsState()
@@ -127,7 +128,7 @@ fun ChatInputArea(
                                 colors = listOf(
                                     Color.Transparent,
                                     Color.Transparent,
-                                    Color.White.copy(0.8f),
+                                    TextWhite.copy(0.8f),
                                     Color.Transparent,
                                 ),
                                 start = Offset(offset, offset),
@@ -153,6 +154,7 @@ fun ChatInputArea(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(8.dp))
+                .background(themeColor)
                 .background(HalfTransparentWhite)
                 .padding(5.dp, 3.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -191,7 +193,7 @@ fun ChatInputArea(
                     Icon(
                         Icons.Rounded.ArrowUpward,
                         contentDescription = "发送",
-                        tint = TextSecondaryDark,
+                        tint = TextWhite,
                         modifier = Modifier
                             .size(28.dp)
                             .clip(CircleShape)
@@ -202,7 +204,7 @@ fun ChatInputArea(
                     Icon(
                         Icons.Rounded.AddCircleOutline,
                         contentDescription = "发送图片",
-                        tint = TextSecondaryDark
+                        tint = TextWhite
                     )
                 }
             }

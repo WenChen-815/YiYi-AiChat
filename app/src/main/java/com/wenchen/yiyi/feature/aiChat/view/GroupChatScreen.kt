@@ -7,7 +7,6 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -234,6 +233,7 @@ fun GroupChatScreenContent(
                         },
                         modifier = Modifier.fillMaxSize(),
                         chatWindowHazeState = chatWindowHazeState,
+                        themeColor = colors[0]
                     )
                 }
             }
@@ -294,7 +294,8 @@ fun GroupChatContent(
     onOpenDrawer: () -> Unit,
     onPickImage: () -> Unit,
     modifier: Modifier = Modifier,
-    chatWindowHazeState: HazeState
+    chatWindowHazeState: HazeState,
+    themeColor: Color
 ) {
     val chatUiState by viewModel.chatUiState.collectAsState()
     val messages by viewModel.messages.collectAsState()
@@ -438,6 +439,7 @@ fun GroupChatContent(
                     isAiReplying = chatUiState.isAiReplying,
                     isSendSystemMessage = isSendSystemMessage,
                     onSendSysMsgClick = { isSendSystemMessage = !isSendSystemMessage },
+                    themeColor = themeColor
                 )
             }
         },
