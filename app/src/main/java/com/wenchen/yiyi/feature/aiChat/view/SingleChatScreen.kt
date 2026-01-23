@@ -279,7 +279,9 @@ private fun SingleChatScreenContent(
             if (showClearChatDialog) {
                 ClearChatDialog(
                     onConfirm = {
-                        viewModel.clearChatHistory()
+                        viewModel.clearChatHistory {
+                            viewModel.checkFirstMessage()
+                        }
                         ToastUtils.showToast("聊天记录已清空")
                     },
                     onDismiss = { showClearChatDialog = false },
