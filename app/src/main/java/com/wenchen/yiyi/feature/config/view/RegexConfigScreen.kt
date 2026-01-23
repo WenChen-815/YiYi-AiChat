@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.wenchen.yiyi.core.designSystem.theme.*
 import com.wenchen.yiyi.core.database.entity.YiYiRegexGroup
+import com.wenchen.yiyi.core.designSystem.component.SpaceVerticalXSmall
 import com.wenchen.yiyi.core.ui.SettingTextFieldItem
 import com.wenchen.yiyi.feature.config.viewmodel.RegexConfigViewModel
 
@@ -33,7 +34,12 @@ internal fun RegexConfigRoute(
     RegexConfigScreen(
         regexGroups = viewModel.regexGroups.collectAsState().value,
         onBack = { viewModel.navigateBack() },
-        onNavigateToDetail = { groupId, groupName -> viewModel.navigateToDetail(groupId, groupName) },
+        onNavigateToDetail = { groupId, groupName ->
+            viewModel.navigateToDetail(
+                groupId,
+                groupName
+            )
+        },
         onAddGroup = { name, desc -> viewModel.addGroup(name, desc) },
         onDeleteGroup = { viewModel.deleteGroup(it) }
     )
@@ -155,11 +161,11 @@ fun RegexGroupItem(
                     color = if (isSystemInDarkTheme()) TextPrimaryDark else TextPrimaryLight
                 )
                 if (!group.description.isNullOrBlank()) {
+                    SpaceVerticalXSmall()
                     Text(
                         text = group.description,
                         style = MaterialTheme.typography.bodySmall,
                         color = TextGray,
-                        modifier = Modifier.padding(top = 4.dp)
                     )
                 }
             }
@@ -221,7 +227,11 @@ fun RegexConfigScreenPreview() {
     AppTheme {
         RegexConfigScreen(
             regexGroups = listOf(
-                YiYiRegexGroup(id = "1", name = "净化回复", description = "用于过滤AI回复中的无关内容"),
+                YiYiRegexGroup(
+                    id = "1",
+                    name = "净化回复",
+                    description = "用于过滤AI回复中的无关内容"
+                ),
                 YiYiRegexGroup(id = "2", name = "格式化", description = "统一输出格式")
             ),
             onBack = {},

@@ -117,25 +117,15 @@ private fun WorldBookEditScreen(
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
+            TopAppBar(
                 title = {
-                    Text(
-                        if (isNewWorld) "新建世界书" else "编辑世界书",
-                        style = MaterialTheme.typography.titleMedium
-                    )
+                    Text(if (isNewWorld) "新建世界书" else "编辑世界书",)
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Rounded.ArrowBackIosNew, "返回", modifier = Modifier.size(18.dp))
                     }
                 },
-                actions = {
-                    if (!isNewWorld) {
-                        TextButton(onClick = { showDeleteDialog = true }) {
-                            Text("删除", color = MaterialTheme.colorScheme.error)
-                        }
-                    }
-                }
             )
         },
         bottomBar = {
@@ -232,7 +222,7 @@ private fun WorldBookEditScreen(
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = " * ",
+                            text = "    ",
                             color = Color.Red,
                             style = MaterialTheme.typography.bodyLarge
                         )
@@ -270,7 +260,7 @@ private fun WorldBookEditScreen(
                         Text(
                             "添加",
                             modifier = Modifier.clickable { onNavigateToEntryEdit(null) },
-                            color = Color.Gray,
+                            color = MaterialTheme.colorScheme.primary,
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
@@ -350,12 +340,6 @@ fun WorldBookEntryItem(
 //            )
             Row(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = entry.name ?: "未命名条目",
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium
-                )
-                SpaceHorizontalXSmall()
-                Text(
                     text = if (entry.constant) "常驻" else "关键词",
                     style = MaterialTheme.typography.labelSmall,
                     color = if (entry.constant) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary,
@@ -363,6 +347,12 @@ fun WorldBookEntryItem(
                         shape = RoundedCornerShape(4.dp),
                         color = if (entry.constant) MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
                     ).padding(2.dp)
+                )
+                SpaceHorizontalXSmall()
+                Text(
+                    text = entry.name ?: "未命名条目",
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium
                 )
             }
             IconButton(onClick = onEdit, modifier = Modifier.size(24.dp)) {

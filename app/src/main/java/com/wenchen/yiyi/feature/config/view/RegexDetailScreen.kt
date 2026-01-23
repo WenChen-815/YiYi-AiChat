@@ -27,8 +27,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.wenchen.yiyi.core.designSystem.theme.*
 import com.wenchen.yiyi.core.database.entity.YiYiRegexScript
+import com.wenchen.yiyi.core.designSystem.component.SpaceHorizontalSmall
+import com.wenchen.yiyi.core.designSystem.component.SpaceHorizontalXSmall
 import com.wenchen.yiyi.core.designSystem.component.SpaceVerticalSmall
 import com.wenchen.yiyi.core.ui.SettingTextFieldItem
 import com.wenchen.yiyi.core.ui.SwitchWithText
@@ -38,10 +41,13 @@ import com.wenchen.yiyi.feature.config.viewmodel.RegexDetailViewModel
 internal fun RegexDetailRoute(
     viewModel: RegexDetailViewModel = hiltViewModel()
 ) {
+    val groupName by viewModel.groupName.collectAsStateWithLifecycle()
+    val scripts by viewModel.regexScripts.collectAsStateWithLifecycle()
+
     RegexDetailScreen(
         groupId = viewModel.groupId,
-        groupName = viewModel.groupName.collectAsState().value,
-        scripts = viewModel.regexScripts.collectAsState().value,
+        groupName = groupName,
+        scripts = scripts,
         onBack = { viewModel.navigateBack() },
         onGroupNameChange = { viewModel.updateGroupName(it) },
         onAddOrUpdateScript = { viewModel.addOrUpdateScript(it) },
@@ -79,44 +85,81 @@ fun RegexDetailScreen(
                 }
             )
         },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
-                    editingScript = YiYiRegexScript(id = "", groupId = groupId)
-                    showEditDialog = true
-                },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = TextWhite
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "添加规则")
-            }
-        },
         modifier = Modifier.fillMaxSize()
     ) { padding ->
         LazyColumn(
             modifier = Modifier
+                .fillMaxSize()
                 .padding(padding)
-                .fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(horizontal = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
-                SettingTextFieldItem(
-                    value = groupName,
-                    onValueChange = onGroupNameChange,
-                    label = "分组名称",
-                    placeholder = { Text("输入分组名称") },
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                HorizontalDivider(
-                    modifier = Modifier.padding(vertical = 8.dp),
-                    color = if (isSystemInDarkTheme()) DarkGray else LightGray
-                )
-                Text(
-                    text = "规则列表",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(bottom = 4.dp)
-                )
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(
+                            alpha = 0.3f
+                        )
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ){
+                        Text(
+                            text = "分组名称",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = " * ",
+                            color = Color.Red,
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        SpaceHorizontalSmall()
+                        TextField(
+                            value = groupName,
+                            onValueChange = onGroupNameChange,
+                            placeholder = { Text("为世界书命名", color = Color.Gray) },
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                disabledContainerColor = Color.Transparent,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent
+                            ),
+                            modifier = Modifier.weight(1f),
+                            singleLine = true
+                        )
+                    }
+                }
+            }
+
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "规则列表",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Text(
+                            "添加",
+                            modifier = Modifier.clickable {
+                                editingScript = YiYiRegexScript(id = "", groupId = groupId)
+                                showEditDialog = true
+                            },
+                            color = MaterialTheme.colorScheme.primary,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
             }
 
             items(scripts, key = { it.id }) { script ->
@@ -180,36 +223,37 @@ fun RegexScriptItem(
             containerColor = if (isSystemInDarkTheme()) DarkGray else LightGray
         )
     ) {
-        Column(modifier = Modifier.padding(8.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Row(modifier = Modifier.weight(1f)) {
+                    val isEnabled = script.disabled != true
                     Text(
-                        text = script.scriptName ?: "未命名规则",
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(end = 4.dp)
-                    )
-                    Text(
-                        text = if (script.disabled == true) "已禁用" else "已启用",
+                        text = if (isEnabled) "已启用" else "已禁用",
                         style = MaterialTheme.typography.labelSmall,
-                        color = if (script.disabled == true) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                        color = if (isEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
                         modifier = Modifier
                             .background(
                                 shape = RoundedCornerShape(4.dp),
-                                color = if (script.disabled == true) MaterialTheme.colorScheme.error.copy(
-                                    alpha = 0.2f
-                                ) else MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                                color = (if (isEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error).copy(alpha = 0.2f)
                             )
-                            .padding(2.dp)
+                            .padding(horizontal = 4.dp, vertical = 2.dp)
+                    )
+                    SpaceHorizontalXSmall()
+                    Text(
+                        text = script.scriptName ?: "未命名规则",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = if (isSystemInDarkTheme()) TextPrimaryDark else TextPrimaryLight
                     )
                 }
-                IconButton(onClick = onEdit) {
+                IconButton(onClick = onEdit, modifier = Modifier.size(24.dp)) {
                     Icon(
                         Icons.Outlined.Edit,
                         "编辑",
-                        modifier = Modifier.size(20.dp),
+                        modifier = Modifier.size(16.dp),
                         tint = Color.Gray
                     )
                 }
+                Spacer(modifier = Modifier.width(12.dp))
                 Box(
                     modifier = Modifier
                         .size(24.dp)
@@ -241,8 +285,6 @@ fun RegexScriptItem(
                 color = TextGray,
                 maxLines = 1
             )
-
-
         }
     }
 }
@@ -257,7 +299,6 @@ fun RegexScriptEditDialog(
     var findRegex by remember { mutableStateOf(script.findRegex ?: "") }
     var replaceString by remember { mutableStateOf(script.replaceString ?: "") }
     var disabled by remember { mutableStateOf(script.disabled ?: false) }
-    var markdownOnly by remember { mutableStateOf(script.markdownOnly ?: false) }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -297,6 +338,7 @@ fun RegexScriptEditDialog(
                 )
 
                 SettingTextFieldItem(
+                    modifier = Modifier.heightIn(max = 300.dp),
                     value = replaceString,
                     onValueChange = { replaceString = it },
                     label = "替换为",
@@ -309,31 +351,22 @@ fun RegexScriptEditDialog(
                     text = "启用此规则"
                 )
 
-//                SwitchWithText(
-//                    checked = markdownOnly,
-//                    onCheckedChange = { markdownOnly = it },
-//                    text = "仅作用于 Markdown"
-//                )
-
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    TextButton(onClick = onDismiss) { Text("取消", color = Color.Red) }
+                    TextButton(onClick = onDismiss) { Text("取消") }
                     TextButton(
                         onClick = {
-                            onConfirm(
-                                script.copy(
-                                    scriptName = name,
-                                    findRegex = findRegex,
-                                    replaceString = replaceString,
-                                    disabled = disabled,
-                                    markdownOnly = markdownOnly
-                                )
-                            )
-                        },
+                            onConfirm(script.copy(
+                                scriptName = name,
+                                findRegex = findRegex,
+                                replaceString = replaceString,
+                                disabled = disabled
+                            ))
+                        }
                     ) {
-                        Text("保存")
+                        Text("确定")
                     }
                 }
             }
@@ -343,33 +376,31 @@ fun RegexScriptEditDialog(
 
 @Preview(showBackground = true)
 @Composable
-fun RegexDetailScreenPreview() {
-     AppTheme {
+private fun RegexDetailScreenPreview() {
+    AppTheme {
         RegexDetailScreen(
             groupId = "1",
-            groupName = "正则分组",
+            groupName = "我的正则组",
             scripts = listOf(
-                YiYiRegexScript(
-                    id = "1",
-                    groupId = "1",
-                    scriptName = "移除思考过程",
-                    findRegex = "<thought>[\\\\s\\\\S]*?</thought>",
-                    replaceString = "",
-                    disabled = false
-                ),
-                YiYiRegexScript(
-                    id = "2",
-                    groupId = "1",
-                    scriptName = "隐藏特定词汇",
-                    findRegex = "敏感词",
-                    replaceString = "***",
-                    disabled = true
-                )
+                YiYiRegexScript(id = "1", groupId = "1", scriptName = "净化", findRegex = ".*", replaceString = ""),
+                YiYiRegexScript(id = "2", groupId = "1", scriptName = "格式化", findRegex = "\\s+", replaceString = " ", disabled = true)
             ),
             onBack = {},
             onGroupNameChange = {},
             onAddOrUpdateScript = {},
             onDeleteScript = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun RegexScriptEditDialogPreview(){
+    AppTheme {
+        RegexScriptEditDialog(
+            script = YiYiRegexScript(id = "1", groupId = "1", scriptName = "净化", findRegex = ".*", replaceString = "relaceString"),
+            onDismiss = {},
+            onConfirm = {}
         )
     }
 }
