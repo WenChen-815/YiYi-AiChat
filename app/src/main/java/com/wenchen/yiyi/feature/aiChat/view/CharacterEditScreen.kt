@@ -229,7 +229,7 @@ private fun CharacterEditScreenContent(
 
             SettingTextFieldItem(
                 modifier = Modifier.fillMaxWidth().padding(top = 12.dp).heightIn(min = 200.dp),
-                label = "角色设定 (Description)",
+                label = "角色设定",
                 value = description,
                 onValueChange = onDescriptionChange,
                 placeholder = { Text("输入角色设定、背景和行为准则...") },
@@ -238,7 +238,7 @@ private fun CharacterEditScreenContent(
 
             SettingTextFieldItem(
                 modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
-                label = "对话示例 (Mes Example)",
+                label = "对话示例",
                 value = mesExample,
                 onValueChange = onMesExampleChange,
                 minLines = 4
@@ -246,7 +246,7 @@ private fun CharacterEditScreenContent(
 
             SettingTextFieldItem(
                 modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
-                label = "角色记忆 (Memory)",
+                label = "角色记忆",
                 value = memory,
                 onValueChange = onMemoryChange,
                 placeholder = { Text("此处内容会长期保留在上下文末尾...") },
@@ -388,7 +388,6 @@ private fun SectionTitle(title: String) {
     Text(
         text = title,
         style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.primary,
         modifier = Modifier.padding(top = 20.dp, bottom = 8.dp)
     )
 }
