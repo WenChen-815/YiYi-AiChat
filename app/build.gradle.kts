@@ -34,7 +34,7 @@ android {
         minSdk = 27
         targetSdk = 36
         versionCode = 2
-        versionName = "1.5.1"
+        versionName = "2.0.0"
         // Instrumentation 测试入口
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -140,8 +140,9 @@ implementation(libs.coil3.gif) // 图片加载 GIF 支持
 implementation(libs.androidx.compose.material3.adaptive.navigation.suite)
 implementation(libs.haze) // 模糊工具库
 // ConstraintLayout
-implementation(libs.androidx.constraintlayout)
+//implementation(libs.androidx.constraintlayout) // 只用 Compose，传统的 View 版 ConstraintLayout 是不需要的
 implementation(libs.androidx.constraintlayout.compose)
+
 // Material Design 组件
 implementation(libs.material)
 
@@ -180,7 +181,9 @@ ksp(libs.hilt.android.compiler)
 implementation(libs.hilt.navigation.compose)
 androidTestImplementation(libs.hilt.android.testing)
 kspAndroidTest(libs.hilt.android.compiler)
-compileOnly(libs.ksp.gradlePlugin)
+
+// KSP 插件已经在 plugins 块中声明，不需要在此 compileOnly 引入
+//compileOnly(libs.ksp.gradlePlugin)
 
 // 数据库 (Room)
 implementation(libs.androidx.room.runtime)
@@ -192,11 +195,12 @@ kspAndroidTest(libs.androidx.room.compiler)
 testImplementation(libs.androidx.room.testing)
 androidTestImplementation(libs.androidx.room.testing)
 
+// 已统一使用 Kotlinx Serialization
 // JSON 解析 (Moshi)
-implementation(libs.moshi)
-implementation(libs.moshi.kotlin)
-ksp(libs.moshi.kotlin.codegen)
-implementation(libs.gson)
+//implementation(libs.moshi)
+//implementation(libs.moshi.kotlin)
+//ksp(libs.moshi.kotlin.codegen)
+//implementation(libs.gson)
 
 // 调试工具
 // debugImplementation(libs.leakcanary.android)
