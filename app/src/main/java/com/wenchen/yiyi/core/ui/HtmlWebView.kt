@@ -33,7 +33,7 @@ fun HtmlWebView(
     html: String,
     height: Int? = null,
     textColor: Color = Color.White,
-    highlightColor: String = "#FFBF4D",
+    highlightColor: String = "#E5AC47",
     onHeight: (Int) -> Unit = {},
     onLongClick: (Offset) -> Unit = {}
 ) {

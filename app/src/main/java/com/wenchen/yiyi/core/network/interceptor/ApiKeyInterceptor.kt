@@ -106,8 +106,8 @@ class ApiKeyInterceptor @Inject constructor(
                 val buffer = okio.Buffer()
                 try {
                     body.writeTo(buffer)
-                    val bodyContent = buffer.readUtf8()
-                    // append("- Body: $bodyContent\n")
+                    val bodyContent = buffer.readUtf8().replace("\\n", "\n")
+//                     append("- Body: $bodyContent\n")
                     val regex = Regex("\"messages\":\\[[\\s\\S]*?\\],\"")
                     val redactedBody = bodyContent.replace(regex, "\"message\":[MESSAGE],\"")
                     append("- Body: $redactedBody\n")
