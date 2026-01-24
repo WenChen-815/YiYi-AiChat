@@ -1,11 +1,11 @@
 package com.wenchen.yiyi.core.database
 
 import androidx.room.TypeConverter
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import com.wenchen.yiyi.core.database.entity.ConversationType
 import com.wenchen.yiyi.core.database.entity.MessageContentType
 import com.wenchen.yiyi.core.database.entity.MessageType
+import com.wenchen.yiyi.core.util.common.AppJson
+import kotlinx.serialization.encodeToString
 
 class Converters {
 
@@ -36,28 +36,22 @@ class Converters {
 
     @TypeConverter
     fun fromStringList(value: List<String>?): String? {
-        return value?.let { Gson().toJson(it) }
+        return value?.let { AppJson.encodeToString(it) }
     }
 
     @TypeConverter
     fun toStringList(value: String?): List<String>? {
-        return value?.let {
-            val listType = object : TypeToken<List<String>>() {}.type
-            Gson().fromJson(it, listType)
-        }
+        return value?.let { AppJson.decodeFromString(it) }
     }
 
     @TypeConverter
     fun fromIntList(value: List<Int>?): String? {
-        return value?.let { Gson().toJson(it) }
+        return value?.let { AppJson.encodeToString(it) }
     }
 
     @TypeConverter
     fun toIntList(value: String?): List<Int>? {
-        return value?.let {
-            val listType = object : TypeToken<List<Int>>() {}.type
-            Gson().fromJson(it, listType)
-        }
+        return value?.let { AppJson.decodeFromString(it) }
     }
 
     @TypeConverter
@@ -72,27 +66,21 @@ class Converters {
 
     @TypeConverter
     fun fromCharacterIdMap(map: Map<String, Float>?): String? {
-        return map?.let { Gson().toJson(it) }
+        return map?.let { AppJson.encodeToString(it) }
     }
 
     @TypeConverter
     fun toCharacterIdMap(value: String?): Map<String, Float>? {
-        return value?.let {
-            val mapType = object : TypeToken<Map<String, Float>>() {}.type
-            Gson().fromJson(it, mapType)
-        }
+        return value?.let { AppJson.decodeFromString(it) }
     }
 
     @TypeConverter
     fun fromCharacterKeywordsMap(map: Map<String, List<String>>?): String? {
-        return map?.let { Gson().toJson(it) }
+        return map?.let { AppJson.encodeToString(it) }
     }
 
     @TypeConverter
     fun toCharacterKeywordsMap(value: String?): Map<String, List<String>>? {
-        return value?.let {
-            val mapType = object : TypeToken<Map<String, List<String>>>() {}.type
-            Gson().fromJson(it, mapType)
-        }
+        return value?.let { AppJson.decodeFromString(it) }
     }
 }
