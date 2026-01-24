@@ -298,6 +298,7 @@ fun GroupChatContent(
     themeColor: Color
 ) {
     val chatUiState by viewModel.chatUiState.collectAsState()
+    val userConfig by viewModel.userConfigState.userConfig.collectAsState()
     val messages by viewModel.messages.collectAsState()
     var messageText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
@@ -396,8 +397,18 @@ fun GroupChatContent(
                             if (message.isShow) {
                                 DisplayChatMessageItem(
                                     message = message,
-                                    viewModel = viewModel,
-                                    chatWindowHazeState = chatWindowHazeState
+                                    userAvatarUrl = userConfig?.userAvatarPath,
+                                    aiAvatarUrlProvider = { _ -> chatUiState.currentCharacter?.avatar },
+                                    enableSeparator = userConfig?.enableSeparator == true,
+                                    chatWindowHazeState = chatWindowHazeState,
+                                    onDeleteMessage = { viewModel.deleteOneMessage(it) },
+                                    onUpdateMessage = { id, content, callback ->
+                                        viewModel.updateMessageContent(id, content, callback)
+                                    },
+                                    onRegexReplace = { viewModel.regexReplace(it) },
+                                    onParseMessage = { viewModel.paseMessage(it) },
+                                    getSegmentHeight = { id, idx -> viewModel.findSegmentHeight(id, idx) },
+                                    onRememberSegmentHeight = { id, idx, h -> viewModel.rememberSegmentHeight(id, idx, h) }
                                 )
                             }
                         }

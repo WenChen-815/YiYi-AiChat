@@ -7,6 +7,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import com.wenchen.yiyi.feature.config.view.ApiConfigRoute
 import com.wenchen.yiyi.feature.config.view.ChatConfigRoute
+import com.wenchen.yiyi.feature.config.view.DisplayConfigRoute
 import com.wenchen.yiyi.feature.config.view.SettingsRoute
 import com.wenchen.yiyi.navigation.routes.ConfigRoutes
 
@@ -31,5 +32,9 @@ fun NavGraphBuilder.configScreen(
 
     composable<ConfigRoutes.ApiConfig> {
         ApiConfigRoute(navController = navController)
+    }
+
+    composable<ConfigRoutes.DisplayConfig> {
+        DisplayConfigRoute(navController = navController)
     }
 }

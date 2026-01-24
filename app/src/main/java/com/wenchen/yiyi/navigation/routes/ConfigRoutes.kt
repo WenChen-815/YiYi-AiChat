@@ -24,4 +24,10 @@ object ConfigRoutes {
      */
     @Serializable
     data object ApiConfig
+
+    /**
+     * 显示设置页
+     */
+    @Serializable
+    data object DisplayConfig
 }

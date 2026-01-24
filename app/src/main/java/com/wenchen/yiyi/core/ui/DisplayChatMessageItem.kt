@@ -6,31 +6,12 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,92 +27,118 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.constraintlayout.compose.Dimension
 import coil3.compose.AsyncImage
 import com.wenchen.yiyi.R
 import dev.chrisbanes.haze.HazeState
 import kotlinx.coroutines.coroutineScope
 import com.wenchen.yiyi.core.database.entity.ChatMessage
-import com.wenchen.yiyi.core.database.entity.ConversationType
 import com.wenchen.yiyi.core.database.entity.MessageContentType
 import com.wenchen.yiyi.core.database.entity.MessageType
 import com.wenchen.yiyi.core.designSystem.theme.BgGreyDark
 import com.wenchen.yiyi.core.designSystem.theme.TextWhite
 import com.wenchen.yiyi.core.util.business.ChatUtils
-import com.wenchen.yiyi.feature.aiChat.viewmodel.BaseChatViewModel
 import kotlinx.coroutines.launch
 import com.wenchen.yiyi.core.designSystem.component.SpaceHorizontalSmall
 import com.wenchen.yiyi.core.designSystem.theme.MaskLight
-import com.wenchen.yiyi.core.designSystem.theme.TextPrimaryLight
-import com.wenchen.yiyi.core.designSystem.theme.TextSecondaryDark
+import com.wenchen.yiyi.feature.aiChat.common.ChatLayoutMode
+import com.wenchen.yiyi.feature.aiChat.common.LayoutType
 
 @Composable
 fun DisplayChatMessageItem(
     message: ChatMessage,
-    viewModel: BaseChatViewModel,
+    userAvatarUrl: String?,
+    aiAvatarUrlProvider: (String?) -> String?, // 根据 characterId 获取 AI 头像
+    enableSeparator: Boolean,
     chatWindowHazeState: HazeState,
+    layoutMode: ChatLayoutMode = ChatLayoutMode(),
+    onDeleteMessage: (String) -> Unit,
+    onUpdateMessage: (String, String, ((Boolean) -> Unit)?) -> Unit,
+    onRegexReplace: (String) -> String,
+    onParseMessage: (ChatMessage) -> ChatUtils.ParsedMessage,
+    getSegmentHeight: (String, Int) -> Int?,
+    onRememberSegmentHeight: (String, Int, Int) -> Unit
 ) {
-    // 解析AI回复中的日期和角色名称
-    val parseMessage = viewModel.paseMessage(message)
-    val chatUiState by viewModel.chatUiState.collectAsState()
-    val conversation by viewModel.conversation.collectAsState()
-    val userConfig by viewModel.userConfigState.userConfig.collectAsState()
+    // 1. 解析消息内容（使用 remember 避免重组时重复解析）
+    val parsed = remember(message) { onParseMessage(message) }
+    val context = LocalContext.current
+    val defaultAvatar = "android.resource://${context.packageName}/${R.mipmap.ai_closed}"
+
+    // 2. 确定当前消息显示的头像
+    val currentAvatarUrl = when (message.type) {
+        MessageType.USER -> userAvatarUrl ?: defaultAvatar
+        MessageType.ASSISTANT -> aiAvatarUrlProvider(message.characterId) ?: defaultAvatar
+        MessageType.SYSTEM -> defaultAvatar
+    }
 
     when (message.type) {
-        MessageType.USER, MessageType.SYSTEM -> ChatMessageItem(
-            viewModel = viewModel,
-            messageId = message.id,
-            content = when (message.contentType) {
-                MessageContentType.TEXT -> parseMessage.cleanedContent
-                MessageContentType.IMAGE -> message.imgUrl.toString()
-                MessageContentType.VOICE -> ""
-            },
-            parsedMessage = parseMessage,
-            avatarUrl = userConfig?.userAvatarPath
-                ?: "android.resource://${LocalContext.current.packageName}/${R.mipmap.ai_closed}",
-            messageType = message.type,
-            contentType = message.contentType,
-            chatWindowHazeState = chatWindowHazeState
-        )
+        MessageType.USER, MessageType.SYSTEM -> {
+            ChatMessageItem(
+                messageId = message.id,
+                content = when (message.contentType) {
+                    MessageContentType.TEXT -> parsed.cleanedContent
+                    MessageContentType.IMAGE -> message.imgUrl.toString()
+                    MessageContentType.VOICE -> ""
+                },
+                parsedMessage = parsed,
+                avatarUrl = currentAvatarUrl,
+                messageType = message.type,
+                contentType = message.contentType,
+                chatWindowHazeState = chatWindowHazeState,
+                layoutMode = layoutMode,
+                onDeleteMessage = onDeleteMessage,
+                onUpdateMessage = onUpdateMessage,
+                onRegexReplace = onRegexReplace,
+                getSegmentHeight = getSegmentHeight,
+                onRememberSegmentHeight = onRememberSegmentHeight
+            )
+        }
 
         MessageType.ASSISTANT -> {
-            val avatarUrl = if (conversation.type == ConversationType.SINGLE) {
-                chatUiState.currentCharacter?.avatar
-                    ?: "android.resource://${LocalContext.current.packageName}/${R.mipmap.ai_closed}"
-            } else {
-                chatUiState.currentCharacters.find { it.id == message.characterId }?.avatar
-                    ?: "android.resource://${LocalContext.current.packageName}/${R.mipmap.ai_closed}"
-            }
             if (message.contentType == MessageContentType.TEXT) {
-                val parts = if (userConfig?.enableSeparator == true) {
-                    parseMessage.cleanedContent.split('\\').reversed()
+                // 处理分隔符逻辑
+                val parts = if (enableSeparator) {
+                    parsed.cleanedContent.split('\\').reversed()
                 } else {
-                    listOf(parseMessage.cleanedContent)
+                    listOf(parsed.cleanedContent)
                 }
-                for (i in parts.indices) {
+                parts.forEachIndexed { index, part ->
                     ChatMessageItem(
-                        viewModel = viewModel,
                         messageId = message.id,
-                        content = parts[i],
-                        avatarUrl = avatarUrl,
+                        content = part,
+                        avatarUrl = currentAvatarUrl,
                         messageType = message.type,
                         contentType = message.contentType,
-                        parsedMessage = parseMessage,
-                        chatWindowHazeState = chatWindowHazeState
+                        parsedMessage = parsed,
+                        chatWindowHazeState = chatWindowHazeState,
+                        layoutMode = layoutMode,
+                        onDeleteMessage = onDeleteMessage,
+                        onUpdateMessage = onUpdateMessage,
+                        onRegexReplace = onRegexReplace,
+                        getSegmentHeight = getSegmentHeight,
+                        onRememberSegmentHeight = onRememberSegmentHeight,
+                        segmentIndex = index
                     )
                 }
             } else {
                 ChatMessageItem(
-                    viewModel = viewModel,
                     messageId = message.id,
-                    content = parseMessage.cleanedContent,
-                    avatarUrl = avatarUrl,
+                    content = parsed.cleanedContent,
+                    avatarUrl = currentAvatarUrl,
                     messageType = message.type,
                     contentType = message.contentType,
-                    chatWindowHazeState = chatWindowHazeState
+                    chatWindowHazeState = chatWindowHazeState,
+                    layoutMode = layoutMode,
+                    onDeleteMessage = onDeleteMessage,
+                    onUpdateMessage = onUpdateMessage,
+                    onRegexReplace = onRegexReplace,
+                    getSegmentHeight = getSegmentHeight,
+                    onRememberSegmentHeight = onRememberSegmentHeight
                 )
             }
         }
@@ -140,48 +147,57 @@ fun DisplayChatMessageItem(
 
 @Composable
 fun ChatMessageItem(
-    viewModel: BaseChatViewModel,
     messageId: String,
     content: String,
     avatarUrl: String?,
     messageType: MessageType,
     contentType: MessageContentType,
     parsedMessage: ChatUtils.ParsedMessage? = null,
-    chatWindowHazeState: HazeState
+    chatWindowHazeState: HazeState,
+    layoutMode: ChatLayoutMode,
+    onDeleteMessage: (String) -> Unit,
+    onUpdateMessage: (String, String, ((Boolean) -> Unit)?) -> Unit,
+    onRegexReplace: (String) -> String,
+    getSegmentHeight: (String, Int) -> Int?,
+    onRememberSegmentHeight: (String, Int, Int) -> Unit,
+    segmentIndex: Int = 0
 ) {
     val visibilityAlpha = remember { mutableFloatStateOf(1f) }
     val isEditing = remember { mutableStateOf(false) }
-    val threshold = with(LocalDensity.current) { 168.dp.toPx() } // 设定阈值
-    val topBarHeight = with(LocalDensity.current) { 96.dp.toPx() } // 设定顶部栏高度
+    val density = LocalDensity.current
+    val threshold = with(density) { 168.dp.toPx() }
+    val topBarHeight = with(density) { 96.dp.toPx() }
+
     var isMenuVisible by remember { mutableStateOf(false) }
     var messageItemBounds by remember { mutableStateOf(Rect.Zero) }
     var touchPosition by remember { mutableStateOf(Offset.Zero) }
-    val density = LocalDensity.current
 
     ConstraintLayout(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 2.dp)
+            .padding(vertical = 4.dp)
             .onGloballyPositioned { coordinates ->
                 val bounds = coordinates.boundsInWindow()
                 val itemBottom = bounds.bottom
-
-                // 计算透明度
+                // 计算顶部渐隐效果
                 visibilityAlpha.floatValue = if (itemBottom < threshold) {
                     ((itemBottom - topBarHeight) / (threshold - topBarHeight)).coerceIn(0f, 1f)
                 } else 1f
             }
-            .graphicsLayer {
-                alpha = visibilityAlpha.floatValue
-            }
+            .graphicsLayer { alpha = visibilityAlpha.floatValue }
     ) {
         val (avatar, messageCard) = createRefs()
-        if (messageType != MessageType.SYSTEM) {
+
+        // 头像显示逻辑
+        if (layoutMode.type == LayoutType.STANDARD && messageType != MessageType.SYSTEM) {
+            val paddingStart = if (messageType == MessageType.USER) 4.dp else 0.dp
+            val paddingEnd = if (messageType == MessageType.USER) 0.dp else 4.dp
             AsyncImage(
                 model = avatarUrl,
                 contentDescription = "头像",
                 modifier = Modifier
                     .size(40.dp)
+                    .padding(start = paddingStart, end = paddingEnd)
                     .clip(CircleShape)
                     .constrainAs(avatar) {
                         when (messageType) {
@@ -189,64 +205,57 @@ fun ChatMessageItem(
                                 top.linkTo(parent.top)
                                 end.linkTo(parent.end)
                             }
-
                             MessageType.ASSISTANT -> {
                                 top.linkTo(parent.top)
                                 start.linkTo(parent.start)
                             }
-
-                            MessageType.SYSTEM -> {}
                         }
                     },
                 contentScale = ContentScale.Crop
             )
         }
 
+        // 消息气泡卡片
         Card(
+            colors = CardDefaults.cardColors(Color.Transparent),
             modifier = Modifier
-                .widthIn(max = 300.dp)
-                .padding(4.dp)
+//                .padding(if (layoutMode == ChatLayoutMode.Full) 0.dp else 4.dp)
                 .constrainAs(messageCard) {
                     when (messageType) {
                         MessageType.USER -> {
-                            top.linkTo(parent.top)
-                            end.linkTo(avatar.start)
+                            if (layoutMode.type == LayoutType.STANDARD) end.linkTo(avatar.start)
+                            else end.linkTo(parent.end)
+                            start.linkTo(parent.start, margin = if (layoutMode.type == LayoutType.FULL) 0.dp else 24.dp)
+                            horizontalBias = 1f
                         }
-
                         MessageType.ASSISTANT -> {
-                            top.linkTo(parent.top)
-                            start.linkTo(avatar.end)
+                            if (layoutMode.type == LayoutType.STANDARD) start.linkTo(avatar.end)
+                            else start.linkTo(parent.start)
+                            end.linkTo(parent.end, margin = if (layoutMode.type == LayoutType.FULL) 0.dp else 24.dp)
+                            horizontalBias = 0f
                         }
-
                         MessageType.SYSTEM -> {
-                            top.linkTo(parent.top)
                             start.linkTo(parent.start)
                             end.linkTo(parent.end)
                         }
                     }
+                    width = Dimension.preferredWrapContent
                 }
-                .onGloballyPositioned { coordinates ->
-                    messageItemBounds = coordinates.boundsInWindow()
-                },
-            colors = CardDefaults.cardColors(Color.Transparent)
-
+                .onGloballyPositioned { messageItemBounds = it.boundsInWindow() }
         ) {
             Column(
                 modifier = Modifier
                     .background(
                         when (messageType) {
-                            MessageType.USER -> if (contentType == MessageContentType.TEXT) MaterialTheme.colorScheme.primary else Color.Transparent
-                            MessageType.ASSISTANT -> if (contentType == MessageContentType.TEXT) BgGreyDark else Color.Transparent
+                            MessageType.USER -> if (contentType == MessageContentType.TEXT) layoutMode.userBubbleColor else Color.Transparent
+                            MessageType.ASSISTANT -> if (contentType == MessageContentType.TEXT) layoutMode.aiBubbleColor else Color.Transparent
                             MessageType.SYSTEM -> MaskLight
                         }
                     )
                     .padding(if (contentType == MessageContentType.TEXT) 8.dp else 0.dp)
-                    // combinedClickable 获取不到点击位置，使用 pointerInput 替代
                     .pointerInput(Unit) {
                         detectTapGestures(
-                            onTap = { /* 处理点击事件 */ },
                             onLongPress = { offset ->
-                                // 加上 8.dp 的 padding 偏移，使坐标相对于 Card
                                 val paddingPx = if (contentType == MessageContentType.TEXT) with(density) { 8.dp.toPx() } else 0f
                                 touchPosition = Offset(offset.x + paddingPx, offset.y + paddingPx)
                                 isMenuVisible = true
@@ -256,72 +265,24 @@ fun ChatMessageItem(
             ) {
                 when (contentType) {
                     MessageContentType.TEXT -> {
-                        val color = when (messageType) {
-                            MessageType.USER -> TextPrimaryLight
-                            MessageType.ASSISTANT, MessageType.SYSTEM -> TextWhite
-                        }
-                        val specialTextColor = when (messageType) {
-                            MessageType.USER -> Color.DarkGray
-                            MessageType.ASSISTANT -> Color.LightGray
-                            MessageType.SYSTEM -> TextWhite
-                        }
+                        val color = if (messageType == MessageType.USER) layoutMode.userTextColor else layoutMode.aiTextColor
+                        val specialTextColor = if (messageType == MessageType.USER) Color.DarkGray else Color.LightGray
+
                         if (messageType == MessageType.ASSISTANT) {
-                            val regexReplace = viewModel.regexReplace(content)
                             HtmlWebView(
                                 modifier = Modifier.fillMaxWidth(),
-                                id = messageId, // 使用唯一片段ID
-                                html = regexReplace,
+                                id = "${messageId}_$segmentIndex",
+                                html = onRegexReplace(content),
                                 textColor = color,
-                                height = viewModel.findSegmentHeight(messageId, 0),
-                                onHeight = { height ->
-                                    viewModel.rememberSegmentHeight(messageId, 0, height)
-                                },
+                                height = getSegmentHeight(messageId, segmentIndex),
+                                onHeight = { onRememberSegmentHeight(messageId, segmentIndex, it) },
                                 onLongClick = { offset ->
                                     val paddingPx = with(density) { 8.dp.toPx() }
                                     touchPosition = Offset(offset.x + paddingPx, offset.y + paddingPx)
                                     isMenuVisible = true
                                 }
                             )
-                            /*
-                            // 拆分内容
-//                            val segments = remember(regexReplace) { splitMessageContent(regexReplace) }
-
-                            Column {
-                                segments.forEachIndexed { index, segment ->
-                                    when (segment) {
-                                        is MessageSegment.Text -> {
-                                            StyledBracketText(
-                                                text = segment.content.trim(),
-                                                normalTextStyle = MaterialTheme.typography.bodyLarge.copy(color = color),
-                                                specialTextStyle = MaterialTheme.typography.bodyLarge.copy(
-                                                    color = specialTextColor,
-                                                    fontStyle = FontStyle.Italic
-                                                )
-                                            )
-                                        }
-                                        is MessageSegment.Html -> {
-                                            HtmlWebView(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                id = "${messageId}_$index", // 使用唯一片段ID
-                                                html = segment.content,
-                                                textColor = color,
-                                                height = viewModel.findSegmentHeight(messageId, index),
-                                                onHeight = { height ->
-                                                    viewModel.rememberSegmentHeight(messageId, index, height)
-                                                },
-                                                onLongClick = { offset ->
-                                                    val paddingPx = with(density) { 8.dp.toPx() }
-                                                    touchPosition = Offset(offset.x + paddingPx, offset.y + paddingPx)
-                                                    isMenuVisible = true
-                                                }
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                            */
                         } else {
-                            // 对于USER和SYSTEM消息，使用常规的StyledBracketText
                             StyledBracketText(
                                 text = content.trim(),
                                 normalTextStyle = MaterialTheme.typography.bodyLarge.copy(color = color),
@@ -332,11 +293,10 @@ fun ChatMessageItem(
                             )
                         }
                     }
-
                     MessageContentType.IMAGE -> {
                         AsyncImage(
                             model = content,
-                            contentDescription = "聊天图片",
+                            contentDescription = "Chat Image",
                             modifier = Modifier
                                 .widthIn(max = 300.dp)
                                 .heightIn(max = 250.dp)
@@ -344,123 +304,39 @@ fun ChatMessageItem(
                             contentScale = ContentScale.Fit
                         )
                     }
-
-                    MessageContentType.VOICE -> {}
+                    else -> {}
                 }
             }
+
+            // 操作菜单 Popup
             if (isMenuVisible) {
-                // 计算控件高度
-//                val itemHeight = messageItemBounds.height
-
-                // 使用 LocalConfiguration 获取高度
-//                val configuration = LocalConfiguration.current
-//                val screenHeightPx = with(density) { configuration.screenHeightDp.dp.toPx() }
-
-                // --- 跟随手指位置 ---
-                // 预估菜单高度
                 val menuHeightPx = with(density) { 50.dp.toPx() }
-                // 计算手指在屏幕上的绝对 Y 坐标
                 val absoluteTouchY = messageItemBounds.top + touchPosition.y
-
-                // 判断逻辑：如果手指位置太靠顶部，则在手指下方弹出；否则在手指上方弹出
                 val finalY = if (absoluteTouchY < threshold + menuHeightPx) {
                     (touchPosition.y + with(density) { 10.dp.toPx() }).toInt()
                 } else {
                     (touchPosition.y - menuHeightPx).toInt()
                 }
 
-            Popup(
-                onDismissRequest = { isMenuVisible = false }, // 点击外部关闭菜单
-                offset = IntOffset(
-                    x = touchPosition.x.toInt(),
-                    /**
-                     * 知识点
-                     * popup的坐标原点在于父控件的左上角,是相对坐标，而不是整个屏幕左上角的绝对坐标
-                     * 但 messageItemBounds.value = coordinates.boundsInWindow() 获取到的位置是基于整个屏幕的坐标
-                     * 直接应用会导致偏移甚远
-                     */
-//                    y = if (itemHeight > screenHeight * 0.75) {
-//                        touchPosition.y.toInt()
-//                    } else {
-//                        with(LocalDensity.current) { (-15).dp.toPx().toInt() }
-//                        yOffset
-//                    }
-                    y = finalY
-                )
-            ) {
-                val iconOffset1 = remember { Animatable(50f) } // 第一个图标初始位置偏移
-                val iconOffset2 = remember { Animatable(50f) } // 第二个图标初始位置偏移
-                // 触发动画
-                LaunchedEffect(isMenuVisible) {
-                    if (isMenuVisible) {
-                        // 并行执行动画
-                        coroutineScope {
-                            launch {
-                                iconOffset1.animateTo(
-                                    targetValue = 0f,
-                                    animationSpec = spring(
-                                        dampingRatio = Spring.DampingRatioNoBouncy,
-                                        stiffness = Spring.StiffnessHigh
-                                    )
-                                )
-                            }
-                            launch {
-                                iconOffset2.animateTo(
-                                    targetValue = 0f,
-                                    animationSpec = spring(
-                                        dampingRatio = Spring.DampingRatioNoBouncy,
-                                        stiffness = Spring.StiffnessHigh
-                                    )
-                                )
-                            }
+                Popup(
+                    onDismissRequest = { isMenuVisible = false },
+                    offset = IntOffset(touchPosition.x.toInt(), finalY)
+                ) {
+                    MenuContent(
+                        onEdit = {
+                            isEditing.value = true
+                            isMenuVisible = false
+                        },
+                        onDelete = {
+                            onDeleteMessage(messageId)
+                            isMenuVisible = false
                         }
-                    } else {
-                        // 重置位置
-                        iconOffset1.snapTo(50f)
-                        iconOffset2.snapTo(50f)
-                    }
-                }
-                Row {
-                    // 编辑按钮
-                    Icon(
-                        painterResource(id = R.drawable.edit),
-                        contentDescription = "编辑",
-                        tint = TextSecondaryDark,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(10.dp))
-                            .size(30.dp)
-                            .offset(y = iconOffset1.value.dp) // 应用动画偏移
-                            .clickable {
-                                isEditing.value = true
-                                isMenuVisible = false
-                            }
-                            .background(BgGreyDark)
-//                            .hazeEffect(chatWindowHazeState)
-                                .padding(4.dp)
-                        )
-                        SpaceHorizontalSmall()
-                        // 删除按钮
-                        Icon(
-                            painterResource(id = R.drawable.delete),
-                            contentDescription = "删除",
-                            tint = TextWhite,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(10.dp))
-                                .size(30.dp)
-                                .offset(y = iconOffset2.value.dp) // 应用动画偏移
-                                .clickable {
-                                    viewModel.deleteOneMessage(messageId)
-                                    isMenuVisible = false
-                                }
-                                .background(BgGreyDark)
-//                            .hazeEffect(chatWindowHazeState)
-                                .padding(4.dp)
-
-                        )
-                    }
+                    )
                 }
             }
         }
+
+        // 编辑弹窗
         if (isEditing.value) {
             EditMessageDialog(
                 originalContent = content,
@@ -470,20 +346,54 @@ fun ChatMessageItem(
                         finalContent = listOfNotNull(
                             parsedMessage.extractedDate,
                             parsedMessage.extractedRole
-                        ).joinToString("") + " " + parsedMessage.cleanedContent.replace(
-                            content,
-                            editedContent
-                        )
+                        ).joinToString("") + " " + parsedMessage.cleanedContent.replace(content, editedContent)
                     }
-                    viewModel.updateMessageContent(messageId, finalContent) {
-                        isEditing.value = false
-                    }
+                    onUpdateMessage(messageId, finalContent) { isEditing.value = false }
                 },
-                onDismiss = {
-                    isEditing.value = false
-                }
+                onDismiss = { isEditing.value = false }
             )
         }
+    }
+}
+
+@Composable
+private fun MenuContent(onEdit: () -> Unit, onDelete: () -> Unit) {
+    val iconOffset1 = remember { Animatable(50f) }
+    val iconOffset2 = remember { Animatable(50f) }
+
+    LaunchedEffect(Unit) {
+        coroutineScope {
+            launch { iconOffset1.animateTo(0f, spring(stiffness = Spring.StiffnessHigh)) }
+            launch { iconOffset2.animateTo(0f, spring(stiffness = Spring.StiffnessHigh)) }
+        }
+    }
+
+    Row {
+        Icon(
+            painterResource(id = R.drawable.edit),
+            contentDescription = "Edit",
+            tint = TextWhite,
+            modifier = Modifier
+                .clip(RoundedCornerShape(10.dp))
+                .size(30.dp)
+                .offset(y = iconOffset1.value.dp)
+                .clickable { onEdit() }
+                .background(BgGreyDark)
+                .padding(4.dp)
+        )
+        SpaceHorizontalSmall()
+        Icon(
+            painterResource(id = R.drawable.delete),
+            contentDescription = "Delete",
+            tint = TextWhite,
+            modifier = Modifier
+                .clip(RoundedCornerShape(10.dp))
+                .size(30.dp)
+                .offset(y = iconOffset2.value.dp)
+                .clickable { onDelete() }
+                .background(BgGreyDark)
+                .padding(4.dp)
+        )
     }
 }
 
@@ -494,177 +404,50 @@ fun EditMessageDialog(
     onDismiss: () -> Unit
 ) {
     val editedText = remember { mutableStateOf(originalContent) }
-
     AlertDialog(
         onDismissRequest = onDismiss,
         text = {
             SettingTextFieldItem(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp)
-                        .heightIn(max = 250.dp),
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp).heightIn(max = 250.dp),
                 label = "编辑消息",
                 labelPadding = PaddingValues(bottom = 6.dp),
                 value = editedText.value,
                 onValueChange = { editedText.value = it },
-                placeholder = { Text("请输入编辑后的消息") },
                 minLines = 5,
                 maxLines = 15,
             )
         },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    onConfirm(editedText.value)
-                }
-            ) {
-                Text("保存")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("取消")
-            }
-        }
+        confirmButton = { TextButton(onClick = { onConfirm(editedText.value) }) { Text("保存") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } }
     )
 }
-/**
- * 将消息内容拆分为文本和HTML片段，支持处理嵌套标签
- */
-private fun splitMessageContent(content: String): List<MessageSegment> {
-    val segments = mutableListOf<MessageSegment>()
-    // 识别 HTML 标签的正则，忽略大小写
-    // 使用 [\s\S]*? 来匹配包括换行在内的所有字符以捕获多行注释
-    val tagRegex = Regex("""<!--[\s\S]*?-->|<(/?)([a-zA-Z1-6]+)[^>]*>""", RegexOption.IGNORE_CASE)
-    val matches = tagRegex.findAll(content).toList()
 
-    if (matches.isEmpty()) {
-        return listOf(MessageSegment.Text(content))
-    }
+// --- Preview ---
 
-    var lastIndex = 0
-    var i = 0
-    while (i < matches.size) {
-        val match = matches[i]
-
-        // 添加标签前的文本
-        if (match.range.first > lastIndex) {
-            val text = content.substring(lastIndex, match.range.first)
-            if (text.isNotBlank()) segments.add(MessageSegment.Text(text))
-        }
-
-        // 处理 HTML 注释：注释直接作为 HTML 片段
-        if (match.value.startsWith("<!--")) {
-            segments.add(MessageSegment.Html(match.value))
-            lastIndex = match.range.last + 1
-            i++
-            continue
-        }
-
-        // 获取标签信息，索引 1 为 (/?), 索引 2 为 ([a-zA-Z1-6]+)
-        val isClosing = match.groupValues[1] == "/"
-        val tagName = match.groupValues[2]
-        val isSelfClosing = match.value.endsWith("/>")
-
-        if (tagName.isEmpty()) {
-            // 如果由于某种原因 tagName 为空且不是注释，则作为普通 HTML 处理
-            segments.add(MessageSegment.Html(match.value))
-            lastIndex = match.range.last + 1
-            i++
-            continue
-        }
-
-        if (isClosing || isSelfClosing) {
-            // 孤立的闭合标签或自闭合标签，直接作为 HTML 片段
-            segments.add(MessageSegment.Html(match.value))
-            lastIndex = match.range.last + 1
-            i++
-        } else {
-            // 起始标签，寻找平衡的闭合标签（考虑嵌套）
-            var depth = 1
-            var j = i + 1
-            var blockEnd = match.range.last + 1
-            var foundEnd = false
-
-            while (j < matches.size) {
-                val nextMatch = matches[j]
-
-                // 跳过注释，注释不参与标签嵌套计算
-                if (nextMatch.value.startsWith("<!--")) {
-                    j++
-                    continue
-                }
-
-                val nextIsClosing = nextMatch.groupValues[1] == "/"
-                val nextTagName = nextMatch.groupValues[2]
-
-                if (nextTagName.equals(tagName, ignoreCase = true)) {
-                    if (nextIsClosing) {
-                        depth--
-                    } else if (!nextMatch.value.endsWith("/>")) {
-                        depth++
-                    }
-                }
-
-                if (depth == 0) {
-                    blockEnd = nextMatch.range.last + 1
-                    foundEnd = true
-                    i = j + 1
-                    break
-                }
-                j++
-            }
-
-            if (foundEnd) {
-                // 找到了匹配的闭合标签，将整个范围作为 HTML 片段
-                segments.add(MessageSegment.Html(content.substring(match.range.first, blockEnd)))
-                lastIndex = blockEnd
-            } else {
-                // 未找到匹配，仅将当前标签视为 HTML 并继续
-                segments.add(MessageSegment.Html(match.value))
-                lastIndex = match.range.last + 1
-                i++
-            }
+@Preview(showBackground = true)
+@Composable
+fun PreviewUserMessage() {
+    MaterialTheme {
+        Box(modifier = Modifier.padding(16.dp).background(Color.Gray)) {
+            DisplayChatMessageItem(
+                message = ChatMessage(
+                    id = "1", content = "你好，这是一条用户消息", type = MessageType.USER,
+                    conversationId = "123",
+                    characterId = "123",
+                    chatUserId = "123",
+                    contentType = MessageContentType.TEXT,
+                ),
+                userAvatarUrl = null,
+                aiAvatarUrlProvider = { null },
+                enableSeparator = false,
+                chatWindowHazeState = remember { HazeState() },
+                onDeleteMessage = {},
+                onUpdateMessage = { _, _, _ -> },
+                onRegexReplace = { it },
+                onParseMessage = { ChatUtils.ParsedMessage(cleanedContent = it.content) },
+                getSegmentHeight = { _, _ -> null },
+                onRememberSegmentHeight = { _, _, _ -> }
+            )
         }
     }
-
-    if (lastIndex < content.length) {
-        val remaining = content.substring(lastIndex)
-        if (remaining.isNotBlank()) segments.add(MessageSegment.Text(remaining))
-    }
-
-    // 合并相邻的 HTML 片段（包括它们之间的空白字符），减少 WebView 数量并防止布局断裂
-    val mergedSegments = mutableListOf<MessageSegment>()
-    segments.forEach { segment ->
-        when (val last = mergedSegments.lastOrNull()) {
-            is MessageSegment.Html if segment is MessageSegment.Html -> {
-                mergedSegments[mergedSegments.size - 1] =
-                    MessageSegment.Html(last.content + segment.content)
-            }
-
-            is MessageSegment.Html if segment is MessageSegment.Text && segment.content.isBlank() -> {
-                mergedSegments.add(segment)
-            }
-
-            is MessageSegment.Text if last.content.isBlank() && segment is MessageSegment.Html &&
-                    mergedSegments.size >= 2 && mergedSegments[mergedSegments.size - 2] is MessageSegment.Html -> {
-                val prevHtml = mergedSegments[mergedSegments.size - 2] as MessageSegment.Html
-                mergedSegments.removeAt(mergedSegments.size - 1)
-                mergedSegments[mergedSegments.size - 1] =
-                    MessageSegment.Html(prevHtml.content + last.content + segment.content)
-            }
-
-            else -> {
-                mergedSegments.add(segment)
-            }
-        }
-    }
-
-    return if (mergedSegments.isEmpty() && content.isNotEmpty()) listOf(MessageSegment.Text(content)) else mergedSegments
-}
-// 定义消息片段类型
-private sealed class MessageSegment {
-    data class Text(val content: String) : MessageSegment()
-    data class Html(val content: String) : MessageSegment()
 }

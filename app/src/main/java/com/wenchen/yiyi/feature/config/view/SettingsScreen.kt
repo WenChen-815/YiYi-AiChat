@@ -67,6 +67,13 @@ fun SettingsScreen(
 
             SpaceVerticalLarge()
 
+            SettingNavigationCard(
+                title = "显示设置",
+                description = "配置聊天气泡颜色及布局模式",
+                onClick = { viewModel.navigate(ConfigRoutes.DisplayConfig) }
+            )
+
+            SpaceVerticalLarge()
 
             SettingNavigationCard(
                 title = "API 配置",

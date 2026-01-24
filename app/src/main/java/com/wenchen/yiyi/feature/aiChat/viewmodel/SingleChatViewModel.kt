@@ -18,8 +18,10 @@ import com.wenchen.yiyi.feature.aiChat.common.AIChatManager
 import com.wenchen.yiyi.navigation.AppNavigator
 import com.wenchen.yiyi.navigation.routes.AiChatRoutes
 import com.aventrix.jnanoid.jnanoid.NanoIdUtils
+import com.wenchen.yiyi.feature.aiChat.common.ChatLayoutMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -55,6 +57,8 @@ class SingleChatViewModel @Inject constructor(
     userConfigState = userConfigState,
     savedStateHandle = savedStateHandle
 ){
+    val _layoutMode = MutableStateFlow(ChatLayoutMode())
+    val layoutMode: MutableStateFlow<ChatLayoutMode> = _layoutMode
 
     init {
         val route = savedStateHandle.toRoute<AiChatRoutes.SingleChat>()
@@ -64,6 +68,7 @@ class SingleChatViewModel @Inject constructor(
         }
         // 更新最大上下文消息数
         chatContext.setLimit(userConfigState.userConfig.value?.maxContextMessageSize ?: 15)
+        _layoutMode.value = userConfigState.userConfig.value?.layoutMode ?: ChatLayoutMode()
         init()
     }
 

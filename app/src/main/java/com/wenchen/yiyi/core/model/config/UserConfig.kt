@@ -1,6 +1,7 @@
 package com.wenchen.yiyi.core.model.config
 
 import com.aventrix.jnanoid.jnanoid.NanoIdUtils
+import com.wenchen.yiyi.feature.aiChat.common.ChatLayoutMode
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -30,12 +31,15 @@ data class UserConfig(
     var enableTimePrefix: Boolean = true,
     var enableStreamOutput: Boolean = true,
 
+    // ======布局模式=====================
+    var layoutMode: ChatLayoutMode = ChatLayoutMode(),
+
     // ======开发者设置=====================
     var showLogcatView: Boolean = false,
 
     // 选中的角色相关
     var selectedCharacterId: String? = null,
-    ){
+) {
     val baseUrl get() = apiConfigs.find { it.id == currentApiConfigId }?.baseUrl
     val baseApiKey get() = apiConfigs.find { it.id == currentApiConfigId }?.apiKey
 
