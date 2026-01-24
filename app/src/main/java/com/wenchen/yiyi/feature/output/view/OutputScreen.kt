@@ -16,10 +16,14 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -60,6 +64,7 @@ internal fun OutputRoute(
         characters = characters,
         selectedIndex = selectedIndex,
         isExporting = isExporting,
+        onBackClick = { viewModel.navigateBack() },
         onItemClick = { index ->
             viewModel.onItemClick(index)
         },
@@ -72,6 +77,7 @@ fun OutputScreen(
     characters: List<AICharacter>,
     selectedIndex: List<Int>,
     isExporting: Boolean,
+    onBackClick: () -> Unit,
     onItemClick: (Int) -> Unit,
     outputSelected: () -> Unit
 ) {
@@ -79,6 +85,7 @@ fun OutputScreen(
         characters = characters,
         selectedIndex = selectedIndex,
         isExporting = isExporting,
+        onBackClick = onBackClick,
         onItemClick = onItemClick,
         outputSelected = outputSelected
     )
@@ -90,6 +97,7 @@ fun OutputScreenContent(
     characters: List<AICharacter>,
     selectedIndex: List<Int>,
     isExporting: Boolean,
+    onBackClick: () -> Unit,
     onItemClick: (Int) -> Unit,
     outputSelected: () -> Unit
 ) {
@@ -98,6 +106,15 @@ fun OutputScreenContent(
             TopAppBar(
                 title = {
                     Text(text = "角色导出")
+                },
+                navigationIcon = {
+                    IconButton(onClick = { onBackClick }) {
+                        Icon(
+                            Icons.Rounded.ArrowBackIosNew,
+                            contentDescription = "返回",
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 },
                 actions = {
                     if (isExporting) {
@@ -293,6 +310,7 @@ fun OutputScreenPreview() {
             characters = characters,
             selectedIndex = listOf(0, 1, 2),
             isExporting = false,
+            onBackClick = {},
             onItemClick = { _ -> },
             outputSelected = {}
         )

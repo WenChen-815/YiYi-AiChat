@@ -95,7 +95,7 @@ fun ApiConfigScreen(
             TopAppBar(
                 title = { Text("API 配置") },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = { viewModel.navigateBack() }) {
                         Icon(
                             Icons.Rounded.ArrowBackIosNew,
                             contentDescription = "返回",
